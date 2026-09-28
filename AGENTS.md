@@ -34,6 +34,15 @@ Run lint and typecheck before declaring any task done.
 Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
 Docs: https://docs.expo.dev/eas/index.md
 
+## Project: KolektaPH
+
+- Users are ordinary Carmona residents (including seniors and people on low-end phones), truck drivers, and City ENRO staff. Resident UI is Filipino-first (English toggle), uses large text and touch targets, and never relies on colour alone.
+- No database or backend in this phase. Screens call only `src/services/` interfaces; mock implementations and the deterministic simulator live behind them. Don't import mock data directly into screens.
+- Domain logic (ETA, vicinity SMS, missed streets, report lifecycle, Kolek intents) is pure TypeScript in `src/features/` and is unit-tested.
+- Every user-facing string goes through i18n (`src/i18n/`). Sample numbers must be labelled as sample data.
+- Maps are MapLibre only: `KMap.web.tsx` (maplibre-gl) and `KMap.native.tsx` (@maplibre/maplibre-react-native). Don't add react-native-maps.
+- Web output is `single` (SPA), because maplibre-gl needs `window` and can't be statically rendered.
+
 ## Rules
 
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.

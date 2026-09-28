@@ -1,1 +1,8 @@
-{ "recommendations": ["expo.vscode-expo-tools"] }
+{
+  "recommendations": [
+    "expo.vscode-expo-tools",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "lokalise.i18n-ally"
+  ]
+}
