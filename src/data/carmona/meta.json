@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-09-28T17:42:51.155Z",
+  "bounds": [
+    [121.00258, 14.25715],
+    [121.07768, 14.32913]
+  ],
+  "center": [121.04013, 14.29314],
+  "depot": {
+    "name": "Carmona City Hall",
+    "coordinates": [121.05728, 14.31375]
+  },
+  "sources": [
+    "Barangay boundaries, names and population tags: © OpenStreetMap contributors (ODbL 1.0)",
+    "Population figures: Philippine Statistics Authority, 2024 Census of Population (via OSM tags)",
+    "Route geometry: OSRM routing on OpenStreetMap road data. Routes are SAMPLE data, not ENRO routes."
+  ]
+}

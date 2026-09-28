@@ -40,8 +40,12 @@ Docs: https://docs.expo.dev/eas/index.md
 - No database or backend in this phase. Screens call only `src/services/` interfaces; mock implementations and the deterministic simulator live behind them. Don't import mock data directly into screens.
 - Domain logic (ETA, vicinity SMS, missed streets, report lifecycle, Kolek intents) is pure TypeScript in `src/features/` and is unit-tested.
 - Every user-facing string goes through i18n (`src/i18n/`). Sample numbers must be labelled as sample data.
-- Maps are MapLibre only: `KMap.web.tsx` (maplibre-gl) and `KMap.native.tsx` (@maplibre/maplibre-react-native). Don't add react-native-maps.
-- Web output is `single` (SPA), because maplibre-gl needs `window` and can't be statically rendered.
+- Maps are MapLibre only: `KMap.web.tsx` (maplibre-gl) and `KMap.tsx` (native, @maplibre/maplibre-react-native), sharing the layer specs in `layers.ts`. Keep both in sync. Don't add react-native-maps.
+- Web output is `single` (SPA), because maplibre-gl needs `window` and can't be statically rendered. Its worker is served from `public/maplibre/` (copied on postinstall).
+- Role areas are real URL segments (`src/app/resident`, `driver`, `enro`), not route groups, so the dashboard lives at `/enro`.
+- Asia/Manila time uses the fixed UTC+8 helpers in `src/lib/time.ts` (the Philippines has no DST). Don't add timezone libraries.
+- With the React Compiler on, never read `Date.now()` during render. Get time from `useSimNow()` or read it inside event handlers.
+- Map fixtures come from `scripts/data/build-carmona-data.mjs`. Regenerate them; don't edit the JSON by hand.
 
 ## Rules
 

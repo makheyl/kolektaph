@@ -4,3 +4,6 @@ ios/
 dist/
 assets/
 package-lock.json
+src/data/carmona/barangays.json
+src/data/carmona/routes.json
+public/maplibre/

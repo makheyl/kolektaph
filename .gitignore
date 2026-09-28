@@ -41,3 +41,6 @@ example
 # generated native folders
 /ios
 /android
+
+# maplibre-gl worker files, copied from node_modules on postinstall
+/public/maplibre/

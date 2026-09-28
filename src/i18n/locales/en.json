@@ -1,0 +1,72 @@
+{
+  "app": {
+    "name": "KolektaPH",
+    "tagline": "Know when. Know where."
+  },
+  "common": {
+    "sampleData": "Sample data",
+    "sampleDataHint": "Numbers, routes and schedules here are samples, not official city data yet.",
+    "back": "Back",
+    "comingSoon": "This part is still being built. Coming in {{sprint}}.",
+    "language": "Language",
+    "largeText": "Large text"
+  },
+  "roles": {
+    "title": "Who is using the app?",
+    "resident": "Resident",
+    "residentHint": "When will the truck reach my barangay?",
+    "driver": "Truck driver",
+    "driverHint": "Start the shift and log the load",
+    "enro": "City ENRO",
+    "enroHint": "Monitor every truck and street"
+  },
+  "demo": {
+    "title": "KolektaPH demo",
+    "clockTitle": "Demo clock",
+    "liveMode": "Real time",
+    "demoMode": "Demo time",
+    "goLive": "Back to real time",
+    "speed": "Speed",
+    "presetsTitle": "Jump to a moment",
+    "presets": {
+      "nightBefore": "Monday 6:00 PM · night before",
+      "beforeStart": "Tuesday 6:55 AM · before departure",
+      "approaching": "Tuesday 7:25 AM · approaching",
+      "midRoute": "Tuesday 8:30 AM · mid-route",
+      "afterRoute": "Tuesday 11:30 AM · finished"
+    },
+    "mapTitle": "Map of Carmona",
+    "trucksTitle": "Trucks today"
+  },
+  "truck": {
+    "status": {
+      "off_duty": "No trip today",
+      "not_started": "Not yet departed",
+      "on_route": "On route",
+      "full": "Full",
+      "to_disposal": "Going to disposal site",
+      "break": "On break",
+      "breakdown": "Broken down",
+      "no_signal": "No signal",
+      "done": "Route finished"
+    },
+    "load": "Load",
+    "loadFull": "Full",
+    "location": "On {{street}}, {{barangay}}",
+    "atDepot": "At {{depot}}",
+    "unnamedRoad": "an unnamed road",
+    "pinLabel": "{{name}}, {{status}}"
+  },
+  "weekday": {
+    "0": "Sunday",
+    "1": "Monday",
+    "2": "Tuesday",
+    "3": "Wednesday",
+    "4": "Thursday",
+    "5": "Friday",
+    "6": "Saturday"
+  },
+  "map": {
+    "a11yLabel": "Map of Carmona showing {{count}} trucks"
+  }
+}

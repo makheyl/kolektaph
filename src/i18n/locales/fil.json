@@ -1,0 +1,72 @@
+{
+  "app": {
+    "name": "KolektaPH",
+    "tagline": "Alam mo kung kailan. Alam mo kung saan."
+  },
+  "common": {
+    "sampleData": "Halimbawang datos",
+    "sampleDataHint": "Ang mga numero, ruta at iskedyul dito ay halimbawa lamang, hindi pa opisyal na datos ng lungsod.",
+    "back": "Bumalik",
+    "comingSoon": "Ginagawa pa ang bahaging ito. Darating sa {{sprint}}.",
+    "language": "Wika",
+    "largeText": "Malaking teksto"
+  },
+  "roles": {
+    "title": "Sino ang gagamit?",
+    "resident": "Residente",
+    "residentHint": "Kailan darating ang truck sa barangay ko?",
+    "driver": "Driver ng truck",
+    "driverHint": "Simulan ang shift at i-log ang karga",
+    "enro": "City ENRO",
+    "enroHint": "Bantayan ang lahat ng truck at kalye"
+  },
+  "demo": {
+    "title": "Demo ng KolektaPH",
+    "clockTitle": "Oras ng demo",
+    "liveMode": "Totoong oras",
+    "demoMode": "Demo na oras",
+    "goLive": "Bumalik sa totoong oras",
+    "speed": "Bilis",
+    "presetsTitle": "Tumalon sa oras",
+    "presets": {
+      "nightBefore": "Lunes 6:00 PM · bisperas",
+      "beforeStart": "Martes 6:55 AM · bago umalis",
+      "approaching": "Martes 7:25 AM · papalapit",
+      "midRoute": "Martes 8:30 AM · kalagitnaan",
+      "afterRoute": "Martes 11:30 AM · tapos na"
+    },
+    "mapTitle": "Mapa ng Carmona",
+    "trucksTitle": "Mga truck ngayon"
+  },
+  "truck": {
+    "status": {
+      "off_duty": "Walang biyahe ngayon",
+      "not_started": "Hindi pa umaalis",
+      "on_route": "Nasa ruta",
+      "full": "Puno na",
+      "to_disposal": "Papunta sa tapunan",
+      "break": "Naka-break",
+      "breakdown": "Sira ang truck",
+      "no_signal": "Walang signal",
+      "done": "Tapos na ang ruta"
+    },
+    "load": "Karga",
+    "loadFull": "Puno",
+    "location": "Nasa {{street}}, {{barangay}}",
+    "atDepot": "Nasa {{depot}}",
+    "unnamedRoad": "kalsadang walang pangalan",
+    "pinLabel": "{{name}}, {{status}}"
+  },
+  "weekday": {
+    "0": "Linggo",
+    "1": "Lunes",
+    "2": "Martes",
+    "3": "Miyerkoles",
+    "4": "Huwebes",
+    "5": "Biyernes",
+    "6": "Sabado"
+  },
+  "map": {
+    "a11yLabel": "Mapa ng Carmona na may {{count}} truck na nakikita"
+  }
+}
