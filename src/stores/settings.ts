@@ -21,12 +21,15 @@ interface SettingsState {
   barangayId: string | null;
   onboarded: boolean;
   sms: SmsSubscription | null;
+  /** Alerts sent after this time show as unread in "Mga abiso". */
+  alertsSeenAt: number;
   setLanguage: (language: Language) => void;
   setLargeText: (largeText: boolean) => void;
   setRole: (role: Role | null) => void;
   setBarangayId: (barangayId: string | null) => void;
   completeOnboarding: () => void;
   setSms: (sms: SmsSubscription | null) => void;
+  markAlertsSeen: (at: number) => void;
   /** "Burahin ang data ko": forget everything stored about this resident on this device. */
   deleteMyData: () => void;
 }
@@ -38,6 +41,7 @@ const DEFAULTS = {
   barangayId: null,
   onboarded: false,
   sms: null,
+  alertsSeenAt: 0,
 };
 
 /**
@@ -58,19 +62,21 @@ export const useSettings = create<SettingsState>()(
       },
       completeOnboarding: () => set({ onboarded: true }),
       setSms: (sms) => set({ sms }),
+      markAlertsSeen: (at) => set({ alertsSeenAt: Math.max(get().alertsSeenAt, at) }),
       deleteMyData: () => set({ ...DEFAULTS, language: get().language }),
     }),
     {
       name: 'kolektaph.settings',
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: ({ language, largeText, role, barangayId, onboarded, sms }) => ({
+      partialize: ({ language, largeText, role, barangayId, onboarded, sms, alertsSeenAt }) => ({
         language,
         largeText,
         role,
         barangayId,
         onboarded,
         sms,
+        alertsSeenAt,
       }),
       // v0 (Sprint S1) had no onboarding/SMS fields; keep the saved preferences.
       migrate: (persisted) => ({ ...DEFAULTS, ...(persisted as object) }),

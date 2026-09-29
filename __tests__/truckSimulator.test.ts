@@ -11,17 +11,21 @@ const sim = (id: string, at: number) => simulateTruck(truck(id), ROUTE_SCHEDULES
 describe('deterministic truck simulator', () => {
   it('waits at the depot before the shift starts', () => {
     const s = sim('t2', tue(6, 30));
-    const route = ROUTES.find((r) => r.id === 'r-milagrosa')!;
+    const route = ROUTES.find((r) => r.id === 'r-poblacion-milagrosa')!;
     expect(s.status).toBe('not_started');
-    expect(s.routeId).toBe('r-milagrosa');
+    expect(s.routeId).toBe('r-poblacion-milagrosa');
     expect(s.position).toEqual(route.segments[0].coordinates[0]);
     expect(s.load).toBe(0);
   });
 
-  it('is on route in Milagrosa at 7:30 AM Tuesday', () => {
-    const s = sim('t2', tue(7, 30));
+  it('serves Poblacion first, then is in Milagrosa by 7:50 AM Tuesday', () => {
+    expect(sim('t2', tue(7, 25)).barangayId).toMatch(/^brgy-[1-4]$/);
+    const s = sim('t2', tue(7, 50));
     expect(s.status).toBe('on_route');
-    expect(s.barangayId).toBe('milagrosa');
+    // The street under the truck may belong to a neighbouring barangay between stops; the
+    // service log is what says Milagrosa collection has started.
+    expect(s.visits.milagrosa.startedAt).toBeLessThan(tue(7, 50));
+    expect(s.visits.milagrosa.finishedAt).toBeNull();
     expect(s.progressM).toBeGreaterThan(0);
     expect(s.load).toBeGreaterThan(0);
     expect(s.load).toBeLessThan(1);
@@ -72,10 +76,38 @@ describe('deterministic truck simulator', () => {
   it('builds a timeline that fits every sample route inside its schedule window', () => {
     for (const sched of ROUTE_SCHEDULES) {
       const route = ROUTES.find((r) => r.id === sched.routeId)!;
-      const [sh, sm] = sched.start.split(':').map(Number);
+      const [dh, dm] = (sched.departAt ?? sched.start).split(':').map(Number);
       const [eh, em] = sched.windowEnd.split(':').map(Number);
-      const windowMs = (eh * 60 + em - (sh * 60 + sm)) * 60_000;
-      expect(getTimeline(route).totalMs).toBeLessThanOrEqual(windowMs);
+      const availableMs = (eh * 60 + em - (dh * 60 + dm)) * 60_000;
+      expect(getTimeline(route).totalMs).toBeLessThanOrEqual(availableMs);
     }
+  });
+
+  it('leaves the depot at its departure time, after the window opens (Truck 2: 7:17)', () => {
+    expect(sim('t2', tue(7, 16)).status).toBe('not_started');
+    expect(sim('t2', tue(7, 18)).status).toBe('on_route');
+    expect(sim('t2', tue(7, 0)).departAt).toBe(tue(7, 17));
+  });
+
+  it('stops for a breakdown and resumes later, shifting the rest of the route', () => {
+    const events = [
+      { id: 'b', kind: 'breakdown' as const, truckId: 't1', at: tue(7, 30), minutes: 60 },
+    ];
+    const withBreakdown = (at: number) =>
+      simulateTruck(truck('t1'), ROUTE_SCHEDULES, ROUTES, at, [], events);
+    const during = withBreakdown(tue(8, 0));
+    expect(during.status).toBe('breakdown');
+    expect(during.incident).toMatchObject({ since: tue(7, 30), until: tue(8, 30) });
+    expect(during.position).toEqual(withBreakdown(tue(7, 31)).position);
+    // After the repair it is exactly where it would have been an hour earlier.
+    expect(withBreakdown(tue(9, 30)).progressM).toBeCloseTo(sim('t1', tue(8, 30)).progressM, 3);
+  });
+
+  it('ignores breakdowns reported when the truck is not on its route', () => {
+    const events = [
+      { id: 'b', kind: 'breakdown' as const, truckId: 't2', at: tue(6, 0), minutes: 60 },
+    ];
+    const s = simulateTruck(truck('t2'), ROUTE_SCHEDULES, ROUTES, tue(7, 50), [], events);
+    expect(s).toEqual(sim('t2', tue(7, 50)));
   });
 });

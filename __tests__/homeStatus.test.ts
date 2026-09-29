@@ -39,9 +39,16 @@ describe('Home status: "Kailan darating ang truck?"', () => {
     expect(s.kind === 'no_collection_today' && s.next?.start).toBe(manilaEpoch(2026, 10, 2, 7, 0));
   });
 
-  it('before 7:00 AM: the truck has not left yet', () => {
+  it('before the truck leaves: says when it departs (Truck 2 leaves at 7:17)', () => {
     const s = statusFor('milagrosa', tue(6, 30));
-    expect(s).toMatchObject({ kind: 'before_start', departAt: tue(7, 0) });
+    expect(s).toMatchObject({ kind: 'before_start', departAt: tue(7, 17) });
+  });
+
+  it('Aling Rosa, 7:26 AM: "Ilabas na ang basura!" with the truck ~15 min away', () => {
+    const s = statusFor('milagrosa', tue(7, 26));
+    expect(s.kind).toBe('bring_out');
+    expect(s.kind === 'bring_out' && s.minutes).toBeLessThanOrEqual(15);
+    expect(s.kind === 'bring_out' && s.minutes).toBeGreaterThanOrEqual(12);
   });
 
   it('approaching, then "bring it out" within 15 minutes (Maduya is served after Poblacion)', () => {
@@ -56,9 +63,9 @@ describe('Home status: "Kailan darating ang truck?"', () => {
   });
 
   it('while collecting: in your barangay, with the street and finish time', () => {
-    const s = statusFor('milagrosa', tue(7, 30));
+    const s = statusFor('milagrosa', tue(7, 50));
     expect(s.kind).toBe('in_barangay');
-    expect(s.kind === 'in_barangay' && s.finishAt).toBeGreaterThan(tue(7, 30));
+    expect(s.kind === 'in_barangay' && s.finishAt).toBeGreaterThan(tue(7, 50));
   });
 
   it('after the truck finishes: passed, with the time and the next collection', () => {
@@ -74,6 +81,6 @@ describe('Home status: "Kailan darating ang truck?"', () => {
   });
 
   it('is honest when there is no data from the truck', () => {
-    expect(statusFor('milagrosa', tue(7, 30), { dropTruck: true }).kind).toBe('no_signal');
+    expect(statusFor('milagrosa', tue(7, 50), { dropTruck: true }).kind).toBe('no_signal');
   });
 });

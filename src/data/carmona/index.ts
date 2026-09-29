@@ -30,7 +30,10 @@ export const TRUCKS: Truck[] = [
 /**
  * SAMPLE schedule: every barangay is collected twice a week, following the 2013 Cavite
  * provincial profile ("twice-a-week collection"). Replace with the ENRO schedule.
- * Mabuhay's expectedLoad > 1 is intentional: it drives the "truck full with streets left" demo.
+ *
+ * Tuned to the pitch's Aling Rosa story: Truck 2 leaves at 7:17, collects Poblacion 1–4, and
+ * reaches Milagrosa around 7:40, so Milagrosa's "15 minutes away" text goes out around 7:25.
+ * Mabuhay's expectedLoad > 1 is intentional: Truck 3 fills up with 3 streets left (Problem 3).
  */
 export const ROUTE_SCHEDULES: RouteSchedule[] = [
   {
@@ -43,10 +46,11 @@ export const ROUTE_SCHEDULES: RouteSchedule[] = [
     expectedLoad: 0.9,
   },
   {
-    routeId: 'r-milagrosa',
+    routeId: 'r-poblacion-milagrosa',
     truckId: 't2',
     days: [2, 5],
     start: '07:00',
+    departAt: '07:17',
     windowEnd: '10:00',
     wasteType: 'mixed',
     expectedLoad: 0.85,
@@ -58,7 +62,7 @@ export const ROUTE_SCHEDULES: RouteSchedule[] = [
     start: '07:00',
     windowEnd: '10:00',
     wasteType: 'mixed',
-    expectedLoad: 1.25,
+    expectedLoad: 1.45,
   },
   {
     routeId: 'r-poblacion-maduya',
@@ -103,16 +107,30 @@ export const SCHEDULE_EXCEPTIONS: ScheduleException[] = [
   },
   {
     date: '2026-12-25',
-    routeIds: ['r-lantic', 'r-milagrosa', 'r-mabuhay', 'r-poblacion-maduya'],
+    routeIds: ['r-lantic', 'r-poblacion-milagrosa', 'r-mabuhay', 'r-poblacion-maduya'],
     action: 'move',
     moveTo: '2026-12-26',
     reason: { fil: 'Pasko', en: 'Christmas Day' },
   },
   {
     date: '2027-01-01',
-    routeIds: ['r-lantic', 'r-milagrosa', 'r-mabuhay', 'r-poblacion-maduya'],
+    routeIds: ['r-lantic', 'r-poblacion-milagrosa', 'r-mabuhay', 'r-poblacion-maduya'],
     action: 'move',
     moveTo: '2027-01-02',
     reason: { fil: 'Bagong Taon', en: "New Year's Day" },
   },
 ];
+
+/** SAMPLE truck capacity used to estimate tonnes from load (compactor trucks carry ~6 t). */
+export const TRUCK_CAPACITY_TONNES = 6;
+
+/**
+ * SAMPLE SMS registrations per barangay: about 2.8% of residents (roughly one in eight
+ * households). Replace with real opt-in counts once registration opens.
+ */
+export const SMS_REGISTRATIONS: Record<string, number> = Object.fromEntries(
+  BARANGAYS.features.map((f) => [
+    f.properties.id,
+    Math.round((f.properties.population ?? 0) * 0.028),
+  ]),
+);

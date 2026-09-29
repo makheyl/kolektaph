@@ -63,11 +63,16 @@
       "nightBefore": "Monday 6:00 PM · night before",
       "beforeStart": "Tuesday 6:55 AM · before departure",
       "approaching": "Tuesday 7:25 AM · approaching",
-      "midRoute": "Tuesday 8:30 AM · mid-route",
+      "truckFull": "Tuesday 7:55 AM · Truck 3 is full",
       "afterRoute": "Tuesday 11:30 AM · finished"
     },
     "mapTitle": "Map of Carmona",
-    "trucksTitle": "Trucks today"
+    "trucksTitle": "Trucks today",
+    "scenarioTitle": "Scenarios (demo)",
+    "scenarioHint": "Trigger a problem to see the delay alerts and the City ENRO dashboard react.",
+    "breakdown": "Break down {{truck}} now (2 hours)",
+    "clearEvents": "Reset scenarios",
+    "activeEvents": "{{count}} scenario events set"
   },
   "truck": {
     "status": {
@@ -189,8 +194,14 @@
         "fullTitle": "Delayed: the truck is full",
         "fullBody": "Your barangay isn't finished yet. Another truck is needed. Please don't bring your garbage out yet.",
         "noSignalTitle": "No signal from the truck",
-        "noSignalBody": "We don't know where the truck is right now. This will update automatically."
-      }
+        "noSignalBody": "We don't know where the truck is right now. This will update automatically.",
+        "breakdownTitle": "Delayed: the truck broke down",
+        "breakdownArrive": "New estimated arrival: {{time}}.",
+        "breakdownResume": "Collection should resume around {{time}}.",
+        "breakdownHold": "Please don't bring your garbage out yet. We'll text you when it's near."
+      },
+      "alertsLabel": "Alerts",
+      "alertsUnread": "Alerts, {{count}} new"
     },
     "map": {
       "showMine": "My barangay",
@@ -235,6 +246,15 @@
       "deleteConfirmBody": "Your barangay and number will be removed from this device, and texts will stop.",
       "deleteConfirm": "Yes, delete",
       "switchRole": "Back to demo"
+    },
+    "alerts": {
+      "title": "Alerts",
+      "subtitle": "Reminders and texts for {{barangay}} from the last 7 days.",
+      "empty": "No alerts yet.",
+      "pickBarangay": "Choose a barangay first to see its alerts.",
+      "viaSms": "You also received this by SMS.",
+      "smsOff": "Turn on text alerts to get these even without internet.",
+      "new": "New"
     }
   },
   "privacy": {
@@ -248,5 +268,101 @@
     "whoBody": "Only the City ENRO, to send reminders. It is never sold or shared.",
     "rightsTitle": "Your rights",
     "rightsBody": "You can stop texts anytime (reply STOP) and delete your data in Settings. This follows the Data Privacy Act of 2012 (RA 10173)."
+  },
+  "alert": {
+    "kind": {
+      "night_before": "Reminder for tomorrow",
+      "vicinity": "Truck is near",
+      "vicinity_now": "Truck is here",
+      "delay_breakdown": "Delayed: truck broke down",
+      "delay_full": "Delayed: truck is full",
+      "announcement": "City ENRO announcement"
+    }
+  },
+  "enro": {
+    "brand": "City ENRO",
+    "nav": {
+      "liveOps": "Live Operations",
+      "sms": "SMS and announcements",
+      "reports": "Reports",
+      "trucks": "Trucks",
+      "stats": "Statistics",
+      "schedules": "Schedules",
+      "soon": "In {{sprint}}",
+      "backToDemo": "Back to demo"
+    },
+    "live": {
+      "title": "Live Operations",
+      "subtitle": "{{weekday}}, {{time}} · City of Carmona",
+      "kpiOnRoute": "Trucks on route",
+      "kpiSmsToday": "SMS today",
+      "kpiMissed": "Streets missed",
+      "kpiServed": "Streets served this week",
+      "mapTitle": "All trucks",
+      "loadTitle": "Truck load now",
+      "alertsTitle": "Alerts",
+      "noAlerts": "No alerts right now.",
+      "fullAlert": "{{truck}} is FULL with {{count}} streets left in {{barangay}}.",
+      "suggestion": "Suggested: send {{truck}} ({{load}} load, {{distance}} away).",
+      "noCandidate": "No other truck has enough room right now.",
+      "dispatch": "Send",
+      "dismiss": "Dismiss",
+      "dispatched": "{{truck}} sent ({{time}}).",
+      "dismissed": "Dismissed ({{time}}).",
+      "humansDecide": "This is only a suggestion. Staff decide.",
+      "breakdownAlert": "{{truck}} broke down. Resuming around {{time}}. Affected barangays were texted.",
+      "missedTitle": "Streets missed today (GPS check)",
+      "noMissed": "No streets missed so far today.",
+      "missedReason": {
+        "truck_full": "not passed: truck full",
+        "not_passed": "not passed"
+      },
+      "weekTitle": "This week",
+      "tonnes": "Tonnes",
+      "trips": "Trips",
+      "served": "Served",
+      "recentSms": "Latest SMS",
+      "seeAllSms": "See all",
+      "offDuty": "No trip",
+      "unnamed": "unnamed road",
+      "metres": "{{value}} m",
+      "km": "{{value}} km"
+    },
+    "sms": {
+      "title": "SMS and announcements",
+      "composeTitle": "New announcement",
+      "to": "To",
+      "all": "All",
+      "templates": "Template",
+      "tplCustom": "Custom message",
+      "tplTyphoon": "No collection (typhoon)",
+      "tplCleanup": "Clean-up drive",
+      "tplSegregation": "Segregation reminder",
+      "typhoon": "KolektaPH: Walang koleksyon ng basura ngayong araw dahil sa bagyo. Itabi muna po ang basura sa ligtas na lugar. Salamat po.",
+      "cleanup": "KolektaPH: May clean-up drive sa Sabado, 7AM. Sama-sama nating linisin ang ating barangay. Salamat po!",
+      "segregation": "KolektaPH: Paalala po: ihiwalay ang nabubulok at di-nabubulok. Hindi kukunin ang basurang hindi nakahiwalay. Salamat po!",
+      "message": "Message",
+      "messageHint": "Write in plain Filipino. One SMS (160 characters) is cheapest.",
+      "counter": "{{units}} / {{capacity}} · {{segments}} SMS per number · {{encoding}}",
+      "ucsWarning": "Contains a special character (e.g. emoji or curly quotes): only 70 characters fit per SMS.",
+      "recipients": "{{count}} registered numbers · {{total}} SMS in total",
+      "pickTarget": "Choose at least one barangay.",
+      "emptyMessage": "Write a message first.",
+      "send": "Send",
+      "confirmTitle": "Send to {{count}} numbers?",
+      "confirmBody": "This can't be undone once sent.",
+      "confirm": "Yes, send",
+      "sent": "Sent at {{time}}.",
+      "outboxTitle": "Outbox",
+      "filterAll": "All",
+      "filterAuto": "Automatic",
+      "filterManual": "Announcements",
+      "outboxEmpty": "No SMS sent yet.",
+      "sentTo": "{{barangays}} · {{count}} numbers · {{segments}} SMS",
+      "arrived": "Truck arrived at {{time}} ({{minutes}} min after the text).",
+      "arrivedEarly": "Truck arrived at {{time}}, before the text.",
+      "awaiting": "Waiting for the truck.",
+      "beforeTruckKpi": "{{pct}} of texts arrived before the truck (today)"
+    }
   }
 }

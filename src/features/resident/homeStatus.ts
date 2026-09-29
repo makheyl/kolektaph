@@ -32,6 +32,14 @@ export type HomeStatus =
       next: CollectionOccurrence | null;
     }
   | { kind: 'full'; today: CollectionOccurrence }
+  | {
+      kind: 'breakdown';
+      today: CollectionOccurrence;
+      /** When the crew expects to move again. */
+      resumeAt: number;
+      /** New estimated arrival in the barangay (null if the truck is already there). */
+      arriveAt: number | null;
+    }
   | { kind: 'no_signal'; today: CollectionOccurrence };
 
 export interface HomeStatusInput {
@@ -62,6 +70,8 @@ export function homeStatus({
       ? { kind: 'before_start', today, departAt: today.start }
       : { kind: 'no_signal', today };
   }
+  // The truck may leave the depot after the window opens (it serves other streets first).
+  const departAt = truck.departAt ?? today.start;
 
   const visit = barangayVisit(route, truck, barangayId, now);
   if (!visit) return { kind: 'no_signal', today };
@@ -70,7 +80,15 @@ export function homeStatus({
     return { kind: 'passed', today, passedAt: visit.passedAt, next: nextAfterToday };
   }
   if (truck.status === 'full') return { kind: 'full', today };
-  if (truck.status === 'not_started') return { kind: 'before_start', today, departAt: today.start };
+  if (truck.status === 'breakdown' && truck.incident) {
+    return {
+      kind: 'breakdown',
+      today,
+      resumeAt: truck.incident.until,
+      arriveAt: visit.state === 'upcoming' ? visit.arriveAt : null,
+    };
+  }
+  if (truck.status === 'not_started') return { kind: 'before_start', today, departAt };
 
   if (visit.state === 'in_progress') {
     return {

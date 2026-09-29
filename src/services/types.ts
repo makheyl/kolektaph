@@ -67,6 +67,11 @@ export interface RouteSchedule {
   wasteType: WasteType;
   /** Sample simulation parameter: load fraction the route would generate (>1 means it overflows). */
   expectedLoad: number;
+  /**
+   * When the truck leaves the depot, if later than the window start (residents still see the
+   * window, e.g. 7:00–10:00 AM, while the truck may serve other streets first).
+   */
+  departAt?: string;
 }
 
 /** A holiday or one-off change to the regular schedule, on a Manila calendar date. */
@@ -118,6 +123,102 @@ export interface TruckState {
    * barangay. A backend derives this from GPS; the simulator derives it from its timeline.
    */
   visits: Record<string, BarangayVisitLog>;
+  /** Departure time from the depot for today's route (null when off duty). */
+  departAt: number | null;
+  /** Current incident, e.g. a breakdown, with its expected end. */
+  incident: TruckIncident | null;
+}
+
+export interface TruckIncident {
+  kind: 'breakdown';
+  since: number;
+  /** Expected time the truck moves again (estimate reported by the crew). */
+  until: number;
+}
+
+/**
+ * Something that happens to a truck. Drivers report these in the driver app (Sprint S4);
+ * in the demo they are triggered from the demo controls.
+ */
+export interface ScenarioEvent {
+  id: string;
+  kind: 'breakdown';
+  truckId: string;
+  at: number;
+  minutes: number;
+}
+
+// ---------- Alerts (SMS + in-app) ----------
+
+export type AlertKind =
+  'night_before' | 'vicinity' | 'vicinity_now' | 'delay_breakdown' | 'delay_full' | 'announcement';
+
+export interface OutboundAlert {
+  /** Deterministic id, so the same alert is never sent twice. */
+  id: string;
+  kind: AlertKind;
+  barangayIds: string[];
+  sentAt: number;
+  /** Exact SMS text (Filipino, like the pitch samples). */
+  text: string;
+  /** Registered numbers the SMS goes to (sample counts in the prototype). */
+  recipients: number;
+  /** SMS segments per message (1 = cheapest). */
+  segments: number;
+  truckId?: string;
+  routeId?: string;
+  /** For vicinity alerts: the estimated arrival quoted in the SMS. */
+  etaAt?: number;
+}
+
+/** A message the City ENRO writes by hand in the SMS center. */
+export interface Announcement {
+  id: string;
+  barangayIds: string[];
+  text: string;
+  sentAt: number;
+}
+
+// ---------- Operations (City ENRO) ----------
+
+export type MissedReason = 'truck_full' | 'not_passed';
+
+export interface MissedStreet {
+  id: string;
+  routeId: string;
+  truckId: string;
+  barangayId: string;
+  name: string | null;
+  segmentIds: string[];
+  lengthM: number;
+  reason: MissedReason;
+}
+
+export interface BackupSuggestion {
+  id: string;
+  fullTruckId: string;
+  routeId: string;
+  barangayId: string;
+  streetsLeft: number;
+  candidateTruckId: string;
+  candidateLoad: number;
+  distanceM: number;
+}
+
+export interface WeeklyStats {
+  /** Estimated tonnes collected this week (sample: load × truck capacity). */
+  tonnes: number;
+  trips: number;
+  /** Share of scheduled collection streets served (0..1). */
+  servedRate: number;
+}
+
+export interface OpsSnapshot {
+  at: number;
+  states: TruckState[];
+  missed: MissedStreet[];
+  suggestions: BackupSuggestion[];
+  weekly: WeeklyStats;
 }
 
 // ---------- Services (screens only talk to these) ----------
@@ -139,8 +240,23 @@ export interface ScheduleService {
   getExceptions(): Promise<ScheduleException[]>;
 }
 
+export interface AlertsService {
+  /** Every alert sent so far (automatic + announcements), newest first. */
+  subscribeAlerts(listener: (alerts: OutboundAlert[]) => void): () => void;
+  sendAnnouncement(input: { barangayIds: string[]; text: string }): Promise<OutboundAlert>;
+  /** Registered SMS numbers per barangay. */
+  getSmsRegistrations(): Promise<Record<string, number>>;
+}
+
+export interface OpsService {
+  /** Live operations picture for the City ENRO dashboard. */
+  subscribeOps(listener: (snapshot: OpsSnapshot) => void): () => void;
+}
+
 export interface Services {
   geo: GeoService;
   fleet: FleetService;
   schedule: ScheduleService;
+  alerts: AlertsService;
+  ops: OpsService;
 }

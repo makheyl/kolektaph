@@ -4,7 +4,7 @@ export const DEMO_PRESET_IDS = [
   'nightBefore',
   'beforeStart',
   'approaching',
-  'midRoute',
+  'truckFull',
   'afterRoute',
 ] as const;
 
@@ -23,8 +23,8 @@ export function demoPresetTime(id: DemoPresetId, realNow: number): number {
       return tuesday('06:55');
     case 'approaching':
       return tuesday('07:25');
-    case 'midRoute':
-      return tuesday('08:30');
+    case 'truckFull':
+      return tuesday('07:55');
     case 'afterRoute':
       return tuesday('11:30');
   }

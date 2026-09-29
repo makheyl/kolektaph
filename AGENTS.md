@@ -46,6 +46,10 @@ Docs: https://docs.expo.dev/eas/index.md
 - Asia/Manila time uses the fixed UTC+8 helpers in `src/lib/time.ts` (the Philippines has no DST). Don't add timezone libraries.
 - With the React Compiler on, never read `Date.now()` during render. Get time from `useSimNow()` or read it inside event handlers.
 - Map fixtures come from `scripts/data/build-carmona-data.mjs`. Regenerate them; don't edit the JSON by hand.
+- SMS texts are Filipino (like the pitch samples) and live in `src/features/alerts/templates.ts`. A test checks that every template fits one GSM-7 SMS for every barangay, so keep them that way.
+- Alerts come from `AlertEngine` (a stateful evaluator, the same as a backend would run), replayed over the deterministic simulation. Send once per barangay per day; never invent ETAs (see `etaBase`).
+- The GPS coverage check (`features/coverage`) is the single source of truth for missed streets; the backup suggestion counts streets from it. Suggestions never act on their own: staff decide.
+- The sample schedule is tuned to the pitch story (Truck 2 departs 7:17, so Milagrosa's 15-minute SMS goes out around 7:25). Check `__tests__/alerts.test.ts` after changing routes or schedules.
 
 ## Rules
 

@@ -1,0 +1,45 @@
+/**
+ * SMS texts, in Filipino like the pitch samples (the language residents asked for). Every
+ * template is tested to fit one GSM-7 segment (160 characters) with the longest barangay name.
+ */
+
+/** "Brgy. Milagrosa", and "Brgy. 1" for Poblacion's "Barangay 1". */
+export const brgyLong = (name: string) =>
+  name.startsWith('Barangay ') ? `Brgy. ${name.slice('Barangay '.length)}` : `Brgy. ${name}`;
+
+/** "Milagrosa" (as in the pitch sample), and "Brgy. 1" for Poblacion. */
+export const brgyShort = (name: string) => (name.startsWith('Barangay ') ? brgyLong(name) : name);
+
+export const sms = {
+  nightBefore: (p: { weekday: string; range: string; barangay: string }) =>
+    `KolektaPH: Paalala! Bukas, ${p.weekday}, ${p.range} ang koleksyon ng basura sa ${brgyLong(p.barangay)}. Ihiwalay po ang nabubulok at di-nabubulok.`,
+
+  nightBeforeMoved: (p: { weekday: string; range: string; barangay: string; reason: string }) =>
+    `KolektaPH: Paalala! Bukas, ${p.weekday}, ${p.range} ang koleksyon sa ${brgyLong(p.barangay)} (inilipat dahil sa ${p.reason}). Ihiwalay po ang basura.`,
+
+  vicinity: (p: { barangay: string; minutes: number; eta: string }) =>
+    `KolektaPH: ${brgyShort(p.barangay)}, ${p.minutes} min na lang bago dumating ang garbage truck (~${p.eta}). Ilabas na po ang basura. Salamat!`,
+
+  vicinityNow: (p: { barangay: string }) =>
+    `KolektaPH: ${brgyShort(p.barangay)}, nandiyan na ang garbage truck. Ilabas na po ang basura ngayon. Salamat!`,
+
+  delayBreakdown: (p: { barangay: string; time: string }) =>
+    `KolektaPH: Naantala ang truck para sa ${brgyLong(p.barangay)} dahil sa sira. Bagong tantiyang oras: ${p.time}. Paumanhin po.`,
+
+  delayFull: (p: { barangay: string }) =>
+    `KolektaPH: Naantala ang koleksyon sa ${brgyLong(p.barangay)}: puno na ang truck. Magpapadala ng ibang truck. Huwag munang ilabas ang basura.`,
+
+  welcome: (p: { barangay: string }) =>
+    `KolektaPH: Salamat! Ite-text ka namin tungkol sa koleksyon ng basura sa ${brgyLong(p.barangay)}. I-reply ang STOP para itigil.`,
+};
+
+/** SMS always go out in Filipino (pitch); weekday names for the reminders. */
+export const WEEKDAYS_FIL = [
+  'Linggo',
+  'Lunes',
+  'Martes',
+  'Miyerkoles',
+  'Huwebes',
+  'Biyernes',
+  'Sabado',
+];

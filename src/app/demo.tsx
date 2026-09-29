@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
@@ -25,7 +26,7 @@ import {
 import { formatClock, manilaParts } from '@/lib/time';
 import type { TruckState } from '@/services/types';
 import { DEMO_PRESET_IDS, demoPresetTime } from '@/simulator/presets';
-import { useDemo } from '@/stores/demo';
+import { getSimTime, useDemo } from '@/stores/demo';
 import { type Role, useSettings } from '@/stores/settings';
 import { colors, spacing } from '@/theme/tokens';
 
@@ -44,7 +45,8 @@ export default function DemoScreen() {
   const states = useTruckStates();
   const now = useSimNow();
 
-  const { clock, jumpTo, setSpeed, goLive } = useDemo();
+  const { clock, jumpTo, setSpeed, goLive, events, addEvent, clearEvents } = useDemo();
+  const [breakdownTruck, setBreakdownTruck] = useState('t2');
   const { language, setLanguage, largeText, setLargeText, setRole } = useSettings();
 
   const barangayName = (id: string | null) =>
@@ -159,6 +161,52 @@ export default function DemoScreen() {
               label={t('demo.goLive')}
               onPress={goLive}
             />
+          ) : null}
+        </Card>
+      </Section>
+
+      <Section title={t('demo.scenarioTitle')}>
+        <Card>
+          <AppText variant="label" color={colors.textMuted}>
+            {t('demo.scenarioHint')}
+          </AppText>
+          <View style={styles.chips}>
+            {(trucks ?? []).map((tr) => (
+              <Chip
+                key={tr.id}
+                label={tr.name}
+                selected={breakdownTruck === tr.id}
+                onPress={() => setBreakdownTruck(tr.id)}
+              />
+            ))}
+          </View>
+          <Button
+            variant="danger"
+            icon="car-wrench"
+            label={t('demo.breakdown', {
+              truck: trucks?.find((tr) => tr.id === breakdownTruck)?.name ?? '',
+            })}
+            onPress={() => {
+              const at = getSimTime();
+              addEvent({
+                id: `breakdown|${breakdownTruck}|${at}`,
+                kind: 'breakdown',
+                truckId: breakdownTruck,
+                at,
+                minutes: 120,
+              });
+            }}
+          />
+          {events.length ? (
+            <>
+              <AppText variant="label">{t('demo.activeEvents', { count: events.length })}</AppText>
+              <Button
+                variant="secondary"
+                icon="restore"
+                label={t('demo.clearEvents')}
+                onPress={clearEvents}
+              />
+            </>
           ) : null}
         </Card>
       </Section>

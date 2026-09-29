@@ -14,7 +14,7 @@ const sim = (id: string, at: number) =>
 
 describe('ETA estimation', () => {
   it('is zero for no distance and grows with distance', () => {
-    const r = route('r-milagrosa');
+    const r = route('r-poblacion-milagrosa');
     expect(travelMs(r, 1000, 1000)).toBe(0);
     expect(travelMs(r, 0, 2000)).toBeGreaterThan(travelMs(r, 0, 1000));
   });
@@ -33,8 +33,8 @@ describe('ETA estimation', () => {
   });
 
   it('reports in-progress and passed states with times', () => {
-    const r = route('r-milagrosa');
-    expect(barangayVisit(r, sim('t2', tue(7, 30)), 'milagrosa', tue(7, 30))?.state).toBe(
+    const r = route('r-poblacion-milagrosa');
+    expect(barangayVisit(r, sim('t2', tue(7, 50)), 'milagrosa', tue(7, 50))?.state).toBe(
       'in_progress',
     );
     const passed = barangayVisit(r, sim('t2', tue(10, 0)), 'milagrosa', tue(10, 0));
@@ -50,13 +50,13 @@ describe('ETA estimation', () => {
 
   it('returns null for barangays the route does not collect', () => {
     expect(
-      barangayVisit(route('r-milagrosa'), sim('t2', tue(7, 30)), 'lantic', tue(7, 30)),
+      barangayVisit(route('r-poblacion-milagrosa'), sim('t2', tue(7, 30)), 'lantic', tue(7, 30)),
     ).toBeNull();
   });
 
   it('lists upcoming streets once each, in arrival order', () => {
     const at = tue(7, 20);
-    const streets = upcomingStreets(route('r-milagrosa'), sim('t2', at), at, 8);
+    const streets = upcomingStreets(route('r-poblacion-milagrosa'), sim('t2', at), at, 8);
     expect(streets.length).toBeGreaterThan(0);
     expect(streets.length).toBeLessThanOrEqual(8);
     for (let i = 1; i < streets.length; i++) {
@@ -79,7 +79,7 @@ describe('route preview', () => {
   it('splits the route at the truck into collected + upcoming parts', () => {
     const at = tue(7, 30);
     const s = sim('t2', at);
-    const r = route('r-milagrosa');
+    const r = route('r-poblacion-milagrosa');
     const p = buildRoutePreview(r, s, at);
     const done = lengthOf(p.done);
     const next = lengthOf(p.next);

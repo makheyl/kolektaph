@@ -11,6 +11,7 @@ import { NextCollectionCard } from '@/features/resident/components/NextCollectio
 import { QuickAction } from '@/features/resident/components/QuickAction';
 import { StatusCard } from '@/features/resident/components/StatusCard';
 import { barangayLabel } from '@/features/resident/format';
+import { useMyAlerts } from '@/features/resident/useMyAlerts';
 import { useResidentToday } from '@/features/resident/useResidentToday';
 import { useBarangays } from '@/features/tracking/hooks';
 import { formatClock } from '@/lib/time';
@@ -21,6 +22,7 @@ export default function ResidentHome() {
   const { t } = useTranslation();
   const { data: barangays } = useBarangays();
   const { barangayId, now, next, status, truck } = useResidentToday();
+  const { unread } = useMyAlerts();
 
   const props = barangays?.features.find((f) => f.properties.id === barangayId)?.properties;
   const nameOf = (id: string | null) =>
@@ -32,11 +34,23 @@ export default function ResidentHome() {
         eyebrow={props ? t('resident.home.yourBarangay') : undefined}
         title={props ? barangayLabel(props) : t('app.name')}
         actions={
-          <IconButton
-            icon="cog-outline"
-            label={t('common.settings')}
-            onPress={() => router.push('/resident/settings')}
-          />
+          <>
+            <IconButton
+              icon={unread ? 'bell-badge' : 'bell-outline'}
+              badge={unread}
+              label={
+                unread
+                  ? t('resident.home.alertsUnread', { count: unread })
+                  : t('resident.home.alertsLabel')
+              }
+              onPress={() => router.push('/resident/alerts')}
+            />
+            <IconButton
+              icon="cog-outline"
+              label={t('common.settings')}
+              onPress={() => router.push('/resident/settings')}
+            />
+          </>
         }
       />
       <SampleDataBadge />

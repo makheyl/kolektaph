@@ -45,7 +45,12 @@ export function TextField({ label, hint, error, icon, onFocus, onBlur, ...input 
           accessibilityLabel={label}
           accessibilityHint={hint}
           placeholderTextColor={colors.textMuted}
-          style={[styles.input, { fontSize }, Platform.OS === 'web' && WEB_NO_OUTLINE]}
+          style={[
+            styles.input,
+            { fontSize },
+            input.multiline && styles.multiline,
+            Platform.OS === 'web' && WEB_NO_OUTLINE,
+          ]}
         />
       </View>
       {error ? (
@@ -76,6 +81,7 @@ const styles = StyleSheet.create({
   },
   boxFocused: { borderColor: colors.navy, borderWidth: 3, paddingHorizontal: spacing.md - 1 },
   boxError: { borderColor: colors.red },
+  multiline: { minHeight: 132, paddingVertical: spacing.md, textAlignVertical: 'top' },
   input: {
     flex: 1,
     minHeight: touch.large - 4,

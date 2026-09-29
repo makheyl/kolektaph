@@ -60,6 +60,7 @@ export default function ResidentLayout() {
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="barangay" options={{ href: null }} />
       <Tabs.Screen name="privacy" options={{ href: null }} />
+      <Tabs.Screen name="alerts" options={{ href: null }} />
     </Tabs>
   );
 }

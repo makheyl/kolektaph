@@ -63,11 +63,16 @@
       "nightBefore": "Lunes 6:00 PM · bisperas",
       "beforeStart": "Martes 6:55 AM · bago umalis",
       "approaching": "Martes 7:25 AM · papalapit",
-      "midRoute": "Martes 8:30 AM · kalagitnaan",
+      "truckFull": "Martes 7:55 AM · puno ang Truck 3",
       "afterRoute": "Martes 11:30 AM · tapos na"
     },
     "mapTitle": "Mapa ng Carmona",
-    "trucksTitle": "Mga truck ngayon"
+    "trucksTitle": "Mga truck ngayon",
+    "scenarioTitle": "Mga pangyayari (demo)",
+    "scenarioHint": "Mag-trigger ng problema para makita ang mga delay alert at ang dashboard ng City ENRO.",
+    "breakdown": "Masira ang {{truck}} ngayon (2 oras)",
+    "clearEvents": "I-reset ang mga pangyayari",
+    "activeEvents": "{{count}} pangyayari ang naka-set"
   },
   "truck": {
     "status": {
@@ -189,8 +194,14 @@
         "fullTitle": "Naantala: puno na ang truck",
         "fullBody": "Hindi pa tapos ang barangay mo. Hinihintay ang susunod na truck. Huwag munang ilabas ang basura.",
         "noSignalTitle": "Walang signal mula sa truck",
-        "noSignalBody": "Hindi namin alam kung nasaan ang truck ngayon. Awtomatiko itong mag-a-update."
-      }
+        "noSignalBody": "Hindi namin alam kung nasaan ang truck ngayon. Awtomatiko itong mag-a-update.",
+        "breakdownTitle": "Naantala: sira ang truck",
+        "breakdownArrive": "Bagong tantiyang dating sa inyo: {{time}}.",
+        "breakdownResume": "Itutuloy ang koleksyon mga {{time}}.",
+        "breakdownHold": "Huwag munang ilabas ang basura. Ite-text ka namin kapag malapit na."
+      },
+      "alertsLabel": "Mga abiso",
+      "alertsUnread": "Mga abiso, {{count}} bago"
     },
     "map": {
       "showMine": "Ang barangay ko",
@@ -235,6 +246,15 @@
       "deleteConfirmBody": "Mabubura ang barangay at number mo sa device na ito, at hihinto ang mga text.",
       "deleteConfirm": "Oo, burahin",
       "switchRole": "Bumalik sa demo"
+    },
+    "alerts": {
+      "title": "Mga abiso",
+      "subtitle": "Mga paalala at text para sa {{barangay}}, nitong nakaraang 7 araw.",
+      "empty": "Wala pang abiso.",
+      "pickBarangay": "Pumili muna ng barangay para makita ang mga abiso.",
+      "viaSms": "Natanggap mo rin ito bilang SMS.",
+      "smsOff": "I-on ang text alert para matanggap ito kahit walang internet.",
+      "new": "Bago"
     }
   },
   "privacy": {
@@ -248,5 +268,101 @@
     "whoBody": "Ang City ENRO lang, para sa pagpapadala ng paalala. Hindi ito ibebenta o ibibigay sa iba.",
     "rightsTitle": "Ang karapatan mo",
     "rightsBody": "Puwede mong itigil ang text anumang oras (reply STOP) at burahin ang data mo sa Mga setting. Sumusunod ito sa Data Privacy Act of 2012 (RA 10173)."
+  },
+  "alert": {
+    "kind": {
+      "night_before": "Paalala para bukas",
+      "vicinity": "Malapit na ang truck",
+      "vicinity_now": "Nandiyan na ang truck",
+      "delay_breakdown": "Naantala: sira ang truck",
+      "delay_full": "Naantala: puno ang truck",
+      "announcement": "Anunsyo ng City ENRO"
+    }
+  },
+  "enro": {
+    "brand": "City ENRO",
+    "nav": {
+      "liveOps": "Live Operations",
+      "sms": "SMS at anunsyo",
+      "reports": "Mga report",
+      "trucks": "Mga truck",
+      "stats": "Estadistika",
+      "schedules": "Iskedyul",
+      "soon": "Sa {{sprint}}",
+      "backToDemo": "Bumalik sa demo"
+    },
+    "live": {
+      "title": "Live Operations",
+      "subtitle": "{{weekday}}, {{time}} · Lungsod ng Carmona",
+      "kpiOnRoute": "Truck na umiikot",
+      "kpiSmsToday": "SMS ngayong araw",
+      "kpiMissed": "Kalyeng hindi nadaanan",
+      "kpiServed": "Kalyeng nadaanan ngayong linggo",
+      "mapTitle": "Lahat ng truck",
+      "loadTitle": "Karga ng truck ngayon",
+      "alertsTitle": "Mga alerto",
+      "noAlerts": "Walang alerto ngayon.",
+      "fullAlert": "{{truck}} ay PUNO na, may {{count}} kalye pang natitira sa {{barangay}}.",
+      "suggestion": "Mungkahi: ipadala ang {{truck}} ({{load}} karga, {{distance}} ang layo).",
+      "noCandidate": "Walang ibang truck na may sapat na espasyo ngayon.",
+      "dispatch": "Ipadala",
+      "dismiss": "Balewalain",
+      "dispatched": "Naipadala ang {{truck}} ({{time}}).",
+      "dismissed": "Binalewala ({{time}}).",
+      "humansDecide": "Mungkahi lang ito. Ang staff ang magpapasya.",
+      "breakdownAlert": "{{truck}} ay sira. Tuloy mga {{time}}. Na-text na ang mga apektadong barangay.",
+      "missedTitle": "Mga kalyeng hindi nadaanan ngayon (GPS check)",
+      "noMissed": "Wala pang kalyeng nalaktawan ngayon.",
+      "missedReason": {
+        "truck_full": "hindi nadaanan: puno ang truck",
+        "not_passed": "hindi nadaanan"
+      },
+      "weekTitle": "Ngayong linggo",
+      "tonnes": "Tonelada",
+      "trips": "Biyahe",
+      "served": "Nadaanan",
+      "recentSms": "Mga huling SMS",
+      "seeAllSms": "Tingnan lahat",
+      "offDuty": "Walang biyahe",
+      "unnamed": "kalsadang walang pangalan",
+      "metres": "{{value}} m",
+      "km": "{{value}} km"
+    },
+    "sms": {
+      "title": "SMS at anunsyo",
+      "composeTitle": "Gumawa ng anunsyo",
+      "to": "Para sa",
+      "all": "Lahat",
+      "templates": "Template",
+      "tplCustom": "Sariling mensahe",
+      "tplTyphoon": "Walang koleksyon (bagyo)",
+      "tplCleanup": "Clean-up drive",
+      "tplSegregation": "Paalala sa paghihiwalay",
+      "typhoon": "KolektaPH: Walang koleksyon ng basura ngayong araw dahil sa bagyo. Itabi muna po ang basura sa ligtas na lugar. Salamat po.",
+      "cleanup": "KolektaPH: May clean-up drive sa Sabado, 7AM. Sama-sama nating linisin ang ating barangay. Salamat po!",
+      "segregation": "KolektaPH: Paalala po: ihiwalay ang nabubulok at di-nabubulok. Hindi kukunin ang basurang hindi nakahiwalay. Salamat po!",
+      "message": "Mensahe",
+      "messageHint": "Isulat sa simpleng Filipino. Mas mura kung isang SMS lang (160 letra).",
+      "counter": "{{units}} / {{capacity}} · {{segments}} SMS bawat numero · {{encoding}}",
+      "ucsWarning": "May espesyal na character (hal. emoji o kulot na quote): 70 letra lang ang kasya bawat SMS.",
+      "recipients": "{{count}} rehistradong numero · {{total}} SMS lahat",
+      "pickTarget": "Pumili ng kahit isang barangay.",
+      "emptyMessage": "Isulat muna ang mensahe.",
+      "send": "Ipadala",
+      "confirmTitle": "Ipadala sa {{count}} numero?",
+      "confirmBody": "Hindi na ito mababawi kapag naipadala.",
+      "confirm": "Oo, ipadala",
+      "sent": "Naipadala nang {{time}}.",
+      "outboxTitle": "Outbox",
+      "filterAll": "Lahat",
+      "filterAuto": "Awtomatiko",
+      "filterManual": "Anunsyo",
+      "outboxEmpty": "Wala pang naipadalang SMS.",
+      "sentTo": "{{barangays}} · {{count}} numero · {{segments}} SMS",
+      "arrived": "Dumating ang truck nang {{time}} ({{minutes}} min pagkatapos ng text).",
+      "arrivedEarly": "Dumating ang truck nang {{time}}, bago pa ang text.",
+      "awaiting": "Hinihintay pa ang truck.",
+      "beforeTruckKpi": "{{pct}} ng mga text ay dumating bago ang truck (ngayong araw)"
+    }
   }
 }

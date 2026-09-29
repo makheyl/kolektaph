@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 import { services } from '@/services';
-import type { TruckState } from '@/services/types';
+import type { OpsSnapshot, OutboundAlert, TruckState } from '@/services/types';
 import { simNow } from '@/simulator/clock';
 import { useDemo } from '@/stores/demo';
 
@@ -42,6 +42,29 @@ export function useTruckStates(): TruckState[] {
   useEffect(() => services.fleet.subscribeTruckStates(setStates), [clock]);
   return states;
 }
+
+/** Every alert sent so far (SMS + in-app), newest first. */
+export function useAlerts(): OutboundAlert[] {
+  const [alerts, setAlerts] = useState<OutboundAlert[]>([]);
+  const clock = useDemo((s) => s.clock);
+  useEffect(() => services.alerts.subscribeAlerts(setAlerts), [clock]);
+  return alerts;
+}
+
+/** Live operations picture for the City ENRO dashboard (null until the first snapshot). */
+export function useOps(): OpsSnapshot | null {
+  const [ops, setOps] = useState<OpsSnapshot | null>(null);
+  const clock = useDemo((s) => s.clock);
+  useEffect(() => services.ops.subscribeOps(setOps), [clock]);
+  return ops;
+}
+
+export const useSmsRegistrations = () =>
+  useQuery({
+    queryKey: ['smsRegistrations'],
+    queryFn: services.alerts.getSmsRegistrations,
+    ...STATIC,
+  });
 
 /** Current simulated time, re-rendering every `intervalMs`. */
 export function useSimNow(intervalMs = 1000): number {

@@ -42,9 +42,25 @@ export type BarangayVisit =
   | { state: 'passed'; passedAt: number };
 
 /**
- * Where the truck is relative to a barangay on its route. ETAs are null when the truck is not
- * moving (full, broken down, no signal) because no honest estimate exists.
+ * The moment from which remaining travel is counted, or null when no honest estimate exists:
+ * - not yet departed → the departure time (or now, if it's late);
+ * - broken down → when the crew expects to move again;
+ * - full / no signal / done → null.
  */
+export function etaBase(truck: TruckState, now: number): number | null {
+  switch (truck.status) {
+    case 'on_route':
+      return now;
+    case 'not_started':
+      return Math.max(now, truck.departAt ?? now);
+    case 'breakdown':
+      return truck.incident ? Math.max(now, truck.incident.until) : null;
+    default:
+      return null;
+  }
+}
+
+/** Where the truck is relative to a barangay on its route, with ETAs when they are honest. */
 export function barangayVisit(
   route: Route,
   truck: TruckState,
@@ -63,17 +79,17 @@ export function barangayVisit(
   const firstM = starts[idx[0]];
   const last = idx[idx.length - 1];
   const lastEndM = starts[last] + route.segments[last].lengthM;
-  const moving = truck.status === 'on_route' || truck.status === 'not_started';
+  const base = etaBase(truck, now);
 
   if (truck.progressM > firstM) {
     return {
       state: 'in_progress',
-      finishAt: moving ? now + travelMs(route, truck.progressM, lastEndM) : null,
+      finishAt: base == null ? null : base + travelMs(route, truck.progressM, lastEndM),
     };
   }
   return {
     state: 'upcoming',
-    arriveAt: moving ? now + travelMs(route, truck.progressM, firstM) : null,
+    arriveAt: base == null ? null : base + travelMs(route, truck.progressM, firstM),
   };
 }
 
@@ -92,6 +108,8 @@ export function upcomingStreets(
   now: number,
   limit = 8,
 ): UpcomingStreet[] {
+  const base = etaBase(truck, now);
+  if (base == null) return [];
   const starts = segmentStarts(route);
   const seen = new Set<string>();
   const out: UpcomingStreet[] = [];
@@ -106,7 +124,7 @@ export function upcomingStreets(
       segmentIndex: i,
       name: seg.name,
       barangayId: seg.barangayId,
-      arriveAt: now + travelMs(route, truck.progressM, starts[i]),
+      arriveAt: base + travelMs(route, truck.progressM, starts[i]),
     });
   }
   return out;

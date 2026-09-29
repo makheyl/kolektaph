@@ -43,10 +43,9 @@ export function buildRoutePreview(
     }
   });
 
-  // Labels only while the truck is actually moving along the route: a full or stopped truck
-  // has no honest arrival time.
-  const moving = truck.status === 'on_route' || truck.status === 'not_started';
-  const labels = moving ? upcomingStreets(route, truck, now, maxLabels) : [];
+  // Labels only when an honest estimate exists (none for a full truck; after a breakdown the
+  // times count from the expected repair time). See etaBase().
+  const labels = upcomingStreets(route, truck, now, maxLabels);
 
   return {
     done: { type: 'FeatureCollection', features: done.filter((c) => c.length > 1).map(line) },

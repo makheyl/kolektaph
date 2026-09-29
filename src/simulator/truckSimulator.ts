@@ -1,11 +1,14 @@
 /**
- * Deterministic truck simulator: a truck's state is a pure function of (route, schedule, time).
- * Every device computing the same time gets the same positions, with no server involved.
+ * Deterministic truck simulator: a truck's state is a pure function of (route, schedule, time,
+ * scenario events). Every device computing the same time gets the same positions, with no
+ * server involved.
  *
  * Model (sample parameters in features/tracking/speeds.ts):
+ * - The truck leaves the depot at `departAt` (or the window start).
  * - Transit segments (depot → barangay) at TRANSIT_KMH; collection segments at COLLECT_KMH.
  * - Load grows with collected distance up to schedule.expectedLoad. If that exceeds 1, the
  *   truck becomes FULL part-way and stops there with streets left (the pitch's Problem 3).
+ * - Breakdown events stop the truck for their duration; everything after shifts later.
  * - Schedule exceptions (holidays) move or cancel runs, using the same rules as the schedule.
  */
 import { along } from '@turf/along';
@@ -13,20 +16,22 @@ import { lineString } from '@turf/helpers';
 
 import { routeRunsOnDay } from '@/features/schedule/collections';
 import { segmentMsPerMetre } from '@/features/tracking/speeds';
-import { atManilaTime } from '@/lib/time';
+import { atManilaTime, manilaStartOfDay, MINUTE } from '@/lib/time';
 import type {
   BarangayVisitLog,
   LngLat,
   Route,
   RouteSchedule,
+  ScenarioEvent,
   ScheduleException,
   Truck,
+  TruckIncident,
   TruckState,
 } from '@/services/types';
 
 interface Timeline {
   route: Route;
-  /** Offset (ms after shift start) at which each segment begins. */
+  /** Offset (ms of driving after departure) at which each segment begins. */
   startMs: number[];
   /** Distance along the route at which each segment begins. */
   startM: number[];
@@ -64,12 +69,12 @@ export function pointOnSegment(route: Route, index: number, metresIntoSegment: n
   return [p[0], p[1]];
 }
 
-/** Segment index and metres into it for a given elapsed time since shift start. */
-function locateByTime(tl: Timeline, elapsedMs: number): { index: number; intoM: number } {
+/** Segment index and metres into it after `drivingMs` of driving. */
+function locateByTime(tl: Timeline, drivingMs: number): { index: number; intoM: number } {
   const { segments } = tl.route;
   let i = 0;
-  while (i < segments.length - 1 && tl.startMs[i + 1] <= elapsedMs) i++;
-  return { index: i, intoM: (elapsedMs - tl.startMs[i]) / segmentMsPerMetre(segments[i].collect) };
+  while (i < segments.length - 1 && tl.startMs[i + 1] <= drivingMs) i++;
+  return { index: i, intoM: (drivingMs - tl.startMs[i]) / segmentMsPerMetre(segments[i].collect) };
 }
 
 /** Collected metres (collection segments only) at a point on the route. */
@@ -94,13 +99,32 @@ function locateByCollected(tl: Timeline, targetM: number): { index: number; into
   return { index: last, intoM: segments[last].lengthM };
 }
 
+/** A breakdown mapped onto the truck's driving time: it stops after `drivingMs` of driving. */
+interface Stop {
+  drivingMs: number;
+  durationMs: number;
+  since: number;
+  until: number;
+}
+
+/**
+ * Converts driving time to wall-clock time, adding every stop that happened before it.
+ * A stop "at" drivingMs d delays everything strictly after d.
+ */
+function wallClock(depart: number, stops: Stop[], drivingMs: number): number {
+  let t = depart + drivingMs;
+  for (const s of stops) if (s.drivingMs < drivingMs) t += s.durationMs;
+  return t;
+}
+
 /**
  * When the truck started and finished collecting in each of the route's barangays, given how
- * far it has travelled. A barangay is finished once its last collection segment is done.
+ * far it has driven. A barangay is finished once its last collection segment is done.
  */
 function visitLog(
   tl: Timeline,
-  shiftStart: number,
+  depart: number,
+  stops: Stop[],
   progressM: number,
 ): Record<string, BarangayVisitLog> {
   const log: Record<string, BarangayVisitLog> = {};
@@ -113,22 +137,28 @@ function visitLog(
     const lastEndM = tl.startM[last] + segments[last].lengthM;
     const lastEndMs = tl.startMs[last] + segments[last].lengthM * segmentMsPerMetre(true);
     log[barangayId] = {
-      startedAt: progressM > tl.startM[first] ? shiftStart + tl.startMs[first] : null,
-      finishedAt: progressM >= lastEndM ? shiftStart + lastEndMs : null,
+      startedAt: progressM > tl.startM[first] ? wallClock(depart, stops, tl.startMs[first]) : null,
+      finishedAt: progressM >= lastEndM ? wallClock(depart, stops, lastEndMs) : null,
     };
   }
   return log;
 }
 
+interface Ctx {
+  truck: Truck;
+  tl: Timeline;
+  depart: number;
+  stops: Stop[];
+  at: number;
+}
+
 function stateAt(
-  truck: Truck,
-  tl: Timeline,
-  shiftStart: number,
+  { truck, tl, depart, stops, at }: Ctx,
   index: number,
   intoM: number,
   status: TruckState['status'],
   load: number,
-  at: number,
+  incident: TruckIncident | null = null,
 ): TruckState {
   const { route } = tl;
   const seg = route.segments[index];
@@ -145,9 +175,28 @@ function stateAt(
     routeLengthM: route.lengthM,
     load,
     at,
-    visits: visitLog(tl, shiftStart, progressM),
+    visits: visitLog(tl, depart, stops, progressM),
+    departAt: depart,
+    incident,
   };
 }
+
+const offDuty = (truck: Truck, at: number): TruckState => ({
+  truckId: truck.id,
+  routeId: null,
+  status: 'off_duty',
+  position: null,
+  segmentIndex: 0,
+  barangayId: null,
+  streetName: null,
+  progressM: 0,
+  routeLengthM: 0,
+  load: 0,
+  at,
+  visits: {},
+  departAt: null,
+  incident: null,
+});
 
 export function simulateTruck(
   truck: Truck,
@@ -155,55 +204,71 @@ export function simulateTruck(
   routes: Route[],
   at: number,
   exceptions: ScheduleException[] = [],
+  events: ScenarioEvent[] = [],
 ): TruckState {
   const schedule = schedules.find(
     (s) => s.truckId === truck.id && routeRunsOnDay(s, at, exceptions).runs,
   );
   const route = schedule && routes.find((r) => r.id === schedule.routeId);
-  if (!schedule || !route) {
-    return {
-      truckId: truck.id,
-      routeId: null,
-      status: 'off_duty',
-      position: null,
-      segmentIndex: 0,
-      barangayId: null,
-      streetName: null,
-      progressM: 0,
-      routeLengthM: 0,
-      load: 0,
-      at,
-      visits: {},
-    };
-  }
+  if (!schedule || !route) return offDuty(truck, at);
 
   const tl = getTimeline(route);
-  const start = atManilaTime(at, schedule.start);
-  const elapsed = at - start;
-  if (elapsed < 0) return stateAt(truck, tl, start, 0, 0, 'not_started', 0, at);
+  const depart = atManilaTime(at, schedule.departAt ?? schedule.start);
 
-  // If the route generates more than a full truck, find when (and where) it fills up.
+  // Driving time at which the truck fills up (Infinity if the route fits in one load).
+  let fullDrivingMs = Infinity;
+  let full: { index: number; intoM: number } | null = null;
   if (schedule.expectedLoad > 1) {
-    const full = locateByCollected(tl, tl.collectLengthM / schedule.expectedLoad);
-    const fullElapsed =
+    full = locateByCollected(tl, tl.collectLengthM / schedule.expectedLoad);
+    fullDrivingMs =
       tl.startMs[full.index] + full.intoM * segmentMsPerMetre(route.segments[full.index].collect);
-    if (elapsed >= fullElapsed) {
-      return stateAt(truck, tl, start, full.index, full.intoM, 'full', 1, at);
-    }
+  }
+  const lastDrivingMs = Math.min(tl.totalMs, fullDrivingMs);
+
+  // Breakdowns count only if they happen while this truck is actually driving its route today.
+  const today = manilaStartOfDay(at);
+  const stops: Stop[] = [];
+  for (const e of events
+    .filter((ev) => ev.kind === 'breakdown' && ev.truckId === truck.id)
+    .filter((ev) => manilaStartOfDay(ev.at) === today && ev.at <= at)
+    .sort((a, b) => a.at - b.at)) {
+    const drivingMs = e.at - depart - stops.reduce((sum, s) => sum + s.durationMs, 0);
+    if (drivingMs < 0 || drivingMs >= lastDrivingMs) continue;
+    const durationMs = e.minutes * MINUTE;
+    stops.push({ drivingMs, durationMs, since: e.at, until: e.at + durationMs });
   }
 
-  if (elapsed >= tl.totalMs) {
+  const ctx: Ctx = { truck, tl, depart, stops, at };
+  const active = stops.find((s) => at >= s.since && at < s.until);
+  // Driving done so far = wall time since departure minus time spent stopped.
+  const stoppedMs = stops.reduce((sum, s) => sum + Math.max(0, Math.min(at, s.until) - s.since), 0);
+  const driving = at - depart - stoppedMs;
+
+  if (driving < 0) return stateAt(ctx, 0, 0, 'not_started', 0);
+
+  if (full && driving >= fullDrivingMs) {
+    return stateAt(ctx, full.index, full.intoM, 'full', 1);
+  }
+
+  if (driving >= tl.totalMs) {
     const last = route.segments.length - 1;
     const load = Math.min(1, schedule.expectedLoad);
-    return stateAt(truck, tl, start, last, route.segments[last].lengthM, 'done', load, at);
+    return stateAt(ctx, last, route.segments[last].lengthM, 'done', load);
   }
 
-  const { index, intoM } = locateByTime(tl, elapsed);
+  const { index, intoM } = locateByTime(tl, driving);
   const load = Math.min(
     1,
     (collectedAt(tl, index, intoM) / tl.collectLengthM) * schedule.expectedLoad,
   );
-  return stateAt(truck, tl, start, index, intoM, 'on_route', load, at);
+  if (active) {
+    return stateAt(ctx, index, intoM, 'breakdown', load, {
+      kind: 'breakdown',
+      since: active.since,
+      until: active.until,
+    });
+  }
+  return stateAt(ctx, index, intoM, 'on_route', load);
 }
 
 export function simulateFleet(
@@ -212,6 +277,23 @@ export function simulateFleet(
   routes: Route[],
   at: number,
   exceptions: ScheduleException[] = [],
+  events: ScenarioEvent[] = [],
 ): TruckState[] {
-  return trucks.map((t) => simulateTruck(t, schedules, routes, at, exceptions));
+  return trucks.map((t) => simulateTruck(t, schedules, routes, at, exceptions, events));
+}
+
+/**
+ * The GPS points a truck would have sent so far: one every `spacingM` metres along the part of
+ * the route it has driven. The coverage check treats these exactly like real phone GPS.
+ */
+export function simulatedTrace(route: Route, progressM: number, spacingM = 15): LngLat[] {
+  const tl = getTimeline(route);
+  const points: LngLat[] = [];
+  route.segments.forEach((seg, i) => {
+    const start = tl.startM[i];
+    if (start > progressM) return;
+    const driven = Math.min(seg.lengthM, progressM - start);
+    for (let m = 0; m <= driven; m += spacingM) points.push(pointOnSegment(route, i, m));
+  });
+  return points;
 }

@@ -41,17 +41,24 @@ const OSRM = 'https://router.project-osrm.org';
 const CITY_AREA = 'area["name"~"^Carmona"]["boundary"="administrative"]["admin_level"="6"]->.a;';
 
 // Sample routes: [barangayId, number of waypoints sampled inside it], visited in order.
+// Truck 2 serves Poblacion 1–4 near City Hall first, so it reaches Milagrosa around 7:40 AM
+// (the pitch's Aling Rosa timeline); Truck 4 takes Poblacion 5–8 and then Maduya.
 const ROUTES = [
   { id: 'r-lantic', barangays: [['lantic', 14]] },
-  { id: 'r-milagrosa', barangays: [['milagrosa', 12]] },
+  {
+    id: 'r-poblacion-milagrosa',
+    barangays: [
+      ['brgy-1', 4],
+      ['brgy-2', 4],
+      ['brgy-3', 4],
+      ['brgy-4', 4],
+      ['milagrosa', 12],
+    ],
+  },
   { id: 'r-mabuhay', barangays: [['mabuhay', 12]] },
   {
     id: 'r-poblacion-maduya',
     barangays: [
-      ['brgy-1', 2],
-      ['brgy-2', 2],
-      ['brgy-3', 2],
-      ['brgy-4', 2],
       ['brgy-5', 2],
       ['brgy-6', 2],
       ['brgy-7', 2],

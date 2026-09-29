@@ -36,6 +36,7 @@ const LOOKS: Record<Exclude<HomeStatus['kind'], 'no_barangay'>, Look> = {
   },
   passed: { icon: 'check-circle', bg: colors.greenSoft, border: colors.green, fg: colors.green },
   full: { icon: 'truck-alert', bg: colors.redSoft, border: colors.red, fg: colors.red },
+  breakdown: { icon: 'car-wrench', bg: colors.redSoft, border: colors.red, fg: colors.red },
   no_signal: { icon: 'signal-off', bg: colors.greySoft, border: colors.grey, fg: colors.grey },
 };
 
@@ -132,6 +133,16 @@ export function StatusCard({ status, now, barangayName, nameOf }: StatusCardProp
     case 'full':
       title = t(`${s}.fullTitle`);
       lines = [t(`${s}.fullBody`)];
+      showMap = true;
+      break;
+    case 'breakdown':
+      title = t(`${s}.breakdownTitle`);
+      lines = [
+        status.arriveAt
+          ? t(`${s}.breakdownArrive`, { time: formatClock(status.arriveAt) })
+          : t(`${s}.breakdownResume`, { time: formatClock(status.resumeAt) }),
+        t(`${s}.breakdownHold`),
+      ];
       showMap = true;
       break;
     case 'no_signal':
