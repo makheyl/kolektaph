@@ -50,6 +50,11 @@ Docs: https://docs.expo.dev/eas/index.md
 - Alerts come from `AlertEngine` (a stateful evaluator, the same as a backend would run), replayed over the deterministic simulation. Send once per barangay per day; never invent ETAs (see `etaBase`).
 - The GPS coverage check (`features/coverage`) is the single source of truth for missed streets; the backup suggestion counts streets from it. Suggestions never act on their own: staff decide.
 - The sample schedule is tuned to the pitch story (Truck 2 departs 7:17, so Milagrosa's 15-minute SMS goes out around 7:25). Check `__tests__/alerts.test.ts` after changing routes or schedules.
+- Driver app reports are `TruckEvent`s. The simulator replays them (a driver can take over a truck mid-route; until a shift starts the simulator stands in for the crew). New driver features = new event kinds + simulator/alert handling + tests in `__tests__/driver.test.ts`.
+- The driver phone keeps an offline queue (`stores/driver.ts` outbox, `stores/gps.ts`). Uploads must stay idempotent (event ids, GPS `fromIndex`); undoable taps are held for `UNDO_MS` before upload, so undo never needs the server.
+- GPS is recorded only during a shift (HAKOT TC-09): `acceptFixes` enforces it and `finishShift` stops the service first. Android uses a foreground service with the "while using the app" permission only; don't add background location permission.
+- Phone GPS = location task (foreground service, keeps recording with the screen off) + a `watchPositionAsync` watcher (reliable delivery while the app runs); a watchdog in the driver layout restarts both when fixes stop. Keep expo-task-manager ≥ 57.0.21: older versions left a stale task manager after a React context was destroyed (e.g. by the dev launcher), so background fixes never reached JS (the GPS log shows such gaps).
+- `stores/backend.ts` stands in for the server; on web, `stores/tabSync.web.ts` reloads shared stores when another tab writes them (the driver ↔ ENRO demo bridge). Screens never read it directly.
 
 ## Rules
 

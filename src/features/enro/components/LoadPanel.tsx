@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { LoadBar } from '@/components/ui/LoadBar';
 import { StatusPill } from '@/components/ui/StatusPill';
+import { formatClock } from '@/lib/time';
 import type { Truck, TruckState } from '@/services/types';
 import { colors, radius, spacing } from '@/theme/tokens';
 
@@ -56,6 +57,11 @@ export function LoadPanel({ states, trucks, nameOf, selectedTruckId, onSelect }:
                   </AppText>
                 ) : null}
                 <LoadBar value={s.load} />
+                {s.loadReportedAt != null ? (
+                  <AppText variant="caption" color={colors.textMuted}>
+                    {t('enro.live.loadReported', { time: formatClock(s.loadReportedAt) })}
+                  </AppText>
+                ) : null}
               </>
             )}
           </Pressable>

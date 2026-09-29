@@ -12,10 +12,15 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
+// Defines the shift GPS task at startup (Android may start the app just to deliver locations).
+import '@/features/driver/recorder';
 import i18n from '@/i18n';
 import { useSettings, useSettingsHydrated } from '@/stores/settings';
+import { startTabSync } from '@/stores/tabSync';
 
 void SplashScreen.preventAutoHideAsync();
+// Web demo: tabs share the mock server (driver tab ↔ City ENRO tab).
+startTabSync();
 
 const queryClient = new QueryClient();
 

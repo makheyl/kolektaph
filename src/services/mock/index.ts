@@ -1,6 +1,7 @@
 import {
   BARANGAYS,
   CITY_META,
+  DRIVER_DEMO_PIN,
   ROUTE_SCHEDULES,
   ROUTES,
   SCHEDULE_EXCEPTIONS,
@@ -12,35 +13,50 @@ import { alertLog, type EngineContext } from '@/features/alerts/engine';
 import { smsInfo } from '@/features/alerts/sms';
 import { WEEKDAYS_FIL } from '@/features/alerts/templates';
 import { missedStreets } from '@/features/coverage/coverage';
+import { skipsBySegment } from '@/features/driver/streets';
 import { suggestBackups } from '@/features/load/backup';
 import { routeRunsOnDay } from '@/features/schedule/collections';
 import { weeklyStats } from '@/features/stats/weekly';
 import { atManilaTime, DAY, manilaDateKey, manilaStartOfDay, MINUTE } from '@/lib/time';
-import { simulatedTrace, simulateFleet } from '@/simulator/truckSimulator';
+import { simulatedTrace, simulateFleet, simulateTruck } from '@/simulator/truckSimulator';
 
+import { OfflineError, SignInError } from '../errors';
 import type {
   Announcement,
+  GpsFix,
+  GpsSource,
   MissedStreet,
   OpsSnapshot,
   OutboundAlert,
-  ScenarioEvent,
   Services,
+  ShiftSummary,
+  TruckEvent,
   TruckState,
+  UploadBatch,
 } from '../types';
 
 const TICK_MS = 1000;
 const ALERT_TICK_MS = 2000;
 const OPS_TICK_MS = 2000;
 const INBOX_DAYS = 7;
+/** Simulated round trip to the server. */
+const NETWORK_MS = 250;
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface MockDeps {
   /** Current (possibly demo-shifted) time. */
   getSimTime: () => number;
-  /** Scripted incidents from the demo controls. */
-  getEvents: () => ScenarioEvent[];
+  /** Every truck event the server knows: driver uploads and demo incidents. */
+  getEvents: () => TruckEvent[];
   /** Stand-in for the backend's announcements table. */
   getAnnouncements: () => Announcement[];
   addAnnouncement: (a: Announcement) => void;
+  /** Stand-in for the backend's driver-upload endpoint and GPS table. */
+  receiveUpload: (batch: UploadBatch) => void;
+  getTraces: () => Record<string, { truckId: string; source: GpsSource; fixes: GpsFix[] }>;
+  /** Whether this device can reach the server right now. */
+  isOnline: () => boolean;
 }
 
 const barangayName = (id: string) =>
@@ -51,7 +67,7 @@ const barangayName = (id: string) =>
  * engine. A real backend implements the same `Services` interface.
  */
 export function createMockServices(deps: MockDeps): Services {
-  const engineContext = (events: ScenarioEvent[]): EngineContext => ({
+  const engineContext = (events: TruckEvent[]): EngineContext => ({
     schedules: ROUTE_SCHEDULES,
     routes: ROUTES,
     exceptions: SCHEDULE_EXCEPTIONS,
@@ -62,13 +78,15 @@ export function createMockServices(deps: MockDeps): Services {
     weekdayFil: (w) => WEEKDAYS_FIL[w],
   });
 
-  // A replayed day never changes unless the scenario events change, so cache per day.
+  // A replayed day only changes when that day's truck events change, so cache per day.
   const dayCache = new Map<string, OutboundAlert[]>();
-  const alertsForDay = (day: number, events: ScenarioEvent[]) => {
-    const key = `${manilaDateKey(day)}|${JSON.stringify(events)}`;
+  const alertsForDay = (day: number, events: TruckEvent[]) => {
+    const dayEvents = events.filter((e) => e.at >= day && e.at < day + DAY);
+    const key = `${manilaDateKey(day)}|${JSON.stringify(dayEvents)}`;
     let alerts = dayCache.get(key);
     if (!alerts) {
-      alerts = alertLog(engineContext(events), day, day);
+      if (dayCache.size > 64) dayCache.clear();
+      alerts = alertLog(engineContext(dayEvents), day, day);
       dayCache.set(key, alerts);
     }
     return alerts;
@@ -117,9 +135,35 @@ export function createMockServices(deps: MockDeps): Services {
 
   let weeklyCache: { key: string; value: OpsSnapshot['weekly'] } | null = null;
 
+  const shiftSummaries = (events: TruckEvent[]): ShiftSummary[] => {
+    const traces = deps.getTraces();
+    return events.flatMap((e) => {
+      if (e.kind !== 'shift_start') return [];
+      const end = events.find((x) => x.kind === 'shift_end' && x.shiftId === e.shiftId);
+      const trace = traces[e.shiftId];
+      return [
+        {
+          shiftId: e.shiftId,
+          truckId: e.truckId,
+          routeId: e.routeId,
+          startedAt: e.at,
+          endedAt: end?.at ?? null,
+          crew: e.crew,
+          gps: {
+            points: trace?.fixes.length ?? 0,
+            lastFixAt: trace?.fixes[trace.fixes.length - 1]?.t ?? null,
+            source: trace?.source ?? null,
+          },
+        },
+      ];
+    });
+  };
+
   const opsSnapshot = (): OpsSnapshot => {
     const now = deps.getSimTime();
     const events = deps.getEvents();
+    const today = manilaStartOfDay(now);
+    const todays = events.filter((e) => e.at >= today && e.at <= now).sort((a, b) => a.at - b.at);
     const states = simulateFleet(TRUCKS, ROUTE_SCHEDULES, ROUTES, now, SCHEDULE_EXCEPTIONS, events);
 
     const missed: MissedStreet[] = [];
@@ -137,6 +181,10 @@ export function createMockServices(deps: MockDeps): Services {
           trace: traceFor(s),
           windowEnd: atManilaTime(now, schedule.windowEnd),
           now,
+          skips: skipsBySegment(
+            todays.filter((e) => e.truckId === s.truckId),
+            route.id,
+          ),
         }),
       );
     }
@@ -165,6 +213,8 @@ export function createMockServices(deps: MockDeps): Services {
       missed,
       suggestions: suggestBackups(states, ROUTES, ROUTE_SCHEDULES, now, missed),
       weekly: weeklyCache.value,
+      events: todays,
+      shifts: shiftSummaries(todays),
     };
   };
 
@@ -229,6 +279,43 @@ export function createMockServices(deps: MockDeps): Services {
         const emit = () => listener(opsSnapshot());
         emit();
         const timer = setInterval(emit, OPS_TICK_MS);
+        return () => clearInterval(timer);
+      },
+      getTrace: async (shiftId) => deps.getTraces()[shiftId]?.fixes ?? [],
+    },
+    driver: {
+      async signIn(truckId, pin) {
+        await wait(NETWORK_MS);
+        if (!deps.isOnline()) throw new OfflineError();
+        if (!TRUCKS.some((t) => t.id === truckId)) throw new SignInError('unknown_truck');
+        if (pin !== DRIVER_DEMO_PIN) throw new SignInError('wrong_pin');
+        return { truckId, signedInAt: deps.getSimTime() };
+      },
+      async upload(batch) {
+        await wait(NETWORK_MS);
+        if (!deps.isOnline()) throw new OfflineError();
+        deps.receiveUpload(batch);
+      },
+      subscribeOwnTruck(truckId, getLocalEvents, listener) {
+        const truck = TRUCKS.find((t) => t.id === truckId);
+        if (!truck) return () => {};
+        const emit = () => {
+          const local = getLocalEvents();
+          const ids = new Set(local.map((e) => e.id));
+          const events = [...deps.getEvents().filter((e) => !ids.has(e.id)), ...local];
+          listener(
+            simulateTruck(
+              truck,
+              ROUTE_SCHEDULES,
+              ROUTES,
+              deps.getSimTime(),
+              SCHEDULE_EXCEPTIONS,
+              events,
+            ),
+          );
+        };
+        emit();
+        const timer = setInterval(emit, TICK_MS);
         return () => clearInterval(timer);
       },
     },

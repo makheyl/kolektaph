@@ -37,6 +37,8 @@ const LOOKS: Record<Exclude<HomeStatus['kind'], 'no_barangay'>, Look> = {
   passed: { icon: 'check-circle', bg: colors.greenSoft, border: colors.green, fg: colors.green },
   full: { icon: 'truck-alert', bg: colors.redSoft, border: colors.red, fg: colors.red },
   breakdown: { icon: 'car-wrench', bg: colors.redSoft, border: colors.red, fg: colors.red },
+  paused: { icon: 'pause-circle', bg: colors.amberSoft, border: colors.amber, fg: colors.amber },
+  unfinished: { icon: 'map-marker-remove', bg: colors.redSoft, border: colors.red, fg: colors.red },
   no_signal: { icon: 'signal-off', bg: colors.greySoft, border: colors.grey, fg: colors.grey },
 };
 
@@ -136,7 +138,7 @@ export function StatusCard({ status, now, barangayName, nameOf }: StatusCardProp
       showMap = true;
       break;
     case 'breakdown':
-      title = t(`${s}.breakdownTitle`);
+      title = t(`${s}.breakdownTitle`, { incident: t(`incident.${status.incident}`) });
       lines = [
         status.arriveAt
           ? t(`${s}.breakdownArrive`, { time: formatClock(status.arriveAt) })
@@ -144,6 +146,19 @@ export function StatusCard({ status, now, barangayName, nameOf }: StatusCardProp
         t(`${s}.breakdownHold`),
       ];
       showMap = true;
+      break;
+    case 'paused':
+      title = t(
+        status.reason === 'to_disposal' ? `${s}.pausedDisposalTitle` : `${s}.pausedBreakTitle`,
+      );
+      lines = [
+        t(status.reason === 'to_disposal' ? `${s}.pausedDisposalBody` : `${s}.pausedBreakBody`),
+      ];
+      showMap = true;
+      break;
+    case 'unfinished':
+      title = t(`${s}.unfinishedTitle`);
+      lines = [t(`${s}.unfinishedBody`)];
       break;
     case 'no_signal':
       title = t(`${s}.noSignalTitle`);

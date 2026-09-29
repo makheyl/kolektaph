@@ -18,6 +18,8 @@ import {
   routeLineLayer,
   routeLines,
   SOURCE_IDS,
+  traceLine,
+  traceLineLayer,
   zoneFillLayer,
   zoneLabelLayer,
   zoneLabelPoints,
@@ -35,6 +37,7 @@ export function KMap({
   trucks,
   routes,
   routePreview,
+  trace,
   highlightBarangayId,
   selectedTruckId,
   fitBounds,
@@ -45,6 +48,7 @@ export function KMap({
   const cameraRef = useRef<CameraRef>(null);
   const labels = useMemo(() => zoneLabelPoints(barangays), [barangays]);
   const lines = useMemo(() => routeLines(routes ?? []), [routes]);
+  const traceData = useMemo(() => (trace ? traceLine(trace) : null), [trace]);
   const [[west, south], [east, north]] = meta.bounds;
 
   const fitKey = fitBounds?.key;
@@ -87,6 +91,11 @@ export function KMap({
               <Layer {...previewNextLayer} />
             </GeoJSONSource>
           </>
+        ) : null}
+        {traceData ? (
+          <GeoJSONSource id={SOURCE_IDS.trace} data={traceData}>
+            <Layer {...traceLineLayer} />
+          </GeoJSONSource>
         ) : null}
         <GeoJSONSource id={SOURCE_IDS.zoneLabels} data={labels}>
           <Layer {...zoneLabelLayer} />

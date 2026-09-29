@@ -115,6 +115,7 @@ export function AlertsPanel({ ops, trucks, nameOf }: AlertsPanelProps) {
             <AppText variant="bodyStrong" style={styles.flex}>
               {t('enro.live.breakdownAlert', {
                 truck: truckName(s.truckId),
+                incident: t(`incident.${s.incident!.kind}`),
                 time: formatClock(s.incident!.until),
               })}
             </AppText>

@@ -7,9 +7,9 @@ import { atManilaTime, DAY, manilaParts, manilaStartOfDay } from '@/lib/time';
 import type {
   Route,
   RouteSchedule,
-  ScenarioEvent,
   ScheduleException,
   Truck,
+  TruckEvent,
   WeeklyStats,
 } from '@/services/types';
 import { getTimeline, simulateTruck } from '@/simulator/truckSimulator';
@@ -20,7 +20,7 @@ export function weeklyStats(
     schedules: RouteSchedule[];
     routes: Route[];
     exceptions: ScheduleException[];
-    events: ScenarioEvent[];
+    events: TruckEvent[];
     capacityTonnes: number;
   },
   now: number,
@@ -49,13 +49,17 @@ export function weeklyStats(
         input.events,
       );
       if (state.status === 'not_started' || state.status === 'off_duty') continue;
-      trips += 1;
-      tonnes += state.load * input.capacityTonnes;
+      // One trip to the disposal site at the end of the run, plus any made mid-route (driver
+      // app); each mid-route trip is counted as a full load.
+      trips += 1 + state.trips;
+      tonnes += (state.load + state.trips) * input.capacityTonnes;
       // Served share counts only finished runs (done, or full = cannot finish).
       if (state.status === 'done' || state.status === 'full') {
         const collectM = getTimeline(route).collectLengthM;
         scheduledM += collectM;
-        servedM += state.status === 'done' ? collectM : collectM / s.expectedLoad;
+        if (state.status === 'done' && state.progressM >= state.routeLengthM) servedM += collectM;
+        else if (state.shift) servedM += collectM * (state.progressM / state.routeLengthM);
+        else servedM += collectM / s.expectedLoad;
       }
     }
   }

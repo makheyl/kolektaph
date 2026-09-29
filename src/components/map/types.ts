@@ -21,6 +21,8 @@ export interface KMapProps {
   routes?: Route[];
   /** One truck's route split into collected (solid) and upcoming (dashed) with time labels. */
   routePreview?: RoutePreview | null;
+  /** GPS recorded by a driver's phone, drawn as a dotted line. */
+  trace?: LngLat[] | null;
   highlightBarangayId?: string | null;
   selectedTruckId?: string | null;
   /** Moves the camera whenever `key` changes. */

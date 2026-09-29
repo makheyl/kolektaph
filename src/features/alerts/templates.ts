@@ -1,3 +1,5 @@
+import type { IncidentKind } from '@/services/types';
+
 /**
  * SMS texts, in Filipino like the pitch samples (the language residents asked for). Every
  * template is tested to fit one GSM-7 segment (160 characters) with the longest barangay name.
@@ -9,6 +11,14 @@ export const brgyLong = (name: string) =>
 
 /** "Milagrosa" (as in the pitch sample), and "Brgy. 1" for Poblacion. */
 export const brgyShort = (name: string) => (name.startsWith('Barangay ') ? brgyLong(name) : name);
+
+/** Incident names in the delay SMS ("dahil sa ..."). */
+export const INCIDENT_FIL: Record<IncidentKind, string> = {
+  breakdown: 'sira',
+  flat_tire: 'flat na gulong',
+  flood: 'baha',
+  road_blocked: 'saradong daan',
+};
 
 export const sms = {
   nightBefore: (p: { weekday: string; range: string; barangay: string }) =>
@@ -23,8 +33,8 @@ export const sms = {
   vicinityNow: (p: { barangay: string }) =>
     `KolektaPH: ${brgyShort(p.barangay)}, nandiyan na ang garbage truck. Ilabas na po ang basura ngayon. Salamat!`,
 
-  delayBreakdown: (p: { barangay: string; time: string }) =>
-    `KolektaPH: Naantala ang truck para sa ${brgyLong(p.barangay)} dahil sa sira. Bagong tantiyang oras: ${p.time}. Paumanhin po.`,
+  delayIncident: (p: { barangay: string; incident: IncidentKind; time: string }) =>
+    `KolektaPH: Naantala ang truck para sa ${brgyLong(p.barangay)} dahil sa ${INCIDENT_FIL[p.incident]}. Bagong tantiyang oras: ${p.time}. Paumanhin po.`,
 
   delayFull: (p: { barangay: string }) =>
     `KolektaPH: Naantala ang koleksyon sa ${brgyLong(p.barangay)}: puno na ang truck. Magpapadala ng ibang truck. Huwag munang ilabas ang basura.`,

@@ -16,7 +16,7 @@ import {
 import { smsInfo, smsTimeRange } from '@/features/alerts/sms';
 import { brgyLong, brgyShort, sms, WEEKDAYS_FIL } from '@/features/alerts/templates';
 import { formatClock, manilaEpoch, MINUTE } from '@/lib/time';
-import type { ScenarioEvent } from '@/services/types';
+import type { TruckEvent } from '@/services/types';
 
 const TUE = manilaEpoch(2026, 9, 29);
 const MON = manilaEpoch(2026, 9, 28);
@@ -24,7 +24,7 @@ const tue = (h: number, m = 0) => manilaEpoch(2026, 9, 29, h, m);
 const nameOf = (id: string) =>
   BARANGAYS.features.find((f) => f.properties.id === id)!.properties.name;
 
-const ctx = (events: ScenarioEvent[] = []): EngineContext => ({
+const ctx = (events: TruckEvent[] = []): EngineContext => ({
   schedules: ROUTE_SCHEDULES,
   routes: ROUTES,
   exceptions: SCHEDULE_EXCEPTIONS,
@@ -74,7 +74,7 @@ describe('SMS templates', () => {
     expect(sms.nightBefore({ weekday: 'Martes', range: '7-10AM', barangay: 'Milagrosa' })).toBe(
       'KolektaPH: Paalala! Bukas, Martes, 7-10AM ang koleksyon ng basura sa Brgy. Milagrosa. Ihiwalay po ang nabubulok at di-nabubulok.',
     );
-    expect(sms.delayBreakdown({ barangay: 'Mabuhay', time: '1:00 PM' })).toBe(
+    expect(sms.delayIncident({ barangay: 'Mabuhay', incident: 'breakdown', time: '1:00 PM' })).toBe(
       'KolektaPH: Naantala ang truck para sa Brgy. Mabuhay dahil sa sira. Bagong tantiyang oras: 1:00 PM. Paumanhin po.',
     );
   });
@@ -98,7 +98,9 @@ describe('SMS templates', () => {
           }),
           sms.vicinity({ barangay, minutes: 15, eta: '12:45 PM' }),
           sms.vicinityNow({ barangay }),
-          sms.delayBreakdown({ barangay, time: '12:45 PM' }),
+          ...(['breakdown', 'flat_tire', 'flood', 'road_blocked'] as const).map((incident) =>
+            sms.delayIncident({ barangay, incident, time: '12:45 PM' }),
+          ),
           sms.delayFull({ barangay }),
           sms.welcome({ barangay }),
         ];
@@ -164,9 +166,11 @@ describe('alert engine', () => {
   });
 
   it('sends a delay with the new estimated time when a truck breaks down', () => {
-    const breakdown: ScenarioEvent = {
+    const breakdown: TruckEvent = {
       id: 'b1',
-      kind: 'breakdown',
+      kind: 'incident',
+      incident: 'breakdown',
+      source: 'demo',
       truckId: 't2',
       at: tue(7, 20),
       minutes: 120,
@@ -208,6 +212,10 @@ describe('alert engine', () => {
       visits: {},
       departAt: tue(7),
       incident: null,
+      statusSince: tue(7),
+      loadReportedAt: null,
+      trips: 0,
+      shift: null,
     };
     const first = engine.observe(tue(7), base, route);
     const again = engine.observe(tue(7, 0) + 5_000, base, route);

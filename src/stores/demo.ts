@@ -2,19 +2,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { ScenarioEvent } from '@/services/types';
+import type { TruckEvent } from '@/services/types';
 import { type ClockConfig, jumpTo, LIVE_CLOCK, simNow, withSpeed } from '@/simulator/clock';
 
 interface DemoState {
   clock: ClockConfig;
   /** Shows "Sample data" badges. On for the whole prototype phase. */
   demoMode: boolean;
-  /** Scripted incidents (e.g. a breakdown) that the simulator applies. */
-  events: ScenarioEvent[];
+  /** Incidents triggered from the demo controls (e.g. a breakdown), applied by the simulator. */
+  events: TruckEvent[];
   jumpTo: (simMs: number) => void;
   setSpeed: (speed: number) => void;
   goLive: () => void;
-  addEvent: (event: ScenarioEvent) => void;
+  addEvent: (event: TruckEvent) => void;
   clearEvents: () => void;
 }
 
@@ -32,10 +32,11 @@ export const useDemo = create<DemoState>()(
     }),
     {
       name: 'kolektaph.demo',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({ clock: s.clock, demoMode: s.demoMode, events: s.events }),
-      migrate: (persisted) => ({ events: [], ...(persisted as object) }),
+      // v2: events became TruckEvents; older scripted breakdowns are dropped.
+      migrate: (persisted) => ({ ...(persisted as object), events: [] }),
     },
   ),
 );
@@ -45,6 +46,6 @@ export function getSimTime(): number {
   return simNow(useDemo.getState().clock);
 }
 
-export function getScenarioEvents(): ScenarioEvent[] {
+export function getDemoEvents(): TruckEvent[] {
   return useDemo.getState().events;
 }

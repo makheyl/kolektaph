@@ -78,3 +78,12 @@ export function useSimNow(intervalMs = 1000): number {
   }, [clock, intervalMs]);
   return tick.clock === clock ? tick.now : simNow(clock);
 }
+
+/** GPS fixes the server received for a driver shift (refreshed every 5 s). */
+export const useTrace = (shiftId: string | null) =>
+  useQuery({
+    queryKey: ['trace', shiftId],
+    queryFn: () => services.ops.getTrace(shiftId as string),
+    enabled: shiftId != null,
+    refetchInterval: 5_000,
+  });

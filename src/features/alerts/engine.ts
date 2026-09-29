@@ -6,8 +6,10 @@
  * - Vicinity alert once the truck is VICINITY_MINUTES (15) or less from a barangay, sent to that
  *   barangay only, once per barangay per day. If the truck is already collecting there when
  *   first observed, a "nandiyan na" variant goes out instead.
- * - Delay alerts: truck breakdown (with the new estimated time) and truck full with the
- *   barangay unfinished. Once per barangay per incident.
+ * - Delay alerts: truck incident (breakdown, flat tire, flood, blocked road; with the new
+ *   estimated time) and truck full with the barangay unfinished. Once per barangay per incident.
+ * - After a delay, the barangay gets a fresh vicinity alert once the truck is on its way again
+ *   (residents were told to hold their garbage, so tell them when to bring it out).
  *
  * `AlertEngine` is the stateful evaluator a backend would run on every GPS update. The
  * prototype replays it over the deterministic simulation (`operationalAlerts`), so the alert
@@ -20,9 +22,9 @@ import type {
   OutboundAlert,
   Route,
   RouteSchedule,
-  ScenarioEvent,
   ScheduleException,
   Truck,
+  TruckEvent,
   TruckState,
 } from '@/services/types';
 import { simulateTruck } from '@/simulator/truckSimulator';
@@ -35,7 +37,7 @@ export interface EngineContext {
   routes: Route[];
   exceptions: ScheduleException[];
   trucks: Truck[];
-  events: ScenarioEvent[];
+  events: TruckEvent[];
   registrations: Record<string, number>;
   barangayName: (id: string) => string;
   /** Filipino weekday names, 0 = Linggo. */
@@ -43,6 +45,8 @@ export interface EngineContext {
 }
 
 const NIGHT_BEFORE_AT = '18:00';
+/** Statuses in which the truck stays put until the crew reports something new. */
+const STOPPED = new Set<TruckState['status']>(['full', 'to_disposal', 'break']);
 const REPLAY_STEP_MS = 10_000;
 
 /**
@@ -99,6 +103,8 @@ export function nightBeforeAlerts(ctx: EngineContext, day: number): OutboundAler
 /** Stateful evaluator: feed it truck observations in time order; it returns new alerts. */
 export class AlertEngine {
   private sent = new Set<string>();
+  /** Delay alerts sent per "date|barangay": each one re-arms the vicinity alert. */
+  private delays = new Map<string, number>();
 
   constructor(private ctx: EngineContext) {}
 
@@ -109,6 +115,10 @@ export class AlertEngine {
       if (this.sent.has(key)) return;
       this.sent.add(key);
       out.push(alert(this.ctx, { ...a, id: key }));
+      if (a.kind === 'delay_full' || a.kind === 'delay_breakdown') {
+        const k = `${dateKey}|${a.barangayIds[0]}`;
+        this.delays.set(k, (this.delays.get(k) ?? 0) + 1);
+      }
     };
 
     for (const b of route.barangayIds) {
@@ -117,8 +127,9 @@ export class AlertEngine {
       const barangay = this.ctx.barangayName(b);
       const base = { barangayIds: [b], sentAt: now, truckId: truck.truckId, routeId: route.id };
 
-      // Vicinity: once per barangay per day.
-      const vKey = `vicinity|${dateKey}|${b}`;
+      // Vicinity: once per barangay per day, and again after each delay alert.
+      const round = this.delays.get(`${dateKey}|${b}`) ?? 0;
+      const vKey = `vicinity|${dateKey}|${b}${round ? `|${round}` : ''}`;
       const moving = truck.status === 'on_route' || truck.status === 'not_started';
       if (moving && visit.state === 'upcoming' && visit.arriveAt != null) {
         const minutes = Math.ceil((visit.arriveAt - now) / MINUTE);
@@ -147,7 +158,7 @@ export class AlertEngine {
         });
       }
 
-      // Delay: breakdown, quoting when the truck should reach (or resume in) the barangay.
+      // Delay: incident, quoting when the truck should reach (or resume in) the barangay.
       if (truck.status === 'breakdown' && truck.incident) {
         const time =
           visit.state === 'upcoming' && visit.arriveAt != null
@@ -156,7 +167,11 @@ export class AlertEngine {
         send(`breakdown|${dateKey}|${b}|${truck.incident.since}`, {
           ...base,
           kind: 'delay_breakdown',
-          text: sms.delayBreakdown({ barangay, time: formatClock(time) }),
+          text: sms.delayIncident({
+            barangay,
+            incident: truck.incident.kind,
+            time: formatClock(time),
+          }),
         });
       }
     }
@@ -181,10 +196,19 @@ export function operationalAlerts(ctx: EngineContext, day: number): OutboundAler
     // From 30 minutes before departure until the truck is finished (or late evening).
     const from = atManilaTime(day, s.departAt ?? s.start) - 30 * MINUTE;
     const until = atManilaTime(day, '21:00');
+    // After the truck's last report, a stopped truck stays stopped: nothing more can happen.
+    const lastEventAt = Math.max(
+      -Infinity,
+      ...ctx.events
+        .filter((e) => e.truckId === truck.id && e.at >= day && e.at < day + DAY)
+        .map((e) => e.at),
+    );
     for (let t = from; t <= until; t += REPLAY_STEP_MS) {
       const state = simulateTruck(truck, ctx.schedules, ctx.routes, t, ctx.exceptions, ctx.events);
+      if (state.routeId !== route.id) break;
       out.push(...engine.observe(t, state, route));
-      if (state.status === 'done' || state.status === 'full') break;
+      if (state.status === 'done') break;
+      if (STOPPED.has(state.status) && t > lastEventAt) break;
     }
   }
   return out;

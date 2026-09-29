@@ -1,8 +1,13 @@
-import { useTranslation } from 'react-i18next';
+import { Redirect } from 'expo-router';
 
-import { ComingSoon } from '@/components/ComingSoon';
+import { useDriver } from '@/stores/driver';
 
-export default function DriverHome() {
-  const { t } = useTranslation();
-  return <ComingSoon title={t('roles.driver')} sprint="Sprint S4" />;
+/** Sends the driver to the right step: sign in → start shift → shift → end-of-shift summary. */
+export default function DriverIndex() {
+  const session = useDriver((s) => s.session);
+  const shift = useDriver((s) => s.shift);
+  if (shift && shift.endedAt == null) return <Redirect href="/driver/shift" />;
+  if (shift) return <Redirect href="/driver/end" />;
+  if (!session) return <Redirect href="/driver/sign-in" />;
+  return <Redirect href="/driver/start" />;
 }

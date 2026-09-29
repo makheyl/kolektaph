@@ -3,9 +3,18 @@
  * planned route. A street segment counts as SERVED when at least 60% of it lies within 30 m of
  * the trace (phone GPS is typically off by 5–20 m in dense areas).
  *
- * Works the same for simulated traces (prototype) and real phone GPS (driver app, Sprint S4).
+ * Works the same for simulated traces (prototype) and real phone GPS (driver app).
+ * Streets the crew logged as skipped in the driver app are listed with the crew's reason
+ * (HAKOT §10.2); "walang basura" means there was nothing to collect, so it is not a miss.
  */
-import type { LngLat, MissedStreet, Route, RouteSegment, TruckState } from '@/services/types';
+import type {
+  LngLat,
+  MissedStreet,
+  Route,
+  RouteSegment,
+  SkipReason,
+  TruckState,
+} from '@/services/types';
 
 export const COVERAGE_RADIUS_M = 30;
 export const COVERAGE_MIN_SHARE = 0.6;
@@ -84,6 +93,8 @@ interface MissedInput {
   /** End of the collection window: after it, every unserved street counts as missed. */
   windowEnd: number;
   now: number;
+  /** Segment id → the crew's skip reason (from the driver app's street log). */
+  skips?: Map<string, SkipReason>;
 }
 
 /**
@@ -99,20 +110,30 @@ export function missedStreets({
   trace,
   windowEnd,
   now,
+  skips = new Map(),
 }: MissedInput): MissedStreet[] {
   const index = buildTraceIndex(trace);
   const judgeAll = truck.status === 'done' || now > windowEnd;
-  const flagged: { seg: RouteSegment; reason: MissedStreet['reason'] }[] = [];
+  const flagged: {
+    seg: RouteSegment;
+    reason: MissedStreet['reason'];
+    skipReason: SkipReason | null;
+  }[] = [];
 
   let start = 0;
   for (const seg of route.segments) {
     const end = start + seg.lengthM;
     if (seg.collect && seg.barangayId && route.barangayIds.includes(seg.barangayId)) {
       const behind = end <= truck.progressM;
-      if (truck.status === 'full' && !behind) {
-        if (!isServed(seg, index)) flagged.push({ seg, reason: 'truck_full' });
+      const skip = skips.get(seg.id) ?? null;
+      if (skip === 'no_garbage') {
+        // Nothing to collect: served.
+      } else if (skip) {
+        flagged.push({ seg, reason: 'skipped', skipReason: skip });
+      } else if (truck.status === 'full' && !behind) {
+        if (!isServed(seg, index)) flagged.push({ seg, reason: 'truck_full', skipReason: null });
       } else if ((behind || judgeAll) && !isServed(seg, index)) {
-        flagged.push({ seg, reason: 'not_passed' });
+        flagged.push({ seg, reason: 'not_passed', skipReason: null });
       }
     }
     start = end;
@@ -122,12 +143,13 @@ export function missedStreets({
   // pieces are intersections/connectors: fold them into the street before them, so a street
   // split by a 40 m connector still shows once.
   const merged: MissedStreet[] = [];
-  for (const { seg, reason } of flagged) {
+  for (const { seg, reason, skipReason } of flagged) {
     const prev = merged[merged.length - 1];
     const sameStreet =
       prev &&
       prev.barangayId === seg.barangayId &&
       prev.reason === reason &&
+      prev.skipReason === skipReason &&
       (prev.name === seg.name || (!seg.name && seg.lengthM < CONNECTOR_MAX_M));
     // A named piece after an absorbed connector continues the same street.
     if (prev && sameStreet) {
@@ -143,6 +165,7 @@ export function missedStreets({
         segmentIds: [seg.id],
         lengthM: seg.lengthM,
         reason,
+        skipReason,
       });
     }
   }

@@ -5,7 +5,7 @@
 import type { CollectionOccurrence } from '@/features/schedule/collections';
 import { barangayVisit, VICINITY_MINUTES } from '@/features/tracking/eta';
 import { MINUTE } from '@/lib/time';
-import type { Route, TruckState } from '@/services/types';
+import type { IncidentKind, Route, TruckState } from '@/services/types';
 
 export type HomeStatus =
   | { kind: 'no_barangay' }
@@ -35,11 +35,16 @@ export type HomeStatus =
   | {
       kind: 'breakdown';
       today: CollectionOccurrence;
+      incident: IncidentKind;
       /** When the crew expects to move again. */
       resumeAt: number;
       /** New estimated arrival in the barangay (null if the truck is already there). */
       arriveAt: number | null;
     }
+  /** Unloading at the disposal site or on a break: it comes back, no honest ETA meanwhile. */
+  | { kind: 'paused'; today: CollectionOccurrence; reason: 'to_disposal' | 'break' }
+  /** The crew ended the shift before reaching the barangay. */
+  | { kind: 'unfinished'; today: CollectionOccurrence }
   | { kind: 'no_signal'; today: CollectionOccurrence };
 
 export interface HomeStatusInput {
@@ -80,10 +85,15 @@ export function homeStatus({
     return { kind: 'passed', today, passedAt: visit.passedAt, next: nextAfterToday };
   }
   if (truck.status === 'full') return { kind: 'full', today };
+  if (truck.status === 'done') return { kind: 'unfinished', today };
+  if (truck.status === 'to_disposal' || truck.status === 'break') {
+    return { kind: 'paused', today, reason: truck.status };
+  }
   if (truck.status === 'breakdown' && truck.incident) {
     return {
       kind: 'breakdown',
       today,
+      incident: truck.incident.kind,
       resumeAt: truck.incident.until,
       arriveAt: visit.state === 'upcoming' ? visit.arriveAt : null,
     };

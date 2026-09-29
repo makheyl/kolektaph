@@ -1,6 +1,6 @@
 /**
  * Deterministic truck simulator: a truck's state is a pure function of (route, schedule, time,
- * scenario events). Every device computing the same time gets the same positions, with no
+ * truck events). Every device computing the same time gets the same positions, with no
  * server involved.
  *
  * Model (sample parameters in features/tracking/speeds.ts):
@@ -8,7 +8,8 @@
  * - Transit segments (depot → barangay) at TRANSIT_KMH; collection segments at COLLECT_KMH.
  * - Load grows with collected distance up to schedule.expectedLoad. If that exceeds 1, the
  *   truck becomes FULL part-way and stops there with streets left (the pitch's Problem 3).
- * - Breakdown events stop the truck for their duration; everything after shifts later.
+ * - Truck events (driver app reports, demo incidents) stop and restart the truck; everything
+ *   after a stop shifts later. See simulateTruck().
  * - Schedule exceptions (holidays) move or cancel runs, using the same rules as the schedule.
  */
 import { along } from '@turf/along';
@@ -19,14 +20,17 @@ import { segmentMsPerMetre } from '@/features/tracking/speeds';
 import { atManilaTime, manilaStartOfDay, MINUTE } from '@/lib/time';
 import type {
   BarangayVisitLog,
+  DriverStatus,
   LngLat,
   Route,
   RouteSchedule,
-  ScenarioEvent,
   ScheduleException,
   Truck,
+  TruckEvent,
   TruckIncident,
+  TruckShiftInfo,
   TruckState,
+  TruckStatus,
 } from '@/services/types';
 
 interface Timeline {
@@ -99,12 +103,10 @@ function locateByCollected(tl: Timeline, targetM: number): { index: number; into
   return { index: last, intoM: segments[last].lengthM };
 }
 
-/** A breakdown mapped onto the truck's driving time: it stops after `drivingMs` of driving. */
+/** A stop mapped onto the truck's driving time: it stops after `drivingMs` of driving. */
 interface Stop {
   drivingMs: number;
   durationMs: number;
-  since: number;
-  until: number;
 }
 
 /**
@@ -144,43 +146,6 @@ function visitLog(
   return log;
 }
 
-interface Ctx {
-  truck: Truck;
-  tl: Timeline;
-  depart: number;
-  stops: Stop[];
-  at: number;
-}
-
-function stateAt(
-  { truck, tl, depart, stops, at }: Ctx,
-  index: number,
-  intoM: number,
-  status: TruckState['status'],
-  load: number,
-  incident: TruckIncident | null = null,
-): TruckState {
-  const { route } = tl;
-  const seg = route.segments[index];
-  const progressM = tl.startM[index] + Math.min(intoM, seg.lengthM);
-  return {
-    truckId: truck.id,
-    routeId: route.id,
-    status,
-    position: pointOnSegment(route, index, intoM),
-    segmentIndex: index,
-    barangayId: seg.barangayId,
-    streetName: seg.name,
-    progressM,
-    routeLengthM: route.lengthM,
-    load,
-    at,
-    visits: visitLog(tl, depart, stops, progressM),
-    departAt: depart,
-    incident,
-  };
-}
-
 const offDuty = (truck: Truck, at: number): TruckState => ({
   truckId: truck.id,
   routeId: null,
@@ -196,79 +161,227 @@ const offDuty = (truck: Truck, at: number): TruckState => ({
   visits: {},
   departAt: null,
   incident: null,
+  statusSince: null,
+  loadReportedAt: null,
+  trips: 0,
+  shift: null,
 });
 
+const byTime = (a: TruckEvent, b: TruckEvent) => a.at - b.at;
+
+/**
+ * The truck's state at `at`: a pure function of the schedule, the route and the events
+ * reported so far today.
+ *
+ * Until a driver starts a shift in the driver app, the simulator stands in for the crew: the
+ * truck follows the schedule, its load grows with the distance collected, and it becomes FULL
+ * where the sample load says it would (demo incidents still apply).
+ *
+ * Once a driver is on shift, the crew's reports decide: the truck moves only while "Nasa ruta",
+ * stops for PUNO / tapunan / break / incidents, empties at the disposal site and carries on.
+ * Its load is what the crew last reported (estimated from the distance collected until the
+ * first report). A driver can take over a truck mid-route, as in the pitch demo.
+ */
 export function simulateTruck(
   truck: Truck,
   schedules: RouteSchedule[],
   routes: Route[],
   at: number,
   exceptions: ScheduleException[] = [],
-  events: ScenarioEvent[] = [],
+  events: TruckEvent[] = [],
 ): TruckState {
+  const today = manilaStartOfDay(at);
+  const todays = events
+    .filter((e) => e.truckId === truck.id && e.at <= at && manilaStartOfDay(e.at) === today)
+    .sort(byTime);
+  const shiftStart = todays.findLast((e) => e.kind === 'shift_start');
+  // Driver reports count from the latest shift; demo incidents count all day.
+  const mine = todays.filter(
+    (e) => e.source === 'demo' || (shiftStart != null && e.at >= shiftStart.at),
+  );
+  const shiftEnd = shiftStart
+    ? mine.find((e) => e.kind === 'shift_end' && e.shiftId === shiftStart.shiftId)
+    : undefined;
+  const shift: TruckShiftInfo | null = shiftStart
+    ? {
+        shiftId: shiftStart.shiftId,
+        startedAt: shiftStart.at,
+        endedAt: shiftEnd?.at ?? null,
+        crew: shiftStart.crew,
+      }
+    : null;
+  const shiftAt = shiftStart?.at ?? Infinity;
+
   const schedule = schedules.find(
     (s) => s.truckId === truck.id && routeRunsOnDay(s, at, exceptions).runs,
   );
-  const route = schedule && routes.find((r) => r.id === schedule.routeId);
-  if (!schedule || !route) return offDuty(truck, at);
+  const routeId = shiftStart ? shiftStart.routeId : schedule?.routeId;
+  const route = routeId ? routes.find((r) => r.id === routeId) : undefined;
+  if (!route) {
+    // On shift without a route today (e.g. a GPS test): known, but not on the map.
+    return shift
+      ? { ...offDuty(truck, at), shift, status: shift.endedAt ? 'done' : 'on_route' }
+      : offDuty(truck, at);
+  }
 
   const tl = getTimeline(route);
-  const depart = atManilaTime(at, schedule.departAt ?? schedule.start);
+  const plan = schedule?.routeId === route.id ? schedule : undefined;
+  let depart = plan ? atManilaTime(at, plan.departAt ?? plan.start) : shiftAt;
+  // "Nasa ruta" before the planned departure means the truck left early.
+  const early = mine.find(
+    (e) => e.kind === 'status' && e.status === 'on_route' && e.source === 'driver' && e.at < depart,
+  );
+  if (early) depart = early.at;
 
-  // Driving time at which the truck fills up (Infinity if the route fits in one load).
-  let fullDrivingMs = Infinity;
+  // Where the sample load would make the truck full (only while the simulator drives it).
+  const expectedLoad = plan?.expectedLoad ?? 1;
   let full: { index: number; intoM: number } | null = null;
-  if (schedule.expectedLoad > 1) {
-    full = locateByCollected(tl, tl.collectLengthM / schedule.expectedLoad);
+  let fullDrivingMs = Infinity;
+  if (expectedLoad > 1) {
+    full = locateByCollected(tl, tl.collectLengthM / expectedLoad);
     fullDrivingMs =
       tl.startMs[full.index] + full.intoM * segmentMsPerMetre(route.segments[full.index].collect);
   }
-  const lastDrivingMs = Math.min(tl.totalMs, fullDrivingMs);
 
-  // Breakdowns count only if they happen while this truck is actually driving its route today.
-  const today = manilaStartOfDay(at);
+  // ---- Walk through the day: the truck drives while "on route" and is stopped otherwise.
+  const w = {
+    base: 'on_route' as DriverStatus,
+    incident: null as TruckIncident | null,
+    ended: false,
+    /** The simulator filled the truck up (before any driver shift). */
+    fullHit: false,
+    trips: 0,
+    driving: 0,
+    /** Last load reset or report: value, driving time then, and when the crew reported it. */
+    anchor: { load: 0, drivingMs: 0, reportedAt: null as number | null },
+  };
   const stops: Stop[] = [];
-  for (const e of events
-    .filter((ev) => ev.kind === 'breakdown' && ev.truckId === truck.id)
-    .filter((ev) => manilaStartOfDay(ev.at) === today && ev.at <= at)
-    .sort((a, b) => a.at - b.at)) {
-    const drivingMs = e.at - depart - stops.reduce((sum, s) => sum + s.durationMs, 0);
-    if (drivingMs < 0 || drivingMs >= lastDrivingMs) continue;
-    const durationMs = e.minutes * MINUTE;
-    stops.push({ drivingMs, durationMs, since: e.at, until: e.at + durationMs });
+
+  const finished = () => w.driving >= tl.totalMs;
+  const moving = () => !w.ended && !w.incident && w.base === 'on_route' && !finished();
+  const effective = (): TruckStatus => {
+    if (w.ended) return 'done';
+    if (w.incident) return 'breakdown';
+    if (finished() && w.base === 'on_route') return 'done';
+    return w.base;
+  };
+
+  const apply = (e: TruckEvent) => {
+    // Without a crew on shift, incidents after the truck has finished are ignored.
+    if (!shift && (w.fullHit || finished())) return;
+    switch (e.kind) {
+      case 'status':
+        w.base = e.status;
+        if (e.status === 'full') w.anchor = { load: 1, drivingMs: w.driving, reportedAt: e.at };
+        break;
+      case 'load':
+        w.anchor = { load: e.load, drivingMs: w.driving, reportedAt: e.at };
+        break;
+      case 'disposal':
+        if (e.action === 'arrive') w.base = 'to_disposal';
+        else {
+          w.base = 'on_route';
+          w.trips += 1;
+          w.anchor = { load: 0, drivingMs: w.driving, reportedAt: null };
+        }
+        break;
+      case 'incident':
+        w.incident = { kind: e.incident, since: e.at, until: e.at + e.minutes * MINUTE };
+        break;
+      case 'incident_end':
+        w.incident = null;
+        break;
+      case 'shift_end':
+        w.ended = true;
+        break;
+      default:
+        break;
+    }
+  };
+
+  let now = depart;
+  let i = 0;
+  // Reports from before the departure set the starting state (e.g. a break at the depot).
+  for (; i < mine.length && mine[i].at <= depart; i++) apply(mine[i]);
+  if (w.incident && w.incident.until <= Math.min(depart, at)) w.incident = null;
+
+  let status: TruckStatus = effective();
+  let statusSince: number | null = depart;
+
+  while (now < at) {
+    // The sample "fills up here" point only applies while the simulator drives the truck.
+    const limit = !w.fullHit && now < shiftAt ? Math.min(tl.totalMs, fullDrivingMs) : tl.totalMs;
+    const nextEvent = i < mine.length ? mine[i].at : Infinity;
+    const expires = w.incident ? w.incident.until : Infinity;
+    const capAt = moving() ? now + (limit - w.driving) : Infinity;
+    const next = Math.min(nextEvent, expires, capAt, at);
+    if (moving()) {
+      w.driving = Math.min(limit, w.driving + (next - now));
+    } else if (!finished() && next > now) {
+      stops.push({ drivingMs: w.driving, durationMs: next - now });
+    }
+    now = next;
+    if (!w.fullHit && full && w.driving >= fullDrivingMs && now <= shiftAt) {
+      // The sample load filled the truck: it stops here until a crew empties it.
+      w.fullHit = true;
+      w.base = 'full';
+      w.anchor = { load: 1, drivingMs: w.driving, reportedAt: null };
+    }
+    if (w.incident && w.incident.until <= now) w.incident = null;
+    for (; i < mine.length && mine[i].at <= now; i++) apply(mine[i]);
+    const s = effective();
+    if (s !== status) {
+      status = s;
+      statusSince = now;
+    }
+  }
+  if (at < depart) {
+    // Waiting at the depot (an incident reported there shows up; the truck has not moved).
+    status = w.incident ? 'breakdown' : 'not_started';
+    statusSince = w.incident ? w.incident.since : null;
+  }
+  const { driving, anchor } = w;
+
+  // ---- Where the truck is, and its load.
+  let index: number;
+  let intoM: number;
+  if (full && w.fullHit && driving === fullDrivingMs) ({ index, intoM } = full);
+  else if (finished()) {
+    index = route.segments.length - 1;
+    intoM = route.segments[index].lengthM;
+  } else ({ index, intoM } = locateByTime(tl, driving));
+  const seg = route.segments[index];
+  const progressM = tl.startM[index] + Math.min(intoM, seg.lengthM);
+
+  let load = anchor.load;
+  if (anchor.reportedAt == null) {
+    // Not reported by the crew: estimate from the distance collected since the last reset.
+    const since = locateByTime(tl, anchor.drivingMs);
+    const collectedSince =
+      collectedAt(tl, index, intoM) - collectedAt(tl, since.index, since.intoM);
+    load = Math.min(1, anchor.load + (collectedSince / tl.collectLengthM) * expectedLoad);
   }
 
-  const ctx: Ctx = { truck, tl, depart, stops, at };
-  const active = stops.find((s) => at >= s.since && at < s.until);
-  // Driving done so far = wall time since departure minus time spent stopped.
-  const stoppedMs = stops.reduce((sum, s) => sum + Math.max(0, Math.min(at, s.until) - s.since), 0);
-  const driving = at - depart - stoppedMs;
-
-  if (driving < 0) return stateAt(ctx, 0, 0, 'not_started', 0);
-
-  if (full && driving >= fullDrivingMs) {
-    return stateAt(ctx, full.index, full.intoM, 'full', 1);
-  }
-
-  if (driving >= tl.totalMs) {
-    const last = route.segments.length - 1;
-    const load = Math.min(1, schedule.expectedLoad);
-    return stateAt(ctx, last, route.segments[last].lengthM, 'done', load);
-  }
-
-  const { index, intoM } = locateByTime(tl, driving);
-  const load = Math.min(
-    1,
-    (collectedAt(tl, index, intoM) / tl.collectLengthM) * schedule.expectedLoad,
-  );
-  if (active) {
-    return stateAt(ctx, index, intoM, 'breakdown', load, {
-      kind: 'breakdown',
-      since: active.since,
-      until: active.until,
-    });
-  }
-  return stateAt(ctx, index, intoM, 'on_route', load);
+  return {
+    truckId: truck.id,
+    routeId: route.id,
+    status,
+    position: pointOnSegment(route, index, intoM),
+    segmentIndex: index,
+    barangayId: seg.barangayId,
+    streetName: seg.name,
+    progressM,
+    routeLengthM: route.lengthM,
+    load,
+    at,
+    visits: visitLog(tl, depart, stops, progressM),
+    departAt: depart,
+    incident: status === 'breakdown' ? w.incident : null,
+    statusSince,
+    loadReportedAt: anchor.reportedAt,
+    trips: w.trips,
+    shift,
+  };
 }
 
 export function simulateFleet(
@@ -277,7 +390,7 @@ export function simulateFleet(
   routes: Route[],
   at: number,
   exceptions: ScheduleException[] = [],
-  events: ScenarioEvent[] = [],
+  events: TruckEvent[] = [],
 ): TruckState[] {
   return trucks.map((t) => simulateTruck(t, schedules, routes, at, exceptions, events));
 }

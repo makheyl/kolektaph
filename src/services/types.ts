@@ -127,26 +127,98 @@ export interface TruckState {
   departAt: number | null;
   /** Current incident, e.g. a breakdown, with its expected end. */
   incident: TruckIncident | null;
+  /** Since when the truck has had its current status (departure time when on route). */
+  statusSince: number | null;
+  /** When the crew last reported the load (null = estimated from the distance collected). */
+  loadReportedAt: number | null;
+  /** Trips to the disposal site completed today. */
+  trips: number;
+  shift: TruckShiftInfo | null;
 }
 
 export interface TruckIncident {
-  kind: 'breakdown';
+  kind: IncidentKind;
   since: number;
   /** Expected time the truck moves again (estimate reported by the crew). */
   until: number;
 }
 
-/**
- * Something that happens to a truck. Drivers report these in the driver app (Sprint S4);
- * in the demo they are triggered from the demo controls.
- */
-export interface ScenarioEvent {
-  id: string;
-  kind: 'breakdown';
-  truckId: string;
-  at: number;
-  minutes: number;
+/** A driver on shift in the driver app (null when the simulator stands in for the crew). */
+export interface TruckShiftInfo {
+  shiftId: string;
+  startedAt: number;
+  endedAt: number | null;
+  crew: number;
 }
+
+// ---------- Truck events (driver app + demo controls) ----------
+
+/** Statuses the driver sets with the big buttons. */
+export type DriverStatus = 'on_route' | 'full' | 'to_disposal' | 'break';
+
+/** Aberya: Sira · Flat · Baha · Sarado ang daan. */
+export type IncidentKind = 'breakdown' | 'flat_tire' | 'flood' | 'road_blocked';
+
+/** Why the crew skipped a street (HAKOT skip reasons). */
+export type SkipReason = 'no_garbage' | 'not_segregated' | 'road_blocked' | 'truck_full' | 'other';
+
+export type StreetOutcome = 'collected' | 'skipped';
+
+interface TruckEventBase {
+  /** Unique and stable, so a retried upload is never counted twice. */
+  id: string;
+  truckId: string;
+  /** When it happened (simulated/demo time, epoch ms). */
+  at: number;
+  /** Reported from the driver app, or triggered from the demo controls. */
+  source: 'driver' | 'demo';
+}
+
+/**
+ * Something a truck crew reports. The simulator replays these on top of the schedule, so the
+ * resident app, the alerts and the City ENRO dashboard all react to the driver's taps.
+ */
+export type TruckEvent = TruckEventBase &
+  (
+    | { kind: 'shift_start'; shiftId: string; routeId: string | null; crew: number }
+    | { kind: 'shift_end'; shiftId: string }
+    | { kind: 'status'; status: DriverStatus }
+    /** Load the crew reports: 0.25, 0.5 or 0.75 (full is the 'full' status). */
+    | { kind: 'load'; load: number }
+    | { kind: 'disposal'; action: 'arrive' | 'leave' }
+    | { kind: 'incident'; incident: IncidentKind; minutes: number }
+    | { kind: 'incident_end' }
+    | {
+        kind: 'street';
+        routeId: string;
+        /** Street key from driverStreets(): one entry per street, not per OSM segment. */
+        streetKey: string;
+        segmentIds: string[];
+        outcome: StreetOutcome;
+        reason: SkipReason | null;
+      }
+  );
+
+export type TruckEventKind = TruckEvent['kind'];
+
+/** A TruckEvent before the id/time/source are stamped. */
+export type TruckEventInput = TruckEvent extends infer E
+  ? E extends TruckEvent
+    ? Omit<E, 'id' | 'at' | 'source' | 'truckId'>
+    : never
+  : never;
+
+/** One GPS fix from the driver's phone (or the demo stand-in). */
+export interface GpsFix {
+  /** Device time of the fix (epoch ms). */
+  t: number;
+  lng: number;
+  lat: number;
+  /** Horizontal accuracy in metres, when the device reports it. */
+  acc: number | null;
+}
+
+export type GpsSource = 'phone' | 'demo';
 
 // ---------- Alerts (SMS + in-app) ----------
 
@@ -181,7 +253,8 @@ export interface Announcement {
 
 // ---------- Operations (City ENRO) ----------
 
-export type MissedReason = 'truck_full' | 'not_passed';
+/** truck_full / not_passed come from the GPS check; skipped = the crew reported a skip. */
+export type MissedReason = 'truck_full' | 'not_passed' | 'skipped';
 
 export interface MissedStreet {
   id: string;
@@ -192,6 +265,8 @@ export interface MissedStreet {
   segmentIds: string[];
   lengthM: number;
   reason: MissedReason;
+  /** The crew's reason, when they logged the street as skipped in the driver app. */
+  skipReason: SkipReason | null;
 }
 
 export interface BackupSuggestion {
@@ -213,12 +288,47 @@ export interface WeeklyStats {
   servedRate: number;
 }
 
+/** A driver shift as the server knows it (from uploads). */
+export interface ShiftSummary {
+  shiftId: string;
+  truckId: string;
+  routeId: string | null;
+  startedAt: number;
+  endedAt: number | null;
+  crew: number;
+  gps: { points: number; lastFixAt: number | null; source: GpsSource | null };
+}
+
 export interface OpsSnapshot {
   at: number;
   states: TruckState[];
   missed: MissedStreet[];
   suggestions: BackupSuggestion[];
   weekly: WeeklyStats;
+  /** Today's truck events received so far (all trucks), oldest first. */
+  events: TruckEvent[];
+  /** Today's driver shifts. */
+  shifts: ShiftSummary[];
+}
+
+// ---------- Driver app ----------
+
+export interface DriverSession {
+  truckId: string;
+  signedInAt: number;
+}
+
+/** What the driver's phone uploads when it has signal. Uploads are idempotent. */
+export interface UploadBatch {
+  truckId: string;
+  events: TruckEvent[];
+  gps: {
+    shiftId: string;
+    source: GpsSource;
+    /** Index of the first fix in the shift's trace, so a retried upload never duplicates. */
+    fromIndex: number;
+    fixes: GpsFix[];
+  } | null;
 }
 
 // ---------- Services (screens only talk to these) ----------
@@ -251,6 +361,24 @@ export interface AlertsService {
 export interface OpsService {
   /** Live operations picture for the City ENRO dashboard. */
   subscribeOps(listener: (snapshot: OpsSnapshot) => void): () => void;
+  /** GPS fixes received for a shift. */
+  getTrace(shiftId: string): Promise<GpsFix[]>;
+}
+
+export interface DriverService {
+  /** Truck code + 4-digit PIN (sample accounts in the prototype). Rejects with SignInError. */
+  signIn(truckId: string, pin: string): Promise<DriverSession>;
+  /** Rejects with OfflineError when the server cannot be reached; the phone keeps the batch. */
+  upload(batch: UploadBatch): Promise<void>;
+  /**
+   * The truck as the driver's phone sees it: what the server knows plus the phone's own
+   * reports that are not uploaded yet, so the driver app keeps working without signal.
+   */
+  subscribeOwnTruck(
+    truckId: string,
+    getLocalEvents: () => TruckEvent[],
+    listener: (state: TruckState) => void,
+  ): () => void;
 }
 
 export interface Services {
@@ -259,4 +387,5 @@ export interface Services {
   schedule: ScheduleService;
   alerts: AlertsService;
   ops: OpsService;
+  driver: DriverService;
 }

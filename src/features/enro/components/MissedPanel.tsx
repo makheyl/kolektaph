@@ -31,8 +31,10 @@ export function MissedPanel({ missed, trucks, nameOf }: MissedPanelProps) {
                 {m.name ?? t('enro.live.unnamed')}, {nameOf(m.barangayId)}
               </AppText>
               <AppText variant="label" color={colors.textMuted}>
-                {t(`enro.live.missedReason.${m.reason}`)} ·{' '}
-                {trucks.find((tr) => tr.id === m.truckId)?.name} · {formatDistance(t, m.lengthM)}
+                {t(`enro.live.missedReason.${m.reason}`, {
+                  reason: m.skipReason ? t(`skipReason.${m.skipReason}`) : '',
+                })}{' '}
+                · {trucks.find((tr) => tr.id === m.truckId)?.name} · {formatDistance(t, m.lengthM)}
               </AppText>
             </View>
           </View>

@@ -12,7 +12,7 @@ import type {
 } from '@maplibre/maplibre-react-native';
 import type { FeatureCollection, LineString, Point } from 'geojson';
 
-import type { BarangayCollection, Route } from '@/services/types';
+import type { BarangayCollection, LngLat, Route } from '@/services/types';
 import { colors } from '@/theme/tokens';
 
 /** Free vector tiles, no API key. Self-host PMTiles before production (OSM tile policy). */
@@ -25,6 +25,7 @@ export const SOURCE_IDS = {
   previewDone: 'kph-preview-done',
   previewNext: 'kph-preview-next',
   previewTimes: 'kph-preview-times',
+  trace: 'kph-trace',
 } as const;
 
 type SourcelessLayer<T> = Omit<T, 'source'>;
@@ -73,6 +74,30 @@ export const previewTimeLabelLayer: SourcelessLayer<SymbolLayerSpecification> = 
     'text-halo-width': 2,
   },
 };
+
+/** GPS actually recorded by the driver's phone: dotted amber, drawn over the route preview. */
+export const traceLineLayer: SourcelessLayer<LineLayerSpecification> = {
+  id: 'kph-trace-line',
+  type: 'line',
+  layout: { 'line-cap': 'round', 'line-join': 'round' },
+  paint: { 'line-color': colors.amber, 'line-width': 3, 'line-dasharray': [0.5, 1.5] },
+};
+
+export function traceLine(trace: LngLat[]): FeatureCollection<LineString> {
+  return {
+    type: 'FeatureCollection',
+    features:
+      trace.length > 1
+        ? [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: { type: 'LineString', coordinates: trace },
+            },
+          ]
+        : [],
+  };
+}
 
 export function zoneFillLayer(
   highlightId: string | null | undefined,

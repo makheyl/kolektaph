@@ -23,7 +23,7 @@ const NAV: NavItem[] = [
   { href: '/enro', icon: 'monitor-dashboard', labelKey: 'enro.nav.liveOps' },
   { href: '/enro/sms', icon: 'message-text-outline', labelKey: 'enro.nav.sms' },
   { icon: 'file-document-outline', labelKey: 'enro.nav.reports', sprint: 'S5' },
-  { icon: 'truck-outline', labelKey: 'enro.nav.trucks', sprint: 'S4' },
+  { href: '/enro/trucks', icon: 'truck-outline', labelKey: 'enro.nav.trucks' },
   { icon: 'chart-bar', labelKey: 'enro.nav.stats', sprint: 'S6' },
   { icon: 'calendar-edit', labelKey: 'enro.nav.schedules', sprint: 'S6' },
 ];

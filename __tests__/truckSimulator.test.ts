@@ -1,12 +1,21 @@
 import { ROUTE_SCHEDULES, ROUTES, TRUCKS } from '@/data/carmona';
 import { manilaEpoch } from '@/lib/time';
-import type { Truck } from '@/services/types';
+import type { Truck, TruckEvent } from '@/services/types';
 import { getTimeline, simulateFleet, simulateTruck } from '@/simulator/truckSimulator';
 
 const truck = (id: string) => TRUCKS.find((t) => t.id === id) as Truck;
 // 2026-09-29 is a Tuesday (Tue/Fri routes run); 2026-09-30 is a Wednesday (no routes).
 const tue = (h: number, m = 0) => manilaEpoch(2026, 9, 29, h, m);
 const sim = (id: string, at: number) => simulateTruck(truck(id), ROUTE_SCHEDULES, ROUTES, at);
+const demoBreakdown = (truckId: string, at: number, minutes: number): TruckEvent => ({
+  id: `b|${truckId}|${at}`,
+  kind: 'incident',
+  incident: 'breakdown',
+  source: 'demo',
+  truckId,
+  at,
+  minutes,
+});
 
 describe('deterministic truck simulator', () => {
   it('waits at the depot before the shift starts', () => {
@@ -90,9 +99,7 @@ describe('deterministic truck simulator', () => {
   });
 
   it('stops for a breakdown and resumes later, shifting the rest of the route', () => {
-    const events = [
-      { id: 'b', kind: 'breakdown' as const, truckId: 't1', at: tue(7, 30), minutes: 60 },
-    ];
+    const events = [demoBreakdown('t1', tue(7, 30), 60)];
     const withBreakdown = (at: number) =>
       simulateTruck(truck('t1'), ROUTE_SCHEDULES, ROUTES, at, [], events);
     const during = withBreakdown(tue(8, 0));
@@ -104,9 +111,7 @@ describe('deterministic truck simulator', () => {
   });
 
   it('ignores breakdowns reported when the truck is not on its route', () => {
-    const events = [
-      { id: 'b', kind: 'breakdown' as const, truckId: 't2', at: tue(6, 0), minutes: 60 },
-    ];
+    const events = [demoBreakdown('t2', tue(6, 0), 60)];
     const s = simulateTruck(truck('t2'), ROUTE_SCHEDULES, ROUTES, tue(7, 50), [], events);
     expect(s).toEqual(sim('t2', tue(7, 50)));
   });

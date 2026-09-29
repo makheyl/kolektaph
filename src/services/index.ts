@@ -1,5 +1,7 @@
+import { isOnline } from '@/lib/network';
 import { useAnnouncements } from '@/stores/announcements';
-import { getScenarioEvents, getSimTime } from '@/stores/demo';
+import { useBackend } from '@/stores/backend';
+import { getDemoEvents, getSimTime } from '@/stores/demo';
 
 import { createMockServices } from './mock';
 import type { Services } from './types';
@@ -10,9 +12,13 @@ import type { Services } from './types';
  */
 export const services: Services = createMockServices({
   getSimTime,
-  getEvents: getScenarioEvents,
+  getEvents: () => [...getDemoEvents(), ...useBackend.getState().events],
   getAnnouncements: () => useAnnouncements.getState().items,
   addAnnouncement: (a) => useAnnouncements.getState().add(a),
+  receiveUpload: (batch) => useBackend.getState().receive(batch),
+  getTraces: () => useBackend.getState().traces,
+  isOnline,
 });
 
+export { OfflineError, SignInError } from './errors';
 export type * from './types';

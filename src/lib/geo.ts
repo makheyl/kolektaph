@@ -56,3 +56,18 @@ export function boundsOf(feature: BarangayFeature): Bounds {
 export function barangayAt(point: LngLat, barangays: BarangayCollection): BarangayFeature | null {
   return barangays.features.find((f) => booleanPointInPolygon(point, f)) ?? null;
 }
+
+/** Bounding box of a list of points (null when empty). */
+export function pointsBounds(points: LngLat[]): Bounds | null {
+  if (!points.length) return null;
+  let [w, s, e, n] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const [lng, lat] of points) {
+    w = Math.min(w, lng);
+    s = Math.min(s, lat);
+    e = Math.max(e, lng);
+    n = Math.max(n, lat);
+  }
+  // A single point (or a truck standing still) still needs an area to show.
+  const pad = 0.002;
+  return [w - pad, s - pad, e + pad, n + pad];
+}

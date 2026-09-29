@@ -6,17 +6,22 @@ import {
   todaysCollection,
 } from '@/features/schedule/collections';
 import { manilaEpoch } from '@/lib/time';
+import type { TruckEvent, TruckEventInput } from '@/services/types';
 import { simulateFleet } from '@/simulator/truckSimulator';
 
 const tue = (h: number, m = 0) => manilaEpoch(2026, 9, 29, h, m);
 
 /** Builds the Home status exactly as the app does, for a barangay at a moment. */
-function statusFor(barangayId: string | null, now: number, { dropTruck = false } = {}) {
+function statusFor(
+  barangayId: string | null,
+  now: number,
+  { dropTruck = false, events = [] as TruckEvent[] } = {},
+) {
   const occ = barangayId
     ? collectionsForBarangay(barangayId, ROUTE_SCHEDULES, ROUTES, SCHEDULE_EXCEPTIONS, now, 14)
     : [];
   const today = todaysCollection(occ, now);
-  const states = simulateFleet(TRUCKS, ROUTE_SCHEDULES, ROUTES, now, SCHEDULE_EXCEPTIONS);
+  const states = simulateFleet(TRUCKS, ROUTE_SCHEDULES, ROUTES, now, SCHEDULE_EXCEPTIONS, events);
   return homeStatus({
     barangayId,
     now,
@@ -82,5 +87,37 @@ describe('Home status: "Kailan darating ang truck?"', () => {
 
   it('is honest when there is no data from the truck', () => {
     expect(statusFor('milagrosa', tue(7, 50), { dropTruck: true }).kind).toBe('no_signal');
+  });
+
+  describe('with a driver on shift (Truck 2, Milagrosa)', () => {
+    const ev = (at: number, input: TruckEventInput) =>
+      ({ ...input, id: `h${at}`, truckId: 't2', at, source: 'driver' }) as TruckEvent;
+    const start = ev(tue(7, 0), {
+      kind: 'shift_start',
+      shiftId: 's',
+      routeId: 'r-poblacion-milagrosa',
+      crew: 3,
+    });
+
+    it('says the truck is unloading, not a made-up time', () => {
+      const events = [start, ev(tue(7, 20), { kind: 'status', status: 'to_disposal' })];
+      expect(statusFor('milagrosa', tue(7, 40), { events })).toMatchObject({
+        kind: 'paused',
+        reason: 'to_disposal',
+      });
+    });
+
+    it('names the incident (e.g. flood) in the delay', () => {
+      const events = [start, ev(tue(7, 20), { kind: 'incident', incident: 'flood', minutes: 60 })];
+      expect(statusFor('milagrosa', tue(7, 40), { events })).toMatchObject({
+        kind: 'breakdown',
+        incident: 'flood',
+      });
+    });
+
+    it('is honest when the shift ended before reaching the barangay', () => {
+      const events = [start, ev(tue(7, 20), { kind: 'shift_end', shiftId: 's' })];
+      expect(statusFor('milagrosa', tue(9, 0), { events }).kind).toBe('unfinished');
+    });
   });
 });

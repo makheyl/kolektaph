@@ -134,3 +134,9 @@ export const SMS_REGISTRATIONS: Record<string, number> = Object.fromEntries(
     Math.round((f.properties.population ?? 0) * 0.028),
   ]),
 );
+
+/**
+ * SAMPLE driver sign-in: every truck uses this PIN in the prototype (shown on the sign-in
+ * screen in demo mode). Real accounts come with the backend (per-driver PINs, lockout).
+ */
+export const DRIVER_DEMO_PIN = '1234';
