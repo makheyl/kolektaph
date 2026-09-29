@@ -1,4 +1,11 @@
-import { BARANGAYS, CITY_META, ROUTE_SCHEDULES, ROUTES, TRUCKS } from '@/data/carmona';
+import {
+  BARANGAYS,
+  CITY_META,
+  ROUTE_SCHEDULES,
+  ROUTES,
+  SCHEDULE_EXCEPTIONS,
+  TRUCKS,
+} from '@/data/carmona';
 import { simulateFleet } from '@/simulator/truckSimulator';
 
 import type { Services, TruckState } from '../types';
@@ -18,13 +25,19 @@ export function createMockServices(getSimTime: () => number): Services {
     fleet: {
       getTrucks: async () => TRUCKS,
       getRoutes: async () => ROUTES,
-      getRouteSchedules: async () => ROUTE_SCHEDULES,
       subscribeTruckStates(listener: (states: TruckState[]) => void) {
-        const emit = () => listener(simulateFleet(TRUCKS, ROUTE_SCHEDULES, ROUTES, getSimTime()));
+        const emit = () =>
+          listener(
+            simulateFleet(TRUCKS, ROUTE_SCHEDULES, ROUTES, getSimTime(), SCHEDULE_EXCEPTIONS),
+          );
         emit();
         const timer = setInterval(emit, TICK_MS);
         return () => clearInterval(timer);
       },
+    },
+    schedule: {
+      getRouteSchedules: async () => ROUTE_SCHEDULES,
+      getExceptions: async () => SCHEDULE_EXCEPTIONS,
     },
   };
 }

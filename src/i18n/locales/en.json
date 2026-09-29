@@ -9,7 +9,38 @@
     "back": "Back",
     "comingSoon": "This part is still being built. Coming in {{sprint}}.",
     "language": "Language",
-    "largeText": "Large text"
+    "largeText": "Large text",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "close": "Close",
+    "settings": "Settings",
+    "minutes": "{{count}} min"
+  },
+  "date": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "dayDate": "{{weekday}}, {{month}} {{day}}",
+    "month": {
+      "1": "Jan",
+      "2": "Feb",
+      "3": "Mar",
+      "4": "Apr",
+      "5": "May",
+      "6": "Jun",
+      "7": "Jul",
+      "8": "Aug",
+      "9": "Sep",
+      "10": "Oct",
+      "11": "Nov",
+      "12": "Dec"
+    }
+  },
+  "waste": {
+    "mixed": "Biodegradable and non-biodegradable",
+    "mixedHint": "Please keep biodegradable and non-biodegradable waste separate.",
+    "biodegradable": "Biodegradable",
+    "residual": "Residual",
+    "recyclable": "Recyclable"
   },
   "roles": {
     "title": "Who is using the app?",
@@ -68,5 +99,154 @@
   },
   "map": {
     "a11yLabel": "Map of Carmona showing {{count}} trucks"
+  },
+  "onboarding": {
+    "step": "Step {{current}} of {{total}}",
+    "language": {
+      "title": "Choose your language",
+      "subtitle": "Pumili ng wika",
+      "largeTextHint": "Make the letters bigger so they're easier to read."
+    },
+    "barangay": {
+      "title": "Which barangay do you live in?",
+      "subtitle": "So we can tell you when the truck will reach you.",
+      "search": "Search for a barangay",
+      "useLocation": "Use my location",
+      "locationWhy": "We only check your location now to find your barangay. It is not saved.",
+      "locating": "Finding your barangay…",
+      "found": "You're in {{barangay}}. Is that right?",
+      "confirm": "Yes, this is my barangay",
+      "outside": "You don't seem to be in Carmona right now. Please pick from the list.",
+      "denied": "Location permission was not given. Please pick from the list.",
+      "error": "Couldn't get your location. Please pick from the list.",
+      "noResults": "No barangay matches \"{{query}}\".",
+      "skip": "Skip for now"
+    },
+    "sms": {
+      "title": "Would you like text alerts?",
+      "subtitle": "We'll text you before the truck arrives. Works without internet or a smartphone.",
+      "previewLabel": "This is what you'll receive:",
+      "preview": "KolektaPH: {{barangay}}, 15 min na lang bago dumating ang garbage truck (~7:40 AM). Ilabas na po ang basura. Salamat!",
+      "mobileLabel": "Mobile number",
+      "mobileHint": "Example: 0917 123 4567",
+      "mobileInvalid": "Please check the number: 11 digits starting with 09.",
+      "consent": "I agree to my number being used only for garbage collection reminders. I can stop anytime by replying STOP.",
+      "consentRequired": "We need your consent before we can text you.",
+      "send": "Send the code",
+      "later": "Not now",
+      "otpTitle": "Enter the code",
+      "otpSubtitle": "We sent a 6-digit code to {{mobile}}.",
+      "otpDemo": "This is a demo, so no real text is sent. The code is {{code}}.",
+      "otpLabel": "6-digit code",
+      "otpInvalid": "Wrong code. Please try again.",
+      "verify": "Confirm",
+      "changeNumber": "Change number"
+    },
+    "done": "All set!"
+  },
+  "resident": {
+    "tabs": {
+      "home": "Home",
+      "map": "Map",
+      "kolek": "Kolek",
+      "report": "Report"
+    },
+    "home": {
+      "yourBarangay": "Your barangay",
+      "change": "Change",
+      "nextTitle": "Next collection",
+      "noSchedule": "No schedule for this barangay in the next 2 weeks.",
+      "movedNote": "Moved because of {{reason}}",
+      "pickTitle": "Choose your barangay",
+      "pickBody": "To see when the truck will reach you.",
+      "pick": "Choose a barangay",
+      "lastUpdate": "Last update: {{time}}",
+      "seeOnMap": "See on the map",
+      "actions": {
+        "map": "Map",
+        "schedule": "Schedule",
+        "report": "Report a problem",
+        "kolek": "Ask Kolek"
+      },
+      "status": {
+        "noneTodayTitle": "No collection today",
+        "noneTodayBody": "The next one is {{day}}, {{window}}.",
+        "noneTodayNoNext": "No collection scheduled in the next 2 weeks.",
+        "beforeStartTitle": "The truck hasn't left yet",
+        "beforeStartBody": "The truck leaves at {{time}}. We'll text you when it's near.",
+        "approachingTitle": "The truck is on its way",
+        "approachingBody": "The truck is in {{place}}. It should reach you around {{time}}.",
+        "approachingIn": "About {{minutes}} to go",
+        "bringOutTitle": "Bring your garbage out now!",
+        "bringOutBody": "The truck arrives around {{time}}.",
+        "bringOutIn": "Only {{minutes}} left",
+        "inBarangayTitle": "The truck is in your barangay",
+        "inBarangayStreet": "It's on {{street}} now.",
+        "inBarangayFinish": "It should finish around {{time}}.",
+        "passedTitle": "{{barangay}} has been collected",
+        "passedBody": "Collected at {{time}}.",
+        "passedNext": "Next: {{day}}, {{window}}.",
+        "fullTitle": "Delayed: the truck is full",
+        "fullBody": "Your barangay isn't finished yet. Another truck is needed. Please don't bring your garbage out yet.",
+        "noSignalTitle": "No signal from the truck",
+        "noSignalBody": "We don't know where the truck is right now. This will update automatically."
+      }
+    },
+    "map": {
+      "showMine": "My barangay",
+      "showCity": "All of Carmona",
+      "listView": "List",
+      "mapView": "Map",
+      "legendDone": "Already collected",
+      "legendNext": "Still to come",
+      "noTrucks": "No trucks are out right now.",
+      "arrives": "Reaches {{barangay}} around {{time}}",
+      "passedAt": "Already collected {{barangay}} ({{time}})",
+      "inBarangay": "Now in {{barangay}}",
+      "notOnRoute": "Not going to {{barangay}} today",
+      "upcomingStreets": "Next streets",
+      "noEta": "No time estimate while the truck is stopped.",
+      "tapTruck": "Tap a truck to see its route.",
+      "timesAreEstimates": "Times are estimates and may change."
+    },
+    "schedule": {
+      "title": "Schedule",
+      "for": "For {{barangay}}",
+      "nextTwoWeeks": "Next 2 weeks",
+      "regularDays": "Regular days: {{days}}",
+      "movedIn": "Replacement day ({{reason}})",
+      "movedOut": "No collection ({{reason}}), moved to {{day}}",
+      "cancelled": "No collection ({{reason}})",
+      "none": "No collection in the next 2 weeks.",
+      "otherBarangay": "See another barangay's schedule",
+      "pickOther": "Choose a barangay"
+    },
+    "settings": {
+      "barangay": "Barangay",
+      "changeBarangay": "Change barangay",
+      "sms": "Text alerts",
+      "smsOn": "On for {{mobile}}",
+      "smsOff": "Off",
+      "smsTurnOn": "Turn on text alerts",
+      "smsTurnOff": "Stop texts (STOP)",
+      "privacy": "Privacy notice",
+      "deleteData": "Delete my data",
+      "deleteConfirmTitle": "Delete your data?",
+      "deleteConfirmBody": "Your barangay and number will be removed from this device, and texts will stop.",
+      "deleteConfirm": "Yes, delete",
+      "switchRole": "Back to demo"
+    }
+  },
+  "privacy": {
+    "title": "Privacy notice",
+    "draft": "Prototype draft. To be reviewed by the city's Data Protection Officer.",
+    "collectTitle": "What we collect",
+    "collectBody": "Only your barangay. If you want text alerts, also your mobile number. We don't need your name, address or ID.",
+    "whyTitle": "Why",
+    "whyBody": "To show your barangay's schedule and text you before the truck arrives.",
+    "whoTitle": "Who can see it",
+    "whoBody": "Only the City ENRO, to send reminders. It is never sold or shared.",
+    "rightsTitle": "Your rights",
+    "rightsBody": "You can stop texts anytime (reply STOP) and delete your data in Settings. This follows the Data Privacy Act of 2012 (RA 10173)."
   }
 }

@@ -68,6 +68,24 @@ export function formatClock(epochMs: number): string {
   return `${h12}:${String(minute).padStart(2, '0')} ${hour < 12 ? 'AM' : 'PM'}`;
 }
 
+/** "YYYY-MM-DD" of the Manila calendar day containing `epochMs`. */
+export function manilaDateKey(epochMs: number): string {
+  const { year, month, day } = manilaParts(epochMs);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** Epoch ms of Manila midnight for a "YYYY-MM-DD" key. */
+export function parseDateKey(key: string): number {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  if (!m) throw new Error(`Invalid date key "${key}", expected YYYY-MM-DD`);
+  return manilaEpoch(Number(m[1]), Number(m[2]), Number(m[3]));
+}
+
+/** Whole Manila calendar days from `fromMs`'s day to `toMs`'s day (0 = same day, 1 = tomorrow). */
+export function manilaDayDiff(fromMs: number, toMs: number): number {
+  return Math.round((manilaStartOfDay(toMs) - manilaStartOfDay(fromMs)) / DAY);
+}
+
 /** Next Manila date (today included) whose weekday is `weekday`, at `hhmm`. */
 export function nextWeekdayAt(fromEpochMs: number, weekday: Weekday, hhmm: string): number {
   const today = manilaParts(fromEpochMs).weekday;

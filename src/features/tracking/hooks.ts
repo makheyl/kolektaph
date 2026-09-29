@@ -21,7 +21,18 @@ export const useRoutes = () =>
   useQuery({ queryKey: ['routes'], queryFn: services.fleet.getRoutes, ...STATIC });
 
 export const useRouteSchedules = () =>
-  useQuery({ queryKey: ['routeSchedules'], queryFn: services.fleet.getRouteSchedules, ...STATIC });
+  useQuery({
+    queryKey: ['routeSchedules'],
+    queryFn: services.schedule.getRouteSchedules,
+    ...STATIC,
+  });
+
+export const useScheduleExceptions = () =>
+  useQuery({
+    queryKey: ['scheduleExceptions'],
+    queryFn: services.schedule.getExceptions,
+    ...STATIC,
+  });
 
 /** Live truck states from the fleet service (simulator today, realtime backend later). */
 export function useTruckStates(): TruckState[] {

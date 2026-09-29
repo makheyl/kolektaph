@@ -3,7 +3,14 @@
  * trucks, routes and schedules are SAMPLE data until validated with the City ENRO.
  * Regenerate the JSON fixtures with `node scripts/data/build-carmona-data.mjs`.
  */
-import type { BarangayCollection, CityMeta, Route, RouteSchedule, Truck } from '@/services/types';
+import type {
+  BarangayCollection,
+  CityMeta,
+  Route,
+  RouteSchedule,
+  ScheduleException,
+  Truck,
+} from '@/services/types';
 
 import barangaysJson from './barangays.json';
 import metaJson from './meta.json';
@@ -79,5 +86,33 @@ export const ROUTE_SCHEDULES: RouteSchedule[] = [
     windowEnd: '10:00',
     wasteType: 'mixed',
     expectedLoad: 0.6,
+  },
+];
+
+/**
+ * SAMPLE holiday changes. The holidays are real 2026 Philippine regular holidays that fall on
+ * collection days; the replacement dates are illustrative until the ENRO sets its policy.
+ */
+export const SCHEDULE_EXCEPTIONS: ScheduleException[] = [
+  {
+    date: '2026-11-30',
+    routeIds: ['r-bancal', 'r-cabilang-baybay'],
+    action: 'move',
+    moveTo: '2026-12-02',
+    reason: { fil: 'Araw ni Bonifacio', en: 'Bonifacio Day' },
+  },
+  {
+    date: '2026-12-25',
+    routeIds: ['r-lantic', 'r-milagrosa', 'r-mabuhay', 'r-poblacion-maduya'],
+    action: 'move',
+    moveTo: '2026-12-26',
+    reason: { fil: 'Pasko', en: 'Christmas Day' },
+  },
+  {
+    date: '2027-01-01',
+    routeIds: ['r-lantic', 'r-milagrosa', 'r-mabuhay', 'r-poblacion-maduya'],
+    action: 'move',
+    moveTo: '2027-01-02',
+    reason: { fil: 'Bagong Taon', en: "New Year's Day" },
   },
 ];

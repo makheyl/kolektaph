@@ -5,6 +5,7 @@
 // Type-only import (erased at runtime, safe on web). maplibre-gl bundles a newer style-spec
 // copy; the native package's types are the stricter subset, which both platforms accept.
 import type {
+  CircleLayerSpecification,
   FillLayerSpecification,
   LineLayerSpecification,
   SymbolLayerSpecification,
@@ -21,9 +22,57 @@ export const SOURCE_IDS = {
   zones: 'kph-zones',
   zoneLabels: 'kph-zone-labels',
   routes: 'kph-routes',
+  previewDone: 'kph-preview-done',
+  previewNext: 'kph-preview-next',
+  previewTimes: 'kph-preview-times',
 } as const;
 
 type SourcelessLayer<T> = Omit<T, 'source'>;
+
+/** Route preview (pitch slide 11): solid green = already collected. */
+export const previewDoneLayer: SourcelessLayer<LineLayerSpecification> = {
+  id: 'kph-preview-done',
+  type: 'line',
+  layout: { 'line-cap': 'round', 'line-join': 'round' },
+  paint: { 'line-color': colors.green, 'line-width': 6 },
+};
+
+/** Dashed navy = streets still to come. Dashes (not only colour) carry the meaning. */
+export const previewNextLayer: SourcelessLayer<LineLayerSpecification> = {
+  id: 'kph-preview-next',
+  type: 'line',
+  layout: { 'line-join': 'round' },
+  paint: { 'line-color': colors.navy, 'line-width': 4, 'line-dasharray': [2, 1.5] },
+};
+
+export const previewTimeDotLayer: SourcelessLayer<CircleLayerSpecification> = {
+  id: 'kph-preview-time-dot',
+  type: 'circle',
+  paint: {
+    'circle-radius': 5,
+    'circle-color': colors.surface,
+    'circle-stroke-color': colors.navy,
+    'circle-stroke-width': 2,
+  },
+};
+
+export const previewTimeLabelLayer: SourcelessLayer<SymbolLayerSpecification> = {
+  id: 'kph-preview-time-label',
+  type: 'symbol',
+  layout: {
+    'text-field': ['get', 'label'],
+    'text-font': ['Noto Sans Bold'],
+    'text-size': 13,
+    'text-anchor': 'bottom',
+    'text-offset': [0, -0.6],
+    'text-allow-overlap': false,
+  },
+  paint: {
+    'text-color': colors.navy,
+    'text-halo-color': '#FFFFFF',
+    'text-halo-width': 2,
+  },
+};
 
 export function zoneFillLayer(
   highlightId: string | null | undefined,

@@ -69,6 +69,18 @@ export interface RouteSchedule {
   expectedLoad: number;
 }
 
+/** A holiday or one-off change to the regular schedule, on a Manila calendar date. */
+export interface ScheduleException {
+  /** "YYYY-MM-DD" (Asia/Manila) of the regular collection that changes. */
+  date: string;
+  /** Affected routes, or 'all'. */
+  routeIds: string[] | 'all';
+  action: 'cancel' | 'move';
+  /** For 'move': the replacement date "YYYY-MM-DD". */
+  moveTo?: string;
+  reason: { fil: string; en: string };
+}
+
 export type TruckStatus =
   | 'off_duty'
   | 'not_started'
@@ -79,6 +91,11 @@ export type TruckStatus =
   | 'breakdown'
   | 'no_signal'
   | 'done';
+
+export interface BarangayVisitLog {
+  startedAt: number | null;
+  finishedAt: number | null;
+}
 
 export interface TruckState {
   truckId: string;
@@ -96,6 +113,11 @@ export interface TruckState {
   load: number;
   /** Simulated time this state describes (epoch ms). */
   at: number;
+  /**
+   * Service log for today's route: when the truck started and finished collecting in each
+   * barangay. A backend derives this from GPS; the simulator derives it from its timeline.
+   */
+  visits: Record<string, BarangayVisitLog>;
 }
 
 // ---------- Services (screens only talk to these) ----------
@@ -108,12 +130,17 @@ export interface GeoService {
 export interface FleetService {
   getTrucks(): Promise<Truck[]>;
   getRoutes(): Promise<Route[]>;
-  getRouteSchedules(): Promise<RouteSchedule[]>;
   /** Pushes the current state of every truck whenever it changes. Returns an unsubscribe function. */
   subscribeTruckStates(listener: (states: TruckState[]) => void): () => void;
+}
+
+export interface ScheduleService {
+  getRouteSchedules(): Promise<RouteSchedule[]>;
+  getExceptions(): Promise<ScheduleException[]>;
 }
 
 export interface Services {
   geo: GeoService;
   fleet: FleetService;
+  schedule: ScheduleService;
 }

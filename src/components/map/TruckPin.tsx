@@ -8,27 +8,58 @@ import { colors, radius } from '@/theme/tokens';
 
 import type { MapTruck } from './types';
 
-/** Map marker: status icon in a coloured circle plus the truck code, the same on web and native. */
-export function TruckPin({ truck, onPress }: { truck: MapTruck; onPress?: () => void }) {
+interface TruckPinProps {
+  truck: MapTruck;
+  selected?: boolean;
+  onPress?: () => void;
+}
+
+/**
+ * Map marker: status icon in a coloured circle plus the truck code, the same on web and native.
+ * Selection is shown by size, a yellow ring AND an inverted code tag (not colour alone).
+ */
+export function TruckPin({ truck, selected, onPress }: TruckPinProps) {
   const { t } = useTranslation();
   const meta = TRUCK_STATUS_META[truck.status];
   const label = t('truck.pinLabel', {
     name: truck.name,
     status: t(`truck.status.${truck.status}`),
   });
+  const size = selected ? 52 : 40;
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ selected: !!selected }}
       hitSlop={8}
       style={styles.wrap}
     >
-      <View style={[styles.circle, { backgroundColor: meta.color }]}>
-        <Icon name={meta.icon} size={22} color={colors.textOnDark} />
+      <View
+        style={[
+          styles.circle,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: meta.color,
+            borderColor: selected ? colors.yellow : colors.surface,
+          },
+        ]}
+      >
+        <Icon name={meta.icon} size={selected ? 28 : 22} color={colors.textOnDark} />
       </View>
-      <View style={[styles.tag, { borderColor: meta.color }]}>
-        <AppText variant="caption" style={styles.code}>
+      <View
+        style={[
+          styles.tag,
+          { borderColor: meta.color, backgroundColor: selected ? colors.navy : colors.surface },
+        ]}
+      >
+        <AppText
+          variant="caption"
+          color={selected ? colors.textOnDark : colors.text}
+          style={styles.code}
+        >
           {truck.code}
         </AppText>
       </View>
@@ -39,17 +70,12 @@ export function TruckPin({ truck, onPress }: { truck: MapTruck; onPress?: () => 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center' },
   circle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: colors.surface,
   },
   tag: {
     marginTop: -4,
-    backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderRadius: radius.pill,
     paddingHorizontal: 6,

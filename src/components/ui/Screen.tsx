@@ -13,7 +13,10 @@ interface ScreenProps {
 
 export function Screen({ children, width = 'resident', scroll = true }: ScreenProps) {
   const maxWidth = width === 'resident' ? layout.residentMaxWidth : layout.pageMaxWidth;
-  const content = <View style={[styles.content, { maxWidth }]}>{children}</View>;
+  // Without scrolling, the content fills the screen so a map can take the remaining height.
+  const content = (
+    <View style={[styles.content, { maxWidth }, !scroll && styles.fill]}>{children}</View>
+  );
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       {scroll ? (
@@ -36,4 +39,5 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.xl,
   },
+  fill: { flex: 1, gap: spacing.md },
 });

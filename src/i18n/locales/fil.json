@@ -9,7 +9,38 @@
     "back": "Bumalik",
     "comingSoon": "Ginagawa pa ang bahaging ito. Darating sa {{sprint}}.",
     "language": "Wika",
-    "largeText": "Malaking teksto"
+    "largeText": "Malaking teksto",
+    "continue": "Magpatuloy",
+    "cancel": "Huwag na",
+    "close": "Isara",
+    "settings": "Mga setting",
+    "minutes": "{{count}} minuto"
+  },
+  "date": {
+    "today": "Ngayon",
+    "tomorrow": "Bukas",
+    "dayDate": "{{weekday}}, {{month}} {{day}}",
+    "month": {
+      "1": "Ene",
+      "2": "Peb",
+      "3": "Mar",
+      "4": "Abr",
+      "5": "May",
+      "6": "Hun",
+      "7": "Hul",
+      "8": "Ago",
+      "9": "Set",
+      "10": "Okt",
+      "11": "Nob",
+      "12": "Dis"
+    }
+  },
+  "waste": {
+    "mixed": "Nabubulok at di-nabubulok",
+    "mixedHint": "Ihiwalay po ang nabubulok at di-nabubulok.",
+    "biodegradable": "Nabubulok",
+    "residual": "Di-nabubulok",
+    "recyclable": "Puwedeng i-recycle"
   },
   "roles": {
     "title": "Sino ang gagamit?",
@@ -68,5 +99,154 @@
   },
   "map": {
     "a11yLabel": "Mapa ng Carmona na may {{count}} truck na nakikita"
+  },
+  "onboarding": {
+    "step": "Hakbang {{current}} sa {{total}}",
+    "language": {
+      "title": "Pumili ng wika",
+      "subtitle": "Choose your language",
+      "largeTextHint": "Palakihin ang mga letra para mas madaling basahin."
+    },
+    "barangay": {
+      "title": "Saang barangay ka nakatira?",
+      "subtitle": "Para malaman namin kung kailan darating ang truck sa inyo.",
+      "search": "Hanapin ang barangay",
+      "useLocation": "Gamitin ang lokasyon ko",
+      "locationWhy": "Titingnan lang namin ang lokasyon mo ngayon para mahanap ang barangay. Hindi ito ise-save.",
+      "locating": "Hinahanap ang barangay mo…",
+      "found": "Nasa {{barangay}} ka. Tama ba?",
+      "confirm": "Oo, ito ang barangay ko",
+      "outside": "Mukhang wala ka sa Carmona ngayon. Pumili na lang sa listahan.",
+      "denied": "Hindi pinayagan ang lokasyon. Pumili na lang sa listahan.",
+      "error": "Hindi makuha ang lokasyon. Pumili na lang sa listahan.",
+      "noResults": "Walang barangay na \"{{query}}\".",
+      "skip": "Laktawan muna"
+    },
+    "sms": {
+      "title": "Gusto mo bang ma-text?",
+      "subtitle": "Ite-text ka namin bago dumating ang truck. Gumagana kahit walang internet o smartphone.",
+      "previewLabel": "Ganito ang matatanggap mo:",
+      "preview": "KolektaPH: {{barangay}}, 15 min na lang bago dumating ang garbage truck (~7:40 AM). Ilabas na po ang basura. Salamat!",
+      "mobileLabel": "Mobile number",
+      "mobileHint": "Halimbawa: 0917 123 4567",
+      "mobileInvalid": "Pakisuri ang number: 11 digits at nagsisimula sa 09.",
+      "consent": "Pumapayag akong gamitin ang number ko para lang sa mga paalala tungkol sa koleksyon ng basura. Puwede akong tumigil anumang oras sa pag-reply ng STOP.",
+      "consentRequired": "Kailangan ang pahintulot mo para ma-text ka.",
+      "send": "Ipadala ang code",
+      "later": "Mamaya na",
+      "otpTitle": "Ilagay ang code",
+      "otpSubtitle": "Nagpadala kami ng 6-digit code sa {{mobile}}.",
+      "otpDemo": "Demo lang ito, walang totoong text. Ang code ay {{code}}.",
+      "otpLabel": "6-digit code",
+      "otpInvalid": "Mali ang code. Subukan ulit.",
+      "verify": "Kumpirmahin",
+      "changeNumber": "Palitan ang number"
+    },
+    "done": "Handa na!"
+  },
+  "resident": {
+    "tabs": {
+      "home": "Bahay",
+      "map": "Mapa",
+      "kolek": "Kolek",
+      "report": "Report"
+    },
+    "home": {
+      "yourBarangay": "Ang barangay mo",
+      "change": "Palitan",
+      "nextTitle": "Susunod na koleksyon",
+      "noSchedule": "Wala pang iskedyul para sa barangay na ito sa susunod na 2 linggo.",
+      "movedNote": "Inilipat dahil sa {{reason}}",
+      "pickTitle": "Piliin ang barangay mo",
+      "pickBody": "Para makita kung kailan darating ang truck sa inyo.",
+      "pick": "Pumili ng barangay",
+      "lastUpdate": "Huling update: {{time}}",
+      "seeOnMap": "Tingnan sa mapa",
+      "actions": {
+        "map": "Mapa",
+        "schedule": "Iskedyul",
+        "report": "Mag-report",
+        "kolek": "Tanong kay Kolek"
+      },
+      "status": {
+        "noneTodayTitle": "Walang koleksyon ngayon",
+        "noneTodayBody": "Ang susunod ay {{day}}, {{window}}.",
+        "noneTodayNoNext": "Walang nakatakdang koleksyon sa susunod na 2 linggo.",
+        "beforeStartTitle": "Hindi pa umaalis ang truck",
+        "beforeStartBody": "Aalis ang truck nang {{time}}. Ite-text ka namin kapag malapit na.",
+        "approachingTitle": "Papunta na ang truck",
+        "approachingBody": "Nasa {{place}} ang truck. Darating sa inyo mga {{time}}.",
+        "approachingIn": "Mga {{minutes}} pa",
+        "bringOutTitle": "Ilabas na ang basura!",
+        "bringOutBody": "Darating ang truck mga {{time}}.",
+        "bringOutIn": "{{minutes}} na lang",
+        "inBarangayTitle": "Nasa barangay mo na ang truck",
+        "inBarangayStreet": "Nasa {{street}} ngayon.",
+        "inBarangayFinish": "Matatapos mga {{time}}.",
+        "passedTitle": "Nadaanan na ang {{barangay}}",
+        "passedBody": "Nakolekta nang {{time}}.",
+        "passedNext": "Susunod: {{day}}, {{window}}.",
+        "fullTitle": "Naantala: puno na ang truck",
+        "fullBody": "Hindi pa tapos ang barangay mo. Hinihintay ang susunod na truck. Huwag munang ilabas ang basura.",
+        "noSignalTitle": "Walang signal mula sa truck",
+        "noSignalBody": "Hindi namin alam kung nasaan ang truck ngayon. Awtomatiko itong mag-a-update."
+      }
+    },
+    "map": {
+      "showMine": "Ang barangay ko",
+      "showCity": "Buong Carmona",
+      "listView": "Listahan",
+      "mapView": "Mapa",
+      "legendDone": "Nadaanan na",
+      "legendNext": "Dadaanan pa",
+      "noTrucks": "Walang truck na umiikot ngayon.",
+      "arrives": "Darating sa {{barangay}} mga {{time}}",
+      "passedAt": "Nadaanan na ang {{barangay}} ({{time}})",
+      "inBarangay": "Nasa {{barangay}} na",
+      "notOnRoute": "Hindi dadaan sa {{barangay}} ngayon",
+      "upcomingStreets": "Mga susunod na kalye",
+      "noEta": "Walang tantiyang oras habang nakahinto ang truck.",
+      "tapTruck": "Pindutin ang truck para makita ang ruta nito.",
+      "timesAreEstimates": "Tantiya lang ang mga oras at puwedeng magbago."
+    },
+    "schedule": {
+      "title": "Iskedyul",
+      "for": "Para sa {{barangay}}",
+      "nextTwoWeeks": "Susunod na 2 linggo",
+      "regularDays": "Regular na araw: {{days}}",
+      "movedIn": "Pinalit na araw ({{reason}})",
+      "movedOut": "Walang koleksyon ({{reason}}), inilipat sa {{day}}",
+      "cancelled": "Walang koleksyon ({{reason}})",
+      "none": "Walang koleksyon sa susunod na 2 linggo.",
+      "otherBarangay": "Tingnan ang iskedyul ng ibang barangay",
+      "pickOther": "Pumili ng barangay"
+    },
+    "settings": {
+      "barangay": "Barangay",
+      "changeBarangay": "Palitan ang barangay",
+      "sms": "Text alert",
+      "smsOn": "Naka-on para sa {{mobile}}",
+      "smsOff": "Naka-off",
+      "smsTurnOn": "I-on ang text alert",
+      "smsTurnOff": "Itigil ang text (STOP)",
+      "privacy": "Paunawa sa privacy",
+      "deleteData": "Burahin ang data ko",
+      "deleteConfirmTitle": "Burahin ang data mo?",
+      "deleteConfirmBody": "Mabubura ang barangay at number mo sa device na ito, at hihinto ang mga text.",
+      "deleteConfirm": "Oo, burahin",
+      "switchRole": "Bumalik sa demo"
+    }
+  },
+  "privacy": {
+    "title": "Paunawa sa privacy",
+    "draft": "Draft para sa prototype. Ire-review pa ng Data Protection Officer ng lungsod.",
+    "collectTitle": "Ano ang kinukuha namin",
+    "collectBody": "Ang barangay mo lang. Kung gusto mong ma-text, ang mobile number mo rin. Hindi namin kailangan ang pangalan, address o ID mo.",
+    "whyTitle": "Bakit",
+    "whyBody": "Para maipakita ang iskedyul ng barangay mo at ma-text ka bago dumating ang truck.",
+    "whoTitle": "Sino ang makakakita",
+    "whoBody": "Ang City ENRO lang, para sa pagpapadala ng paalala. Hindi ito ibebenta o ibibigay sa iba.",
+    "rightsTitle": "Ang karapatan mo",
+    "rightsBody": "Puwede mong itigil ang text anumang oras (reply STOP) at burahin ang data mo sa Mga setting. Sumusunod ito sa Data Privacy Act of 2012 (RA 10173)."
   }
 }

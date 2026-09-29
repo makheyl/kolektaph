@@ -13,7 +13,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 import i18n from '@/i18n';
-import { useSettings } from '@/stores/settings';
+import { useSettings, useSettingsHydrated } from '@/stores/settings';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -27,6 +27,8 @@ export default function RootLayout() {
     Inter_800ExtraBold,
   });
   const language = useSettings((s) => s.language);
+  // Wait for saved settings so returning residents never see onboarding flash by.
+  const hydrated = useSettingsHydrated();
 
   useEffect(() => {
     void i18n.changeLanguage(language);
@@ -34,11 +36,12 @@ export default function RootLayout() {
     if (Platform.OS === 'web') document.documentElement.lang = language;
   }, [language]);
 
+  const ready = fontsLoaded && hydrated;
   useEffect(() => {
-    if (fontsLoaded) void SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+    if (ready) void SplashScreen.hideAsync();
+  }, [ready]);
 
-  if (!fontsLoaded) return null;
+  if (!ready) return null;
 
   return (
     <QueryClientProvider client={queryClient}>

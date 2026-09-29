@@ -1,5 +1,7 @@
 import type { StyleProp, ViewStyle } from 'react-native';
 
+import type { RoutePreview } from '@/features/tracking/routePreview';
+import type { Bounds } from '@/lib/geo';
 import type { BarangayCollection, CityMeta, LngLat, Route, TruckStatus } from '@/services/types';
 
 export interface MapTruck {
@@ -15,9 +17,14 @@ export interface KMapProps {
   barangays: BarangayCollection;
   meta: CityMeta;
   trucks: MapTruck[];
-  /** Routes drawn as thin dashed lines (today's routes). */
+  /** Routes drawn as thin dashed lines (e.g. all of today's routes on the demo screen). */
   routes?: Route[];
+  /** One truck's route split into collected (solid) and upcoming (dashed) with time labels. */
+  routePreview?: RoutePreview | null;
   highlightBarangayId?: string | null;
+  selectedTruckId?: string | null;
+  /** Moves the camera whenever `key` changes. */
+  fitBounds?: { bounds: Bounds; key: string } | null;
   onTruckPress?: (truckId: string) => void;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel: string;

@@ -1,12 +1,16 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { setWorkerUrl } from 'maplibre-gl';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { View } from 'react-native';
-import { Layer, Map as MapLibreMap, Marker, Source } from 'react-map-gl/maplibre';
+import { Layer, Map as MapLibreMap, type MapRef, Marker, Source } from 'react-map-gl/maplibre';
 
 import {
   MAP_STYLE_URL,
+  previewDoneLayer,
+  previewNextLayer,
+  previewTimeDotLayer,
+  previewTimeLabelLayer,
   routeLineLayer,
   routeLines,
   SOURCE_IDS,
@@ -27,18 +31,38 @@ export function KMap({
   meta,
   trucks,
   routes,
+  routePreview,
   highlightBarangayId,
+  selectedTruckId,
+  fitBounds,
   onTruckPress,
   style,
   accessibilityLabel,
 }: KMapProps) {
+  const mapRef = useRef<MapRef>(null);
   const labels = useMemo(() => zoneLabelPoints(barangays), [barangays]);
   const lines = useMemo(() => routeLines(routes ?? []), [routes]);
   const [[west, south], [east, north]] = meta.bounds;
 
+  const fitKey = fitBounds?.key;
+  useEffect(() => {
+    if (!fitBounds) return;
+    const [w, s, e, n] = fitBounds.bounds;
+    mapRef.current?.fitBounds(
+      [
+        [w, s],
+        [e, n],
+      ],
+      { padding: 40, duration: 600 },
+    );
+    // Only move when the caller asks (key changes), not on every re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fitKey]);
+
   return (
     <View style={style} accessibilityLabel={accessibilityLabel}>
       <MapLibreMap
+        ref={mapRef}
         initialViewState={{
           bounds: [west, south, east, north],
           fitBoundsOptions: { padding: 24 },
@@ -57,17 +81,38 @@ export function KMap({
         <Source id={SOURCE_IDS.routes} type="geojson" data={lines}>
           <Layer {...routeLineLayer} />
         </Source>
+        {routePreview ? (
+          <>
+            <Source id={SOURCE_IDS.previewDone} type="geojson" data={routePreview.done}>
+              <Layer {...previewDoneLayer} />
+            </Source>
+            <Source id={SOURCE_IDS.previewNext} type="geojson" data={routePreview.next}>
+              <Layer {...previewNextLayer} />
+            </Source>
+          </>
+        ) : null}
         <Source id={SOURCE_IDS.zoneLabels} type="geojson" data={labels}>
           <Layer {...zoneLabelLayer} />
         </Source>
+        {routePreview ? (
+          <Source id={SOURCE_IDS.previewTimes} type="geojson" data={routePreview.timeLabels}>
+            <Layer {...previewTimeDotLayer} />
+            <Layer {...previewTimeLabelLayer} />
+          </Source>
+        ) : null}
         {trucks.map((truck) => (
           <Marker
             key={truck.id}
             longitude={truck.position[0]}
             latitude={truck.position[1]}
             anchor="bottom"
+            style={{ zIndex: truck.id === selectedTruckId ? 2 : 1 }}
           >
-            <TruckPin truck={truck} onPress={() => onTruckPress?.(truck.id)} />
+            <TruckPin
+              truck={truck}
+              selected={truck.id === selectedTruckId}
+              onPress={() => onTruckPress?.(truck.id)}
+            />
           </Marker>
         ))}
       </MapLibreMap>
