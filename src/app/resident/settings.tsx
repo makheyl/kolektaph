@@ -16,6 +16,7 @@ import { barangayLabel } from '@/features/resident/format';
 import { useBarangays } from '@/features/tracking/hooks';
 import { goBack } from '@/lib/navigation';
 import { maskPhMobile } from '@/lib/phone';
+import { useMyReports } from '@/stores/myReports';
 import { useSettings } from '@/stores/settings';
 import { colors, spacing } from '@/theme/tokens';
 
@@ -115,6 +116,8 @@ export default function SettingsScreen() {
             label={t('resident.settings.deleteConfirm')}
             onPress={() => {
               deleteMyData();
+              // Report numbers and the claim street are the resident's data too.
+              useMyReports.getState().clear();
               router.replace('/onboarding/language');
             }}
           />

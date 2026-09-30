@@ -71,9 +71,10 @@
     "scenarioTitle": "Mga pangyayari (demo)",
     "scenarioHint": "Mag-trigger ng problema para makita ang mga delay alert at ang dashboard ng City ENRO.",
     "breakdown": "Masira ang {{truck}} ngayon (2 oras)",
-    "clearEvents": "I-reset ang mga pangyayari at ulat ng driver",
+    "clearEvents": "I-reset ang mga pangyayari, ulat ng driver at mga report",
     "activeEvents": "{{count}} pangyayari ang naka-set",
-    "bridgeHint": "Tip: buksan ang Driver at ang City ENRO sa magkahiwalay na tab. Konektado sila, parang dalawang device na iisa ang server."
+    "bridgeHint": "Tip: buksan ang Driver at ang City ENRO sa magkahiwalay na tab. Konektado sila, parang dalawang device na iisa ang server.",
+    "resetTickets": "Ibinalik din ang mga halimbawang report."
   },
   "truck": {
     "status": {
@@ -296,7 +297,8 @@
       "stats": "Estadistika",
       "schedules": "Iskedyul",
       "soon": "Sa {{sprint}}",
-      "backToDemo": "Bumalik sa demo"
+      "backToDemo": "Bumalik sa demo",
+      "missed": "Hindi nadaanan"
     },
     "live": {
       "title": "Live Operations",
@@ -397,13 +399,80 @@
         "incident": "Aberya: {{incident}} (tantiya {{duration}})",
         "incident_end": "Naayos ang aberya",
         "street_collected": "Nakolekta: {{street}}",
-        "street_skipped": "Nilaktawan: {{street}} ({{reason}})"
+        "street_skipped": "Nilaktawan: {{street}} ({{reason}})",
+        "task_start": "Papunta sa {{ticket}}",
+        "task_done": "Nakolekta: {{ticket}}"
       },
       "traceTitle": "GPS na natanggap",
       "traceNone": "Wala pang GPS na natanggap mula sa driver app.",
       "traceSummary": "{{count}} lokasyon · {{distance}} · huli {{ago}}",
       "traceElsewhere": "Wala sa Carmona ang mga lokasyong ito (hal. field test).",
       "showTrace": "Ipakita ang GPS sa mapa"
+    },
+    "reports": {
+      "title": "Mga report",
+      "subtitle": "{{open}} bukas · {{high}} mataas ang priority",
+      "filterOpen": "Bukas",
+      "filterAll": "Lahat",
+      "filterClosed": "Sarado",
+      "filterEmergency": "Emergency lang",
+      "allBarangays": "Lahat ng barangay",
+      "empty": "Walang report dito.",
+      "select": "Pumili ng report sa listahan.",
+      "age": "{{time}} ang nakaraan",
+      "details": "Detalye",
+      "reporter": "Nag-report",
+      "noContact": "walang numero",
+      "source": {
+        "resident": "Residente",
+        "claim": "Hindi nadaanan (GPS)",
+        "enro": "City ENRO"
+      },
+      "breakdown": "Paano nakuha ang score",
+      "parts": {
+        "base": "Uri",
+        "size": "Laki",
+        "waterway": "Malapit sa tubig",
+        "sensitive": "Malapit sa paaralan, palengke o klinika",
+        "repeat": "Paulit-ulit sa lugar",
+        "age": "Tagal nang bukas"
+      },
+      "suggestionTitle": "Mungkahi",
+      "suggestMerge": "Parehong lugar at uri ng {{ticket}} sa loob ng 72 oras: pagsamahin.",
+      "suggestDispatch": "{{mode}}: {{truck}}{{distance}}",
+      "specialCrew": "espesyal na crew",
+      "humansDecide": "Mungkahi lang ito. Ang staff ang magpapasya.",
+      "apply": "Sundin ang mungkahi",
+      "actions": "Mga aksyon",
+      "verify": "I-verify",
+      "assign": "Ipadala",
+      "assignTo": "Ipadala sa",
+      "modeLabel": "Paraan",
+      "merge": "Pagsamahin",
+      "mergeInto": "Pagsamahin sa",
+      "reject": "Huwag tanggapin",
+      "rejectReason": "Dahilan (makikita ng nag-report)",
+      "rejectReasons": {
+        "no_waste": "Walang basura sa larawan",
+        "inappropriate": "Hindi angkop na larawan",
+        "duplicate": "Kapareho ng ibang report"
+      },
+      "education": "Paalala sa iskedyul",
+      "educationNote": "Maling araw ng paglabas ng basura. Susunod na koleksyon: {{day}}.",
+      "collect": "Markahang nakolekta",
+      "collectHint": "Kailangan ang larawan pagkatapos.",
+      "done": "Nagawa.",
+      "missedFrom": "Kalye: {{street}} · {{day}}",
+      "dispatched": "{{mode}} · {{truck}}"
+    },
+    "missed": {
+      "title": "Kalyeng hindi nadaanan",
+      "subtitle": "GPS check at tala ng crew",
+      "today": "Ngayon",
+      "empty": "Walang kalyeng hindi nadaanan sa araw na ito.",
+      "schedule": "Iskedyul ang muling pagkolekta",
+      "scheduled": "May ticket: {{ticket}}",
+      "count": "{{count}} kalye"
     }
   },
   "incident": {
@@ -597,6 +666,255 @@
       "notificationBody": "Kinukuha ang lokasyon ng truck habang naka-shift lang.",
       "mapTitle": "Na-record na ruta",
       "noFixes": "Wala pang na-record na lokasyon."
+    },
+    "tasks": {
+      "title": "Espesyal na koleksyon",
+      "count": "Espesyal na koleksyon ({{count}})",
+      "none": "Walang espesyal na koleksyon.",
+      "open": "Buksan",
+      "due": "Target: {{time}}",
+      "start": "Papunta na",
+      "startedNote": "Papunta na ang crew.",
+      "before": "Larawan bago kunin",
+      "after": "Larawan pagkatapos",
+      "done": "Nakolekta na",
+      "needPhotos": "Kailangan ang larawan bago at pagkatapos.",
+      "sent": "Naitala. Ipapaalam sa nag-report.",
+      "landmark": "Palatandaan: {{landmark}}",
+      "residentPhotos": "Larawan ng nag-report",
+      "doneState": "Tapos na ito."
     }
+  },
+  "reports": {
+    "samplePhoto": "Halimbawang larawan",
+    "category": {
+      "MISSED": "Hindi nadaanan",
+      "OVERFLOW": "Umaapaw na basurahan",
+      "DUMPING": "Tambak o illegal na tapunan",
+      "WATERWAY": "Basura sa kanal o ilog",
+      "EVENT": "Basura mula sa okasyon",
+      "BULKY": "Malalaking basura",
+      "DEBRIS": "Kalat pagkatapos ng baha o bagyo",
+      "HAZARD": "Mapanganib na basura",
+      "ANIMAL": "Patay na hayop",
+      "BURNING": "May nagsusunog ng basura"
+    },
+    "categoryHint": {
+      "MISSED": "Hindi dumaan ang truck sa nakatakdang araw",
+      "OVERFLOW": "Communal bin o tapunan na puno na",
+      "DUMPING": "Tambak sa bakanteng lote, kalsada o tulay",
+      "WATERWAY": "Basura sa loob o tabi ng kanal, sapa o estero",
+      "EVENT": "Pagkatapos ng pista, lamay o salu-salo",
+      "BULKY": "Kutson, muwebles, lumang appliance",
+      "DEBRIS": "Sanga, putik at basura na dala ng baha",
+      "HAZARD": "Baterya, kemikal, basag na bote, basura ng ospital",
+      "ANIMAL": "Hayop na patay sa kalsada",
+      "BURNING": "Hindi ito pickup. Aabisuhan ang enforcement."
+    },
+    "size": {
+      "bags": "1–2 bag",
+      "pile": "Tambak",
+      "truckload": "Isang trak"
+    },
+    "priority": {
+      "high": "Mataas",
+      "medium": "Katamtaman",
+      "low": "Mababa"
+    },
+    "priorityScore": "{{level}} · {{score}}",
+    "status": {
+      "submitted": "Natanggap",
+      "verified": "Na-verify",
+      "scheduled": "Naka-iskedyul",
+      "in_progress": "Papunta na ang crew",
+      "collected": "Nakolekta",
+      "closed": "Sarado",
+      "merged": "Pinagsama sa ibang report",
+      "rejected": "Hindi tinanggap"
+    },
+    "event": {
+      "submitted": "Natanggap ang report",
+      "verified": "Na-verify ng City ENRO",
+      "dispatched": "Naka-iskedyul ang pagkolekta",
+      "started": "Papunta na ang crew",
+      "collected": "Nakolekta (may larawan ng crew)",
+      "reopened": "Binuksan ulit: hindi pa nakuha",
+      "rated": "Na-rate: {{stars}} sa 5",
+      "closed": "Isinara",
+      "education": "Paalala tungkol sa tamang iskedyul",
+      "merged": "Pinagsama sa {{ticket}}",
+      "rejected": "Hindi tinanggap: {{reason}}"
+    },
+    "by": {
+      "resident": "residente",
+      "enro": "City ENRO",
+      "driver": "crew ng truck",
+      "system": "awtomatiko"
+    },
+    "dispatchMode": {
+      "add_to_route": "Idinagdag sa ruta ng truck",
+      "special_pickup": "Espesyal na pickup",
+      "next_schedule": "Isasabay sa susunod na koleksyon"
+    },
+    "photo": {
+      "useSample": "Gamitin ang halimbawang larawan (demo)",
+      "denied": "Kailangan ang camera para sa larawan. Payagan ito sa Settings ng telepono.",
+      "processing": "Inaayos ang larawan…",
+      "failed": "Hindi nabasa ang larawan. Subukan ulit.",
+      "shutter": "Kumuha ng larawan",
+      "guide": {
+        "wide": {
+          "title": "Isama ang palatandaan",
+          "hint": "poste, gate o tindahan sa paligid"
+        },
+        "close": {
+          "title": "Malapitang kuha",
+          "hint": "para makita kung gaano karami ang basura"
+        },
+        "before": {
+          "title": "Larawan bago kunin",
+          "hint": "kita ang basura at ang lugar"
+        },
+        "after": {
+          "title": "Larawan pagkatapos",
+          "hint": "parehong lugar, malinis na"
+        }
+      }
+    },
+    "wizard": {
+      "title": "Mag-report",
+      "step": "Hakbang {{current}} sa {{total}}",
+      "whatTitle": "Ano ang problema?",
+      "emergency": "Emergency",
+      "emergencyHint": "Mapanganib na basura, kalat ng baha, sunog",
+      "emergencyTitle": "Anong emergency?",
+      "burningWarning": "Kung may panganib ng sunog, tumawag agad sa 911.",
+      "photoTitle": "Kunan ng larawan",
+      "photoWide": "Kunan ang paligid",
+      "photoClose": "Magdagdag ng malapitang kuha (opsyonal)",
+      "retake": "Kunan ulit",
+      "removePhoto": "Tanggalin ang larawan",
+      "noCamera": "Walang camera? Magpatuloy nang walang larawan",
+      "noPhotoNote": "Walang larawan: kailangang puntahan muna ng eco-aide.",
+      "whereTitle": "Saan ito?",
+      "whereHint": "Igalaw ang mapa para ang pin ay nasa mismong lugar.",
+      "useMyLocation": "Gamitin ang lokasyon ko",
+      "locating": "Hinahanap ang lokasyon…",
+      "locationDenied": "Hindi makuha ang lokasyon. Igalaw na lang ang mapa.",
+      "outside": "Nasa labas ng Carmona ang pin. Igalaw ito sa loob ng lungsod.",
+      "inBarangay": "Nasa {{barangay}}",
+      "landmark": "Palatandaan (opsyonal)",
+      "landmarkPlaceholder": "hal. tapat ng sari-sari store, likod ng court",
+      "nearWaterway": "Malapit sa kanal, sapa o ilog",
+      "nearSensitive": "Malapit sa paaralan, palengke o health center",
+      "reviewTitle": "Suriin at ipadala",
+      "howBig": "Gaano karami?",
+      "note": "Dagdag na detalye (opsyonal)",
+      "contact": "I-text ako tungkol sa report na ito",
+      "contactHint": "Gagamitin ang numero mo para sa SMS alerts: {{mobile}}",
+      "next": "Susunod",
+      "back": "Bumalik",
+      "send": "Ipadala ang report",
+      "sending": "Ipinapadala…",
+      "offlineSaved": "Walang signal. Naka-save ang report at ipapadala kapag may signal na.",
+      "privacy": "Makikita lang ng City ENRO ang numero mo. Hindi ipapakita ang mukha o plate number sa ibang tao."
+    },
+    "done": {
+      "title": "Naipadala ang report!",
+      "ticket": "Ticket number",
+      "target": "Target na tugon",
+      "targetHours": "sa loob ng {{hours}} oras (bago mag-{{time}})",
+      "targetNextDay": "sa susunod na araw ng trabaho ({{day}})",
+      "targetBooked": "ite-text ka ng City ENRO para sa iskedyul",
+      "targetSameDay": "ngayong araw",
+      "track": "Tingnan ang report",
+      "another": "Mag-report ulit"
+    },
+    "mine": {
+      "title": "Aking mga report",
+      "empty": "Wala ka pang report.",
+      "pending": "Naghihintay ng signal",
+      "pendingHint": "Ipapadala ito kapag may signal na.",
+      "new": "Mag-report",
+      "updated": "May bago",
+      "linkFromHome": "Aking mga report",
+      "count": "{{count}} report"
+    },
+    "detail": {
+      "title": "Report {{ticket}}",
+      "where": "Lugar",
+      "photos": "Mga larawan mo",
+      "proof": "Larawan ng crew",
+      "before": "Bago",
+      "after": "Pagkatapos",
+      "timeline": "Status",
+      "reopen": "Hindi pa nakuha? Buksan ulit",
+      "reopenUntil": "Puwedeng buksan ulit hanggang {{time}}.",
+      "reopenNote": "Ano ang naiwan? (opsyonal)",
+      "reopened": "Binuksan ulit. Babalikan ito ng crew.",
+      "rate": "Paano ang serbisyo?",
+      "rateStars": "{{stars}} sa 5",
+      "thanks": "Salamat sa rating mo!",
+      "due": "Target: {{time}}",
+      "mergedInto": "Parehong lugar at problema ng {{ticket}}; doon na susundan.",
+      "notFound": "Hindi makita ang report.",
+      "sample": "Halimbawang report"
+    }
+  },
+  "claims": {
+    "title": "Hindi nadaanan?",
+    "intro": "Susuriin namin agad gamit ang GPS ng truck at ang tala ng crew.",
+    "whereTitle": "Saan ang bahay mo?",
+    "whereHint": "Kailangan ito para masuri ang kalye mo. Sa telepono mo lang ito itatabi.",
+    "pickStreet": "Piliin ang kalye mo",
+    "useLocation": "Gamitin ang lokasyon ko",
+    "noStreets": "Walang kalye ng ruta ngayon sa barangay mo.",
+    "changePlace": "Palitan ang kalye",
+    "check": "Suriin ngayon",
+    "checking": "Sinusuri ang GPS…",
+    "streetLabel": "Kalye: {{street}}",
+    "pointLabel": "Ang lokasyon mo",
+    "outcome": {
+      "no_collection_today": {
+        "title": "Walang koleksyon ngayon sa barangay mo",
+        "body": "Ang susunod ay {{day}}.",
+        "bodyNone": "Wala pang susunod na koleksyon sa iskedyul."
+      },
+      "not_yet": {
+        "title": "Hindi pa tapos ang ruta",
+        "body": "Darating ang truck sa kalye mo mga {{time}}.",
+        "bodyNoTime": "Parating pa ang truck. Ite-text ka namin kapag malapit na."
+      },
+      "verified_miss": {
+        "title": "Na-verify: hindi nadaanan",
+        "body": "Ayon sa GPS, hindi dumaan ang truck sa kalye mo. Gumawa kami ng priority ticket at babalikan ito."
+      },
+      "not_segregated": {
+        "title": "Hindi kinuha: hindi nakahiwalay ang basura",
+        "body": "Itinala ng crew nang {{time}} na hindi nakahiwalay ang basura. Paghiwalayin ang nabubulok at di-nabubulok at ilabas sa susunod na koleksyon.",
+        "guideTitle": "Paano maghiwalay",
+        "guide1": "Nabubulok: tira-tirang pagkain, balat ng prutas, dahon",
+        "guide2": "Di-nabubulok: plastik, bote, lata, papel (malinis at tuyo)",
+        "guide3": "Special: baterya, bombilya, gamot: huwag ihalo"
+      },
+      "crew_not_at_fault": {
+        "title": "Na-verify: hindi nadaanan",
+        "truck_full": "Napuno ang truck bago makarating sa kalye mo. Hindi ito kasalanan ng crew; may ticket na para balikan ito.",
+        "road_blocked": "Sarado ang daan papunta sa kalye mo. Hindi ito kasalanan ng crew; may ticket na para balikan ito."
+      },
+      "please_photo": {
+        "title": "Ayon sa GPS, dumaan ang truck",
+        "body": "Nadaanan ng truck ang barangay mo nang {{from}}–{{to}}. Kung may naiwang basura, magpadala ng larawan at pupuntahan ito ng eco-aide.",
+        "bodyNoTime": "Kung may naiwang basura, magpadala ng larawan at pupuntahan ito ng eco-aide.",
+        "action": "Magpadala ng larawan"
+      },
+      "no_gps": {
+        "title": "Walang GPS mula sa truck",
+        "body": "Hindi namin masuri gamit ang GPS. Gumawa kami ng ticket at pupuntahan ito ng eco-aide."
+      }
+    },
+    "ticket": "Ticket: {{ticket}}",
+    "seeTicket": "Tingnan ang ticket",
+    "homeLink": "Hindi nadaanan ang kalye namin"
   }
 }

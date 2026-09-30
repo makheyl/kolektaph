@@ -188,6 +188,14 @@ export type TruckEvent = TruckEventBase &
     | { kind: 'disposal'; action: 'arrive' | 'leave' }
     | { kind: 'incident'; incident: IncidentKind; minutes: number }
     | { kind: 'incident_end' }
+    /** Crew work on a special pickup (report ticket) assigned to this truck. */
+    | {
+        kind: 'task';
+        ticketId: string;
+        action: 'start' | 'done';
+        before: PhotoRef | null;
+        after: PhotoRef | null;
+      }
     | {
         kind: 'street';
         routeId: string;
@@ -331,6 +339,159 @@ export interface UploadBatch {
   } | null;
 }
 
+// ---------- Reports (Snap & Report, HAKOT Appendix B) ----------
+
+/** HAKOT B.1 category codes used in KolektaPH. */
+export type ReportCategory =
+  | 'MISSED'
+  | 'OVERFLOW'
+  | 'DUMPING'
+  | 'WATERWAY'
+  | 'EVENT'
+  | 'BULKY'
+  | 'DEBRIS'
+  | 'HAZARD'
+  | 'ANIMAL'
+  | 'BURNING';
+
+/** 1–2 bags · pile · truckload. */
+export type ReportSize = 'bags' | 'pile' | 'truckload';
+
+/** HAKOT Figure 4 (without the AI screening step). */
+export type TicketStatus =
+  | 'submitted'
+  | 'verified'
+  | 'scheduled'
+  | 'in_progress'
+  | 'collected'
+  | 'closed'
+  | 'merged'
+  | 'rejected';
+
+/** Bundled sample pictures (labelled as samples) for sample tickets and the web demo. */
+export type SamplePhotoId =
+  | 'overflow'
+  | 'dumping'
+  | 'waterway'
+  | 'event'
+  | 'bulky'
+  | 'animal'
+  | 'hazard'
+  | 'debris'
+  | 'street'
+  | 'clean';
+
+/** A photo: a compressed file/data URI from the camera, or a bundled sample picture. */
+export type PhotoRef = { kind: 'uri'; uri: string } | { kind: 'sample'; id: SamplePhotoId };
+
+export type TicketActor = 'resident' | 'enro' | 'driver' | 'system';
+
+export type TicketEventKind =
+  | 'submitted'
+  | 'verified'
+  | 'dispatched'
+  | 'started'
+  | 'collected'
+  | 'reopened'
+  | 'rated'
+  | 'closed'
+  | 'education'
+  | 'merged'
+  | 'rejected';
+
+/** One line of a ticket's timeline: every change is time-stamped and attributed. */
+export interface TicketEvent {
+  id: string;
+  kind: TicketEventKind;
+  status: TicketStatus;
+  at: number;
+  by: TicketActor;
+  note: string | null;
+}
+
+/** HAKOT dispatch options that lead to a pickup. */
+export type DispatchMode = 'add_to_route' | 'special_pickup' | 'next_schedule';
+
+export interface Ticket {
+  /** "KPH-2026-000123" */
+  id: string;
+  category: ReportCategory;
+  size: ReportSize;
+  photos: PhotoRef[];
+  location: LngLat;
+  accuracyM: number | null;
+  barangayId: string | null;
+  landmark: string;
+  nearWaterway: boolean;
+  /** Within about 50 m of a school, market or health facility. */
+  nearSensitive: boolean;
+  note: string;
+  /** resident = Snap & Report; claim = "Hindi nadaanan"; enro = re-collection from the dashboard. */
+  source: 'resident' | 'claim' | 'enro';
+  /** Optional mobile for status texts (E.164); shown masked. */
+  contact: string | null;
+  createdAt: number;
+  status: TicketStatus;
+  history: TicketEvent[];
+  dispatch: { mode: DispatchMode; truckId: string | null; due: number | null } | null;
+  proof: { before: PhotoRef | null; after: PhotoRef; by: TicketActor } | null;
+  mergedInto: string | null;
+  rejectReason: string | null;
+  rating: number | null;
+  /** For missed-collection tickets: the street and day it is about. */
+  missed: {
+    routeId: string;
+    streetKey: string | null;
+    streetName: string | null;
+    day: string;
+  } | null;
+  /** Sample ticket shipped with the prototype. */
+  sample: boolean;
+}
+
+export interface NewReport {
+  category: ReportCategory;
+  size: ReportSize;
+  photos: PhotoRef[];
+  location: LngLat;
+  accuracyM: number | null;
+  landmark: string;
+  nearWaterway: boolean;
+  nearSensitive: boolean;
+  note: string;
+  contact: string | null;
+}
+
+export type TicketAction =
+  | { type: 'verify' }
+  | { type: 'dispatch'; mode: DispatchMode; truckId: string | null; due: number | null }
+  | { type: 'start' }
+  | { type: 'collect'; before: PhotoRef | null; after: PhotoRef }
+  | { type: 'education'; note: string }
+  | { type: 'reject'; reason: string }
+  | { type: 'merge'; into: string }
+  | { type: 'reopen'; note: string }
+  | { type: 'rate'; stars: number }
+  | { type: 'auto_close' };
+
+/** Where the resident lives, for "Hindi nadaanan" (kept on the device only). */
+export interface ClaimPlace {
+  barangayId: string;
+  /** A street picked from the route list, or a point from "use my location". */
+  streetKey: string | null;
+  point: LngLat | null;
+}
+
+/** HAKOT §10.2 outcomes, plus "not yet" (the route is still running). */
+export type ClaimResult =
+  | { kind: 'no_collection_today'; nextStart: number | null }
+  | { kind: 'not_yet'; arriveAt: number | null; truckId: string }
+  | { kind: 'verified_miss'; ticketId: string }
+  | { kind: 'not_segregated'; at: number }
+  | { kind: 'crew_not_at_fault'; reason: 'truck_full' | 'road_blocked'; ticketId: string }
+  | { kind: 'please_photo'; passedFrom: number | null; passedTo: number | null }
+  | { kind: 'no_gps'; ticketId: string };
+
 // ---------- Services (screens only talk to these) ----------
 
 export interface GeoService {
@@ -363,6 +524,20 @@ export interface OpsService {
   subscribeOps(listener: (snapshot: OpsSnapshot) => void): () => void;
   /** GPS fixes received for a shift. */
   getTrace(shiftId: string): Promise<GpsFix[]>;
+  /** Missed streets for a Manila day (by the end of that day, or up to now for today). */
+  getMissedStreets(day: number): Promise<MissedStreet[]>;
+}
+
+export interface ReportsService {
+  /** Rejects with OfflineError without signal (the app keeps the report and retries). */
+  submit(report: NewReport): Promise<Ticket>;
+  /** Every ticket, newest first (staff view; residents filter to their own ids). */
+  subscribeTickets(listener: (tickets: Ticket[]) => void): () => void;
+  act(ticketId: string, action: TicketAction, by: TicketActor): Promise<Ticket>;
+  /** "Hindi nadaanan": checks the claim against GPS and the crew's log (HAKOT §10.2). */
+  checkMissed(place: ClaimPlace): Promise<ClaimResult>;
+  /** City ENRO: turn a missed street into a pickup ticket (idempotent per street and day). */
+  scheduleRecollection(missed: MissedStreet, day: number): Promise<Ticket>;
 }
 
 export interface DriverService {
@@ -388,4 +563,5 @@ export interface Services {
   alerts: AlertsService;
   ops: OpsService;
   driver: DriverService;
+  reports: ReportsService;
 }

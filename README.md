@@ -58,6 +58,13 @@ server (localStorage), so a driver's tap (e.g. **PUNO**) shows up on Live Operat
 couple of seconds. The demo PIN for every truck is `1234`. "Demo: gayahin ang walang signal" on
 the driver's GPS page shows the offline queue at work.
 
+## Demo: reports and "Hindi nadaanan"
+
+- **Resident → ENRO → driver:** send a report from **Report** in `/resident` (4 steps: what, photo, where, send). It appears in `/enro/reports` sorted by priority, with a suggested handling. Dispatch it to a truck on route and it shows up as "Espesyal na koleksyon" in that truck's `/driver/shift`. The crew's before and after photos close the loop, and the resident's "Aking mga report" shows the timeline and can reopen within 48 hours or rate.
+- **Missed-street claims:** on a collection day, "Hindi nadaanan ang kalye namin" on the resident Home checks the street against the truck's GPS trace. Use the demo clock to reach each outcome: route not finished (ETA), not segregated, crew not at fault (truck full or road blocked), verified miss (ticket), or "please send a photo". `/enro/missed` lists missed streets per day with "Iskedyul ang muling pagkolekta".
+
+The 12 sample tickets (KPH-…-000101 to 000112) and their pictures are sample data. Resetting from `/demo` restores them.
+
 ## Driver app on a phone (Android)
 
 Real GPS recording needs the Android build: location is recorded by a foreground service only

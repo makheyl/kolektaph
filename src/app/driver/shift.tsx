@@ -15,6 +15,9 @@ import { DriverTopBar } from '@/features/driver/components/DriverTopBar';
 import { UndoToast } from '@/features/driver/components/UndoToast';
 import { LOAD_STEPS, loadLabel } from '@/features/driver/format';
 import { driverStreets, streetProgress } from '@/features/driver/streets';
+import { taskState, truckTasks } from '@/features/driver/tasks';
+import { CATEGORY_META } from '@/features/reports/categories';
+import { useTickets } from '@/features/reports/hooks';
 import { percent } from '@/features/enro/format';
 import { TRUCK_STATUS_META } from '@/features/tracking/statusMeta';
 import { buildRoutePreview } from '@/features/tracking/routePreview';
@@ -47,6 +50,7 @@ export default function DriverShift() {
   const { data: barangays } = useBarangays();
   const { data: meta } = useCityMeta();
   const [last, setLast] = useState<{ id: string; label: string } | null>(null);
+  const tickets = useTickets();
   const gpsOk = useDriverLive((s) => s.gpsOk);
   const restartGps = useDriverLive((s) => s.requestGpsRestart);
 
@@ -67,6 +71,7 @@ export default function DriverShift() {
 
   // The phone's own reports decide the sub-steps (e.g. arrived at the tapunan).
   const events = outbox.map((o) => o.event);
+  const tasks = truckTasks(tickets, shift.truckId, events);
   const lastMove = events.findLast((e) => e.kind === 'status' || e.kind === 'disposal');
   const atDisposal = lastMove?.kind === 'disposal' && lastMove.action === 'arrive';
   const fullReport = outbox.findLast((o) => o.event.kind === 'status' && o.event.status === 'full');
@@ -267,6 +272,29 @@ export default function DriverShift() {
             </AppText>
           ) : null}
         </View>
+
+        {tasks.length ? (
+          <View style={styles.block}>
+            <AppText variant="heading">{t('driver.tasks.count', { count: tasks.length })}</AppText>
+            {tasks.map((tk) => (
+              <ListRow
+                key={tk.id}
+                icon={CATEGORY_META[tk.category].icon}
+                iconColor={taskState(tk, events) === 'done' ? colors.green : colors.red}
+                title={`${t(`reports.category.${tk.category}`)} · ${nameOf(tk.barangayId)}`}
+                subtitle={
+                  taskState(tk, events) === 'done'
+                    ? t('driver.tasks.doneState')
+                    : tk.landmark || tk.id
+                }
+                trailing="chevron"
+                onPress={() =>
+                  router.push({ pathname: '/driver/task/[id]', params: { id: tk.id } })
+                }
+              />
+            ))}
+          </View>
+        ) : null}
 
         {route && barangays && meta ? (
           <View style={styles.block}>

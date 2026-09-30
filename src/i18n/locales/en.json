@@ -71,9 +71,10 @@
     "scenarioTitle": "Scenarios (demo)",
     "scenarioHint": "Trigger a problem to see the delay alerts and the City ENRO dashboard react.",
     "breakdown": "Break down {{truck}} now (2 hours)",
-    "clearEvents": "Reset events and driver reports",
+    "clearEvents": "Reset events, driver reports and resident reports",
     "activeEvents": "{{count}} scenario events set",
-    "bridgeHint": "Tip: open the Driver and City ENRO views in separate tabs. They are connected, like two devices sharing one server."
+    "bridgeHint": "Tip: open the Driver and City ENRO views in separate tabs. They are connected, like two devices sharing one server.",
+    "resetTickets": "The sample reports were restored too."
   },
   "truck": {
     "status": {
@@ -296,7 +297,8 @@
       "stats": "Statistics",
       "schedules": "Schedules",
       "soon": "In {{sprint}}",
-      "backToDemo": "Back to demo"
+      "backToDemo": "Back to demo",
+      "missed": "Missed streets"
     },
     "live": {
       "title": "Live Operations",
@@ -397,13 +399,80 @@
         "incident": "Incident: {{incident}} (about {{duration}})",
         "incident_end": "Incident resolved",
         "street_collected": "Collected: {{street}}",
-        "street_skipped": "Skipped: {{street}} ({{reason}})"
+        "street_skipped": "Skipped: {{street}} ({{reason}})",
+        "task_start": "On the way to {{ticket}}",
+        "task_done": "Collected: {{ticket}}"
       },
       "traceTitle": "GPS received",
       "traceNone": "No GPS received from the driver app yet.",
       "traceSummary": "{{count}} locations · {{distance}} · last {{ago}}",
       "traceElsewhere": "These locations are outside Carmona (e.g. a field test).",
       "showTrace": "Show the GPS on the map"
+    },
+    "reports": {
+      "title": "Reports",
+      "subtitle": "{{open}} open · {{high}} high priority",
+      "filterOpen": "Open",
+      "filterAll": "All",
+      "filterClosed": "Closed",
+      "filterEmergency": "Emergency only",
+      "allBarangays": "All barangays",
+      "empty": "No reports here.",
+      "select": "Select a report from the list.",
+      "age": "{{time}} ago",
+      "details": "Details",
+      "reporter": "Reporter",
+      "noContact": "no number",
+      "source": {
+        "resident": "Resident",
+        "claim": "Missed collection (GPS)",
+        "enro": "City ENRO"
+      },
+      "breakdown": "How the score was built",
+      "parts": {
+        "base": "Category",
+        "size": "Size",
+        "waterway": "Near water",
+        "sensitive": "Near a school, market or clinic",
+        "repeat": "Repeat site",
+        "age": "Time open"
+      },
+      "suggestionTitle": "Suggestion",
+      "suggestMerge": "Same place and kind as {{ticket}} within 72 hours: merge.",
+      "suggestDispatch": "{{mode}}: {{truck}}{{distance}}",
+      "specialCrew": "special crew",
+      "humansDecide": "Only a suggestion. Staff decide.",
+      "apply": "Follow the suggestion",
+      "actions": "Actions",
+      "verify": "Verify",
+      "assign": "Dispatch",
+      "assignTo": "Dispatch to",
+      "modeLabel": "How",
+      "merge": "Merge",
+      "mergeInto": "Merge into",
+      "reject": "Reject",
+      "rejectReason": "Reason (the reporter sees it)",
+      "rejectReasons": {
+        "no_waste": "No garbage in the photo",
+        "inappropriate": "Inappropriate photo",
+        "duplicate": "Same as another report"
+      },
+      "education": "Schedule reminder",
+      "educationNote": "Garbage put out on the wrong day. Next collection: {{day}}.",
+      "collect": "Mark collected",
+      "collectHint": "An after photo is required.",
+      "done": "Done.",
+      "missedFrom": "Street: {{street}} · {{day}}",
+      "dispatched": "{{mode}} · {{truck}}"
+    },
+    "missed": {
+      "title": "Missed streets",
+      "subtitle": "GPS check and crew logs",
+      "today": "Today",
+      "empty": "No missed streets on this day.",
+      "schedule": "Schedule re-collection",
+      "scheduled": "Ticket: {{ticket}}",
+      "count": "{{count}} streets"
     }
   },
   "incident": {
@@ -597,6 +666,255 @@
       "notificationBody": "The truck's location is recorded during the shift only.",
       "mapTitle": "Recorded route",
       "noFixes": "No location recorded yet."
+    },
+    "tasks": {
+      "title": "Special pickups",
+      "count": "Special pickups ({{count}})",
+      "none": "No special pickups.",
+      "open": "Open",
+      "due": "Target: {{time}}",
+      "start": "On the way",
+      "startedNote": "The crew is on the way.",
+      "before": "Photo before",
+      "after": "Photo after",
+      "done": "Collected",
+      "needPhotos": "Before and after photos are required.",
+      "sent": "Recorded. The reporter will be told.",
+      "landmark": "Landmark: {{landmark}}",
+      "residentPhotos": "Reporter’s photos",
+      "doneState": "This one is done."
     }
+  },
+  "reports": {
+    "samplePhoto": "Sample photo",
+    "category": {
+      "MISSED": "Missed collection",
+      "OVERFLOW": "Overflowing bin",
+      "DUMPING": "Pile or illegal dumping",
+      "WATERWAY": "Waste in a canal or river",
+      "EVENT": "Waste after an event",
+      "BULKY": "Bulky waste",
+      "DEBRIS": "Debris after a flood or typhoon",
+      "HAZARD": "Hazardous waste",
+      "ANIMAL": "Dead animal",
+      "BURNING": "Someone is burning garbage"
+    },
+    "categoryHint": {
+      "MISSED": "The truck did not pass on the scheduled day",
+      "OVERFLOW": "Communal bin or collection point is full",
+      "DUMPING": "A pile on a vacant lot, road or bridge",
+      "WATERWAY": "Waste in or beside a canal, creek or drain",
+      "EVENT": "After a fiesta, wake or party",
+      "BULKY": "Mattress, furniture, old appliance",
+      "DEBRIS": "Branches, mud and waste left by a flood",
+      "HAZARD": "Batteries, chemicals, broken glass, medical waste",
+      "ANIMAL": "Dead animal on the road",
+      "BURNING": "Not a pickup. Enforcement will be told."
+    },
+    "size": {
+      "bags": "1–2 bags",
+      "pile": "A pile",
+      "truckload": "A truckload"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "priorityScore": "{{level}} · {{score}}",
+    "status": {
+      "submitted": "Received",
+      "verified": "Verified",
+      "scheduled": "Scheduled",
+      "in_progress": "Crew on the way",
+      "collected": "Collected",
+      "closed": "Closed",
+      "merged": "Merged with another report",
+      "rejected": "Not accepted"
+    },
+    "event": {
+      "submitted": "Report received",
+      "verified": "Verified by the City ENRO",
+      "dispatched": "Pickup scheduled",
+      "started": "Crew on the way",
+      "collected": "Collected (with the crew’s photo)",
+      "reopened": "Reopened: not picked up yet",
+      "rated": "Rated {{stars}} of 5",
+      "closed": "Closed",
+      "education": "Reminder about the right schedule",
+      "merged": "Merged with {{ticket}}",
+      "rejected": "Not accepted: {{reason}}"
+    },
+    "by": {
+      "resident": "resident",
+      "enro": "City ENRO",
+      "driver": "truck crew",
+      "system": "automatic"
+    },
+    "dispatchMode": {
+      "add_to_route": "Added to a truck’s route",
+      "special_pickup": "Special pickup",
+      "next_schedule": "With the next collection"
+    },
+    "photo": {
+      "useSample": "Use the sample photo (demo)",
+      "denied": "The camera is needed for the photo. Allow it in the phone’s Settings.",
+      "processing": "Preparing the photo…",
+      "failed": "The photo could not be read. Please try again.",
+      "shutter": "Take photo",
+      "guide": {
+        "wide": {
+          "title": "Include a landmark",
+          "hint": "a post, gate or store nearby"
+        },
+        "close": {
+          "title": "Close-up",
+          "hint": "so staff can see how much waste there is"
+        },
+        "before": {
+          "title": "Photo before pickup",
+          "hint": "showing the waste and the place"
+        },
+        "after": {
+          "title": "Photo after pickup",
+          "hint": "same place, now clean"
+        }
+      }
+    },
+    "wizard": {
+      "title": "Report a problem",
+      "step": "Step {{current}} of {{total}}",
+      "whatTitle": "What is the problem?",
+      "emergency": "Emergency",
+      "emergencyHint": "Hazardous waste, flood debris, burning",
+      "emergencyTitle": "What emergency?",
+      "burningWarning": "If there is a fire risk, call 911 now.",
+      "photoTitle": "Take a photo",
+      "photoWide": "Photograph the surroundings",
+      "photoClose": "Add a close-up (optional)",
+      "retake": "Retake",
+      "removePhoto": "Remove photo",
+      "noCamera": "No camera? Continue without a photo",
+      "noPhotoNote": "No photo: an eco-aide must check it first.",
+      "whereTitle": "Where is it?",
+      "whereHint": "Move the map so the pin is on the exact spot.",
+      "useMyLocation": "Use my location",
+      "locating": "Finding your location…",
+      "locationDenied": "Location unavailable. Move the map instead.",
+      "outside": "The pin is outside Carmona. Move it inside the city.",
+      "inBarangay": "In {{barangay}}",
+      "landmark": "Landmark (optional)",
+      "landmarkPlaceholder": "e.g. across the store, behind the court",
+      "nearWaterway": "Near a canal, creek or river",
+      "nearSensitive": "Near a school, market or health center",
+      "reviewTitle": "Review and send",
+      "howBig": "How much?",
+      "note": "More details (optional)",
+      "contact": "Text me about this report",
+      "contactHint": "Uses your SMS alerts number: {{mobile}}",
+      "next": "Next",
+      "back": "Back",
+      "send": "Send report",
+      "sending": "Sending…",
+      "offlineSaved": "No signal. The report is saved and will be sent when there is signal.",
+      "privacy": "Only the City ENRO sees your number. Faces and plate numbers are never shown to others."
+    },
+    "done": {
+      "title": "Report sent!",
+      "ticket": "Ticket number",
+      "target": "Response target",
+      "targetHours": "within {{hours}} hours (by {{time}})",
+      "targetNextDay": "next working day ({{day}})",
+      "targetBooked": "the City ENRO will text you a schedule",
+      "targetSameDay": "today",
+      "track": "View the report",
+      "another": "Report another"
+    },
+    "mine": {
+      "title": "My reports",
+      "empty": "You have no reports yet.",
+      "pending": "Waiting for signal",
+      "pendingHint": "It will be sent when there is signal.",
+      "new": "Report a problem",
+      "updated": "Updated",
+      "linkFromHome": "My reports",
+      "count": "{{count}} reports"
+    },
+    "detail": {
+      "title": "Report {{ticket}}",
+      "where": "Place",
+      "photos": "Your photos",
+      "proof": "Crew photos",
+      "before": "Before",
+      "after": "After",
+      "timeline": "Status",
+      "reopen": "Not picked up? Reopen",
+      "reopenUntil": "You can reopen until {{time}}.",
+      "reopenNote": "What was left? (optional)",
+      "reopened": "Reopened. The crew will come back.",
+      "rate": "How was the service?",
+      "rateStars": "{{stars}} of 5",
+      "thanks": "Thank you for rating!",
+      "due": "Target: {{time}}",
+      "mergedInto": "Same place and problem as {{ticket}}; followed up there.",
+      "notFound": "Report not found.",
+      "sample": "Sample report"
+    }
+  },
+  "claims": {
+    "title": "Missed collection?",
+    "intro": "We check it right away against the truck’s GPS and the crew’s log.",
+    "whereTitle": "Where do you live?",
+    "whereHint": "Needed to check your street. It is kept on your phone only.",
+    "pickStreet": "Choose your street",
+    "useLocation": "Use my location",
+    "noStreets": "No route streets in your barangay today.",
+    "changePlace": "Change street",
+    "check": "Check now",
+    "checking": "Checking the GPS…",
+    "streetLabel": "Street: {{street}}",
+    "pointLabel": "Your location",
+    "outcome": {
+      "no_collection_today": {
+        "title": "No collection in your barangay today",
+        "body": "The next one is {{day}}.",
+        "bodyNone": "No upcoming collection in the schedule yet."
+      },
+      "not_yet": {
+        "title": "The route is not finished yet",
+        "body": "The truck should reach your street around {{time}}.",
+        "bodyNoTime": "The truck is still coming. We’ll text you when it is near."
+      },
+      "verified_miss": {
+        "title": "Verified: missed",
+        "body": "The GPS shows the truck did not pass your street. We opened a priority ticket and it will come back."
+      },
+      "not_segregated": {
+        "title": "Not collected: waste not segregated",
+        "body": "The crew logged at {{time}} that the waste was not segregated. Separate biodegradable and non-biodegradable waste and put it out at the next collection.",
+        "guideTitle": "How to segregate",
+        "guide1": "Biodegradable: food scraps, fruit peels, leaves",
+        "guide2": "Non-biodegradable: plastic, bottles, cans, paper (clean and dry)",
+        "guide3": "Special: batteries, bulbs, medicine: never mix"
+      },
+      "crew_not_at_fault": {
+        "title": "Verified: missed",
+        "truck_full": "The truck filled up before reaching your street. The crew is not at fault; a ticket was opened to come back.",
+        "road_blocked": "The road to your street was blocked. The crew is not at fault; a ticket was opened to come back."
+      },
+      "please_photo": {
+        "title": "The GPS shows the truck passed",
+        "body": "The truck served your barangay between {{from}} and {{to}}. If garbage was left behind, send a photo and an eco-aide will check.",
+        "bodyNoTime": "If garbage was left behind, send a photo and an eco-aide will check.",
+        "action": "Send a photo"
+      },
+      "no_gps": {
+        "title": "No GPS from the truck",
+        "body": "We can’t check with GPS. We opened a ticket and an eco-aide will check."
+      }
+    },
+    "ticket": "Ticket: {{ticket}}",
+    "seeTicket": "View the ticket",
+    "homeLink": "The truck missed our street"
   }
 }

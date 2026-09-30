@@ -27,6 +27,8 @@ export function eventIcon(e: TruckEvent): IconName {
       return 'check-circle';
     case 'street':
       return e.outcome === 'collected' ? 'check' : 'debug-step-over';
+    case 'task':
+      return e.action === 'done' ? 'clipboard-check-outline' : 'clipboard-arrow-right-outline';
   }
 }
 
@@ -57,6 +59,8 @@ export function describeEvent(
       });
     case 'incident_end':
       return t(`${k}.incident_end`);
+    case 'task':
+      return t(e.action === 'done' ? `${k}.task_done` : `${k}.task_start`, { ticket: e.ticketId });
     case 'street': {
       const seg = route?.segments.find((s) => s.id === e.segmentIds[0]);
       const street = `${seg?.name ?? t('truck.unnamedRoad')}, ${seg?.barangayId ? nameOf(seg.barangayId) : ''}`;

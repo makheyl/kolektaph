@@ -21,6 +21,7 @@ import { atManilaTime, DAY, manilaDateKey, manilaStartOfDay, MINUTE } from '@/li
 import { simulatedTrace, simulateFleet, simulateTruck } from '@/simulator/truckSimulator';
 
 import { OfflineError, SignInError } from '../errors';
+import { createMockReports } from './reports';
 import type {
   Announcement,
   GpsFix,
@@ -30,6 +31,7 @@ import type {
   OutboundAlert,
   Services,
   ShiftSummary,
+  Ticket,
   TruckEvent,
   TruckState,
   UploadBatch,
@@ -57,6 +59,10 @@ export interface MockDeps {
   getTraces: () => Record<string, { truckId: string; source: GpsSource; fixes: GpsFix[] }>;
   /** Whether this device can reach the server right now. */
   isOnline: () => boolean;
+  /** Stand-in for the backend's tickets table. */
+  getTickets: () => Ticket[];
+  saveTicket: (t: Ticket) => void;
+  nextTicketSeq: () => number;
 }
 
 const barangayName = (id: string) =>
@@ -159,13 +165,10 @@ export function createMockServices(deps: MockDeps): Services {
     });
   };
 
-  const opsSnapshot = (): OpsSnapshot => {
-    const now = deps.getSimTime();
-    const events = deps.getEvents();
+  /** Missed streets by `now` for the given fleet states (GPS check + crew skip reasons). */
+  const missedFor = (states: TruckState[], now: number, events: TruckEvent[]): MissedStreet[] => {
     const today = manilaStartOfDay(now);
-    const todays = events.filter((e) => e.at >= today && e.at <= now).sort((a, b) => a.at - b.at);
-    const states = simulateFleet(TRUCKS, ROUTE_SCHEDULES, ROUTES, now, SCHEDULE_EXCEPTIONS, events);
-
+    const todays = events.filter((e) => e.at >= today && e.at <= now);
     const missed: MissedStreet[] = [];
     for (const s of states) {
       if (!s.routeId || s.status === 'off_duty' || s.status === 'not_started') continue;
@@ -188,6 +191,17 @@ export function createMockServices(deps: MockDeps): Services {
         }),
       );
     }
+    return missed;
+  };
+
+  const opsSnapshot = (): OpsSnapshot => {
+    const now = deps.getSimTime();
+    const events = deps.getEvents();
+    const today = manilaStartOfDay(now);
+    const todays = events.filter((e) => e.at >= today && e.at <= now).sort((a, b) => a.at - b.at);
+    const states = simulateFleet(TRUCKS, ROUTE_SCHEDULES, ROUTES, now, SCHEDULE_EXCEPTIONS, events);
+
+    const missed = missedFor(states, now, events);
 
     const weeklyKey = `${Math.floor(now / (5 * MINUTE))}|${JSON.stringify(events)}`;
     if (weeklyCache?.key !== weeklyKey) {
@@ -282,7 +296,32 @@ export function createMockServices(deps: MockDeps): Services {
         return () => clearInterval(timer);
       },
       getTrace: async (shiftId) => deps.getTraces()[shiftId]?.fixes ?? [],
+      async getMissedStreets(day) {
+        const now = deps.getSimTime();
+        const dayStart = manilaStartOfDay(day);
+        if (dayStart > now) return [];
+        const at = Math.min(now, atManilaTime(dayStart, '23:59'));
+        const events = deps.getEvents();
+        const states = simulateFleet(
+          TRUCKS,
+          ROUTE_SCHEDULES,
+          ROUTES,
+          at,
+          SCHEDULE_EXCEPTIONS,
+          events,
+        );
+        return missedFor(states, at, events);
+      },
     },
+    reports: createMockReports({
+      getSimTime: deps.getSimTime,
+      getEvents: deps.getEvents,
+      getTickets: deps.getTickets,
+      saveTicket: deps.saveTicket,
+      nextTicketSeq: deps.nextTicketSeq,
+      isOnline: deps.isOnline,
+      traceFor,
+    }),
     driver: {
       async signIn(truckId, pin) {
         await wait(NETWORK_MS);

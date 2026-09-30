@@ -87,3 +87,13 @@ export const useTrace = (shiftId: string | null) =>
     enabled: shiftId != null,
     refetchInterval: 5_000,
   });
+
+/** Missed streets for a Manila day (refreshed every 5 s so today's list stays current). */
+export const useMissedStreets = (day: number) => {
+  const clock = useDemo((s) => s.clock);
+  return useQuery({
+    queryKey: ['missedStreets', day, clock],
+    queryFn: () => services.ops.getMissedStreets(day),
+    refetchInterval: 5_000,
+  });
+};

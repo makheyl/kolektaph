@@ -18,6 +18,9 @@ export const services: Services = createMockServices({
   receiveUpload: (batch) => useBackend.getState().receive(batch),
   getTraces: () => useBackend.getState().traces,
   isOnline,
+  getTickets: () => useBackend.getState().tickets,
+  saveTicket: (t) => useBackend.getState().saveTicket(t),
+  nextTicketSeq: () => useBackend.getState().nextTicketSeq(),
 });
 
 export { OfflineError, SignInError } from './errors';

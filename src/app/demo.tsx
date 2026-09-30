@@ -29,6 +29,7 @@ import { DEMO_PRESET_IDS, demoPresetTime } from '@/simulator/presets';
 import { useBackend } from '@/stores/backend';
 import { getSimTime, useDemo } from '@/stores/demo';
 import { useEnro } from '@/stores/enro';
+import { useMyReports } from '@/stores/myReports';
 import { type Role, useSettings } from '@/stores/settings';
 import { colors, spacing } from '@/theme/tokens';
 
@@ -52,6 +53,7 @@ export default function DemoScreen() {
   const driverEvents = useBackend((s) => s.events.length);
   const resetBackend = useBackend((s) => s.reset);
   const resetDecisions = useEnro((s) => s.reset);
+  const clearMyReports = useMyReports((s) => s.clear);
   const { language, setLanguage, largeText, setLargeText, setRole } = useSettings();
 
   const barangayName = (id: string | null) =>
@@ -210,22 +212,22 @@ export default function DemoScreen() {
             }}
           />
           {events.length + driverEvents ? (
-            <>
-              <AppText variant="label">
-                {t('demo.activeEvents', { count: events.length + driverEvents })}
-              </AppText>
-              <Button
-                variant="secondary"
-                icon="restore"
-                label={t('demo.clearEvents')}
-                onPress={() => {
-                  clearEvents();
-                  resetBackend();
-                  resetDecisions();
-                }}
-              />
-            </>
+            <AppText variant="label">
+              {t('demo.activeEvents', { count: events.length + driverEvents })}
+            </AppText>
           ) : null}
+          <Button
+            variant="secondary"
+            icon="restore"
+            label={t('demo.clearEvents')}
+            onPress={() => {
+              clearEvents();
+              resetBackend();
+              resetDecisions();
+              // The ticket numbers start over, so the resident's list must too.
+              clearMyReports();
+            }}
+          />
         </Card>
       </Section>
     </View>

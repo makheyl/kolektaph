@@ -25,6 +25,7 @@ import {
   zoneLabelPoints,
   zoneLineLayer,
 } from './layers';
+import { MapPinView } from './MapPinView';
 import { TruckPin } from './TruckPin';
 import type { KMapProps } from './types';
 
@@ -41,6 +42,10 @@ export function KMap({
   highlightBarangayId,
   selectedTruckId,
   fitBounds,
+  initialCenter,
+  flyTo,
+  onCenterChange,
+  pins,
   onTruckPress,
   style,
   accessibilityLabel,
@@ -59,6 +64,14 @@ export function KMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitKey]);
 
+  const flyKey = flyTo?.key;
+  useEffect(() => {
+    if (!flyTo) return;
+    cameraRef.current?.flyTo({ center: flyTo.center, zoom: flyTo.zoom, duration: 600 });
+    // Only move when the caller asks (key changes).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flyKey]);
+
   return (
     <View style={style} accessibilityLabel={accessibilityLabel}>
       <Map
@@ -67,13 +80,18 @@ export function KMap({
         touchRotate={false}
         touchPitch={false}
         attribution
+        onRegionDidChange={onCenterChange ? (e) => onCenterChange(e.nativeEvent.center) : undefined}
       >
         <Camera
           ref={cameraRef}
-          initialViewState={{
-            bounds: [west, south, east, north],
-            padding: { top: 24, right: 24, bottom: 24, left: 24 },
-          }}
+          initialViewState={
+            initialCenter
+              ? { center: initialCenter.center, zoom: initialCenter.zoom }
+              : {
+                  bounds: [west, south, east, north],
+                  padding: { top: 24, right: 24, bottom: 24, left: 24 },
+                }
+          }
         />
         <GeoJSONSource id={SOURCE_IDS.zones} data={barangays}>
           <Layer {...zoneFillLayer(highlightBarangayId)} />
@@ -106,6 +124,11 @@ export function KMap({
             <Layer {...previewTimeLabelLayer} />
           </GeoJSONSource>
         ) : null}
+        {(pins ?? []).map((pin) => (
+          <Marker key={pin.id} id={`pin-${pin.id}`} lngLat={pin.position} anchor="bottom">
+            <MapPinView pin={pin} />
+          </Marker>
+        ))}
         {trucks.map((truck) => (
           <Marker
             key={truck.id}

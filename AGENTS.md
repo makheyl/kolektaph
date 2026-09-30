@@ -55,6 +55,11 @@ Docs: https://docs.expo.dev/eas/index.md
 - GPS is recorded only during a shift (HAKOT TC-09): `acceptFixes` enforces it and `finishShift` stops the service first. Android uses a foreground service with the "while using the app" permission only; don't add background location permission.
 - Phone GPS = location task (foreground service, keeps recording with the screen off) + a `watchPositionAsync` watcher (reliable delivery while the app runs); a watchdog in the driver layout restarts both when fixes stop. Keep expo-task-manager ≥ 57.0.21: older versions left a stale task manager after a React context was destroyed (e.g. by the dev launcher), so background fixes never reached JS (the GPS log shows such gaps).
 - `stores/backend.ts` stands in for the server; on web, `stores/tabSync.web.ts` reloads shared stores when another tab writes them (the driver ↔ ENRO demo bridge). Screens never read it directly.
+- Reports are `Ticket`s changed only through `applyAction` (`features/reports/lifecycle.ts`: HAKOT Fig. 4, roles per action, 48-hour reopen, auto-close). Priority (`priority.ts`, HAKOT App. B.2) and dispatch (`dispatch.ts`) are suggestions computed from the ticket list; they are never stored and never act on their own.
+- Crew work on a ticket is a `task` `TruckEvent` (start / done with before and after photos); the backend turns it into lifecycle actions, so it goes through the same offline queue as every other driver tap.
+- "Hindi nadaanan" claims are judged by `judgeClaim` (`features/claims/missed.ts`, HAKOT §10.2) from the same coverage check as the ENRO missed-streets page. A claim opens at most one MISSED ticket per street per day.
+- Photos: native uses live camera capture only (`PhotoCapture.tsx`, no gallery) and web uses a file input with `capture`. `compressPhoto` only scales down (1280 px native, 960 px web as a data URI). Sample tickets use `SamplePhoto` drawings labelled as sample photos. Never present them as real.
+- Location readings for residents pass `mayShowUserSettingsDialog: false`, so declining Google's "Location Accuracy" prompt can't block the pin. If there's no fix, the pin starts at the barangay and the resident moves the map.
 
 ## Rules
 

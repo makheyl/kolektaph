@@ -4,11 +4,14 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppHeader } from '@/components/ui/AppHeader';
 import { AppText } from '@/components/ui/AppText';
+import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
+import { ListRow } from '@/components/ui/ListRow';
 import { SampleDataBadge } from '@/components/ui/SampleDataBadge';
 import { Screen } from '@/components/ui/Screen';
 import { NextCollectionCard } from '@/features/resident/components/NextCollectionCard';
 import { QuickAction } from '@/features/resident/components/QuickAction';
+import { useMyReports } from '@/stores/myReports';
 import { StatusCard } from '@/features/resident/components/StatusCard';
 import { barangayLabel } from '@/features/resident/format';
 import { useMyAlerts } from '@/features/resident/useMyAlerts';
@@ -23,6 +26,7 @@ export default function ResidentHome() {
   const { data: barangays } = useBarangays();
   const { barangayId, now, next, status, truck } = useResidentToday();
   const { unread } = useMyAlerts();
+  const myCount = useMyReports((s) => s.ticketIds.length + s.pending.length);
 
   const props = barangays?.features.find((f) => f.properties.id === barangayId)?.properties;
   const nameOf = (id: string | null) =>
@@ -57,6 +61,15 @@ export default function ResidentHome() {
 
       <StatusCard status={status} now={now} barangayName={props?.name ?? ''} nameOf={nameOf} />
 
+      {status.kind !== 'no_barangay' && status.kind !== 'no_collection_today' ? (
+        <Button
+          variant="secondary"
+          icon="map-marker-remove"
+          label={t('claims.homeLink')}
+          onPress={() => router.push('/resident/missed')}
+        />
+      ) : null}
+
       {barangayId ? <NextCollectionCard next={next} now={now} /> : null}
 
       <View style={styles.grid}>
@@ -81,6 +94,14 @@ export default function ResidentHome() {
           onPress={() => router.push('/resident/kolek')}
         />
       </View>
+
+      <ListRow
+        icon="clipboard-list-outline"
+        title={t('reports.mine.linkFromHome')}
+        subtitle={myCount ? t('reports.mine.count', { count: myCount }) : undefined}
+        trailing="chevron"
+        onPress={() => router.push('/resident/reports')}
+      />
 
       {truck ? (
         <AppText variant="caption" color={colors.textMuted} style={styles.updated}>

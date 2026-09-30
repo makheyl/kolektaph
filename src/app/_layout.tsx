@@ -15,12 +15,15 @@ import { Platform } from 'react-native';
 // Defines the shift GPS task at startup (Android may start the app just to deliver locations).
 import '@/features/driver/recorder';
 import i18n from '@/i18n';
+import { watchNetwork } from '@/lib/network';
 import { useSettings, useSettingsHydrated } from '@/stores/settings';
 import { startTabSync } from '@/stores/tabSync';
 
 void SplashScreen.preventAutoHideAsync();
 // Web demo: tabs share the mock server (driver tab ↔ City ENRO tab).
 startTabSync();
+// Offline queues (driver reports, resident reports) need to know when signal returns.
+watchNetwork();
 
 const queryClient = new QueryClient();
 

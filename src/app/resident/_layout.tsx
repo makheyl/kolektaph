@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { ColorValue } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { usePendingReportsSync } from '@/features/reports/hooks';
 import { useSettings } from '@/stores/settings';
 import { colors, fonts } from '@/theme/tokens';
 
@@ -18,6 +19,7 @@ function tabIcon(active: IconName, inactive: IconName) {
 export default function ResidentLayout() {
   const { t } = useTranslation();
   const onboarded = useSettings((s) => s.onboarded);
+  usePendingReportsSync();
   if (!onboarded) return <Redirect href="/onboarding/language" />;
 
   return (
@@ -61,6 +63,9 @@ export default function ResidentLayout() {
       <Tabs.Screen name="barangay" options={{ href: null }} />
       <Tabs.Screen name="privacy" options={{ href: null }} />
       <Tabs.Screen name="alerts" options={{ href: null }} />
+      <Tabs.Screen name="missed" options={{ href: null }} />
+      <Tabs.Screen name="reports/index" options={{ href: null }} />
+      <Tabs.Screen name="reports/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

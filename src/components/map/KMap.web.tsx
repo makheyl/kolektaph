@@ -21,6 +21,7 @@ import {
   zoneLabelPoints,
   zoneLineLayer,
 } from './layers';
+import { MapPinView } from './MapPinView';
 import { TruckPin } from './TruckPin';
 import type { KMapProps } from './types';
 
@@ -38,6 +39,11 @@ export function KMap({
   highlightBarangayId,
   selectedTruckId,
   fitBounds,
+  initialCenter,
+  flyTo,
+  onCenterChange,
+  pins,
+  cooperative = true,
   onTruckPress,
   style,
   accessibilityLabel,
@@ -63,19 +69,37 @@ export function KMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitKey]);
 
+  const flyKey = flyTo?.key;
+  useEffect(() => {
+    if (!flyTo) return;
+    mapRef.current?.flyTo({ center: flyTo.center, zoom: flyTo.zoom, duration: 600 });
+    // Only move when the caller asks (key changes).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flyKey]);
+
   return (
     <View style={style} accessibilityLabel={accessibilityLabel}>
       <MapLibreMap
         ref={mapRef}
-        initialViewState={{
-          bounds: [west, south, east, north],
-          fitBoundsOptions: { padding: 24 },
-        }}
+        initialViewState={
+          initialCenter
+            ? {
+                longitude: initialCenter.center[0],
+                latitude: initialCenter.center[1],
+                zoom: initialCenter.zoom,
+              }
+            : { bounds: [west, south, east, north], fitBoundsOptions: { padding: 24 } }
+        }
+        onMoveEnd={
+          onCenterChange
+            ? (e) => onCenterChange([e.viewState.longitude, e.viewState.latitude])
+            : undefined
+        }
         mapStyle={MAP_STYLE_URL}
         style={{ width: '100%', height: '100%' }}
         dragRotate={false}
         pitchWithRotate={false}
-        cooperativeGestures
+        cooperativeGestures={cooperative}
         attributionControl={{ compact: true }}
       >
         <Source id={SOURCE_IDS.zones} type="geojson" data={barangays}>
@@ -109,6 +133,16 @@ export function KMap({
             <Layer {...previewTimeLabelLayer} />
           </Source>
         ) : null}
+        {(pins ?? []).map((pin) => (
+          <Marker
+            key={pin.id}
+            longitude={pin.position[0]}
+            latitude={pin.position[1]}
+            anchor="bottom"
+          >
+            <MapPinView pin={pin} />
+          </Marker>
+        ))}
         {trucks.map((truck) => (
           <Marker
             key={truck.id}
