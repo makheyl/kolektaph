@@ -10,11 +10,7 @@ export function StepIndicator({ current, total }: { current: number; total: numb
   const { t } = useTranslation();
   return (
     <View style={styles.wrap}>
-      <View
-        style={styles.dots}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
+      <View style={styles.dots} aria-hidden>
         {Array.from({ length: total }, (_, i) => (
           <View key={i} style={[styles.dot, i < current && styles.dotDone]} />
         ))}

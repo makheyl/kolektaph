@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -28,7 +29,9 @@ import type { TruckState } from '@/services/types';
 import { DEMO_PRESET_IDS, demoPresetTime } from '@/simulator/presets';
 import { useBackend } from '@/stores/backend';
 import { getSimTime, useDemo } from '@/stores/demo';
+import { useCityAdmin } from '@/stores/cityAdmin';
 import { useEnro } from '@/stores/enro';
+import { useKolekChat } from '@/stores/kolekChat';
 import { useMyReports } from '@/stores/myReports';
 import { type Role, useSettings } from '@/stores/settings';
 import { colors, spacing } from '@/theme/tokens';
@@ -54,6 +57,9 @@ export default function DemoScreen() {
   const resetBackend = useBackend((s) => s.reset);
   const resetDecisions = useEnro((s) => s.reset);
   const clearMyReports = useMyReports((s) => s.clear);
+  const resetAdmin = useCityAdmin((s) => s.reset);
+  const clearKolek = useKolekChat((s) => s.clear);
+  const queryClient = useQueryClient();
   const { language, setLanguage, largeText, setLargeText, setRole } = useSettings();
 
   const barangayName = (id: string | null) =>
@@ -226,6 +232,9 @@ export default function DemoScreen() {
               resetDecisions();
               // The ticket numbers start over, so the resident's list must too.
               clearMyReports();
+              resetAdmin();
+              clearKolek();
+              void queryClient.invalidateQueries({ queryKey: ['routeSchedules'] });
             }}
           />
         </Card>

@@ -56,6 +56,8 @@ export interface HomeStatusInput {
   nextAfterToday: CollectionOccurrence | null;
   truck: TruckState | undefined;
   route: Route | undefined;
+  /** "Ilabas na" threshold: the City ENRO's SMS lead time (default VICINITY_MINUTES). */
+  leadMinutes?: number;
 }
 
 export function homeStatus({
@@ -65,6 +67,7 @@ export function homeStatus({
   nextAfterToday,
   truck,
   route,
+  leadMinutes = VICINITY_MINUTES,
 }: HomeStatusInput): HomeStatus {
   if (!barangayId) return { kind: 'no_barangay' };
   if (!today) return { kind: 'no_collection_today', next: nextAfterToday };
@@ -111,7 +114,7 @@ export function homeStatus({
 
   if (visit.arriveAt == null) return { kind: 'no_signal', today };
   const minutes = Math.max(0, Math.ceil((visit.arriveAt - now) / MINUTE));
-  return minutes <= VICINITY_MINUTES
+  return minutes <= leadMinutes
     ? { kind: 'bring_out', today, arriveAt: visit.arriveAt, minutes }
     : {
         kind: 'approaching',

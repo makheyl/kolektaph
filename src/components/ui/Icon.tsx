@@ -11,13 +11,5 @@ interface IconProps {
 
 /** Decorative icon: always paired with a text label, so hidden from screen readers. */
 export function Icon({ name, size = 24, color }: IconProps) {
-  return (
-    <MaterialCommunityIcons
-      name={name}
-      size={size}
-      color={color}
-      accessibilityElementsHidden
-      importantForAccessibility="no"
-    />
-  );
+  return <MaterialCommunityIcons name={name} size={size} color={color} aria-hidden />;
 }

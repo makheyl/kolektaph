@@ -2,7 +2,6 @@ import {
   BARANGAYS,
   CITY_META,
   DRIVER_DEMO_PIN,
-  ROUTE_SCHEDULES,
   ROUTES,
   SCHEDULE_EXCEPTIONS,
   SMS_REGISTRATIONS,
@@ -16,21 +15,30 @@ import { missedStreets } from '@/features/coverage/coverage';
 import { skipsBySegment } from '@/features/driver/streets';
 import { suggestBackups } from '@/features/load/backup';
 import { routeRunsOnDay } from '@/features/schedule/collections';
+import { applyScheduleChange, validateScheduleChange } from '@/features/schedule/editing';
 import { weeklyStats } from '@/features/stats/weekly';
+import { VICINITY_MINUTES } from '@/features/tracking/eta';
 import { atManilaTime, DAY, manilaDateKey, manilaStartOfDay, MINUTE } from '@/lib/time';
 import { simulatedTrace, simulateFleet, simulateTruck } from '@/simulator/truckSimulator';
 
 import { OfflineError, SignInError } from '../errors';
+import { createMockKolek } from './kolek';
 import { createMockReports } from './reports';
+import { createMockStats } from './stats';
 import type {
   Announcement,
+  CityConfig,
+  ContactInfo,
+  ContactTarget,
   GpsFix,
   GpsSource,
   MissedStreet,
   OpsSnapshot,
   OutboundAlert,
+  RouteSchedule,
   Services,
   ShiftSummary,
+  StaffUser,
   Ticket,
   TruckEvent,
   TruckState,
@@ -41,6 +49,10 @@ const TICK_MS = 1000;
 const ALERT_TICK_MS = 2000;
 const OPS_TICK_MS = 2000;
 const INBOX_DAYS = 7;
+const CONFIG_TICK_MS = 2000;
+/** Allowed SMS lead times (minutes); the replay starts 30 minutes before departure. */
+export const SMS_LEAD_MIN = 5;
+export const SMS_LEAD_MAX = 30;
 /** Simulated round trip to the server. */
 const NETWORK_MS = 250;
 
@@ -63,6 +75,15 @@ export interface MockDeps {
   getTickets: () => Ticket[];
   saveTicket: (t: Ticket) => void;
   nextTicketSeq: () => number;
+  /** Stand-in for the backend's settings tables (schedules, SMS lead time, contacts, staff). */
+  getSchedules: () => RouteSchedule[];
+  saveSchedules: (schedules: RouteSchedule[]) => void;
+  getLeadChanges: () => { at: number; minutes: number }[];
+  addLeadChange: (at: number, minutes: number) => void;
+  getContacts: () => CityConfig['contacts'];
+  setContact: (target: ContactTarget, info: ContactInfo) => void;
+  getStaff: () => StaffUser[];
+  saveStaff: (user: StaffUser) => void;
 }
 
 const barangayName = (id: string) =>
@@ -73,8 +94,18 @@ const barangayName = (id: string) =>
  * engine. A real backend implements the same `Services` interface.
  */
 export function createMockServices(deps: MockDeps): Services {
+  const schedules = () => deps.getSchedules();
+  /** SMS lead time in force at a moment (changes never rewrite alerts already sent). */
+  const leadAt = (at: number) => {
+    let minutes = VICINITY_MINUTES;
+    for (const c of deps.getLeadChanges()) if (c.at <= at) minutes = c.minutes;
+    return minutes;
+  };
+  /** Changes whenever a setting that affects the replayed day changes. */
+  const configKey = () => JSON.stringify([deps.getSchedules(), deps.getLeadChanges()]);
+
   const engineContext = (events: TruckEvent[]): EngineContext => ({
-    schedules: ROUTE_SCHEDULES,
+    schedules: schedules(),
     routes: ROUTES,
     exceptions: SCHEDULE_EXCEPTIONS,
     trucks: TRUCKS,
@@ -82,13 +113,14 @@ export function createMockServices(deps: MockDeps): Services {
     registrations: SMS_REGISTRATIONS,
     barangayName,
     weekdayFil: (w) => WEEKDAYS_FIL[w],
+    vicinityMinutes: leadAt,
   });
 
   // A replayed day only changes when that day's truck events change, so cache per day.
   const dayCache = new Map<string, OutboundAlert[]>();
   const alertsForDay = (day: number, events: TruckEvent[]) => {
     const dayEvents = events.filter((e) => e.at >= day && e.at < day + DAY);
-    const key = `${manilaDateKey(day)}|${JSON.stringify(dayEvents)}`;
+    const key = `${manilaDateKey(day)}|${configKey()}|${JSON.stringify(dayEvents)}`;
     let alerts = dayCache.get(key);
     if (!alerts) {
       if (dayCache.size > 64) dayCache.clear();
@@ -173,7 +205,7 @@ export function createMockServices(deps: MockDeps): Services {
     for (const s of states) {
       if (!s.routeId || s.status === 'off_duty' || s.status === 'not_started') continue;
       const route = ROUTES.find((r) => r.id === s.routeId);
-      const schedule = ROUTE_SCHEDULES.find(
+      const schedule = schedules().find(
         (sc) => sc.routeId === s.routeId && routeRunsOnDay(sc, now, SCHEDULE_EXCEPTIONS).runs,
       );
       if (!route || !schedule) continue;
@@ -199,18 +231,18 @@ export function createMockServices(deps: MockDeps): Services {
     const events = deps.getEvents();
     const today = manilaStartOfDay(now);
     const todays = events.filter((e) => e.at >= today && e.at <= now).sort((a, b) => a.at - b.at);
-    const states = simulateFleet(TRUCKS, ROUTE_SCHEDULES, ROUTES, now, SCHEDULE_EXCEPTIONS, events);
+    const states = simulateFleet(TRUCKS, schedules(), ROUTES, now, SCHEDULE_EXCEPTIONS, events);
 
     const missed = missedFor(states, now, events);
 
-    const weeklyKey = `${Math.floor(now / (5 * MINUTE))}|${JSON.stringify(events)}`;
+    const weeklyKey = `${Math.floor(now / (5 * MINUTE))}|${configKey()}|${JSON.stringify(events)}`;
     if (weeklyCache?.key !== weeklyKey) {
       weeklyCache = {
         key: weeklyKey,
         value: weeklyStats(
           {
             trucks: TRUCKS,
-            schedules: ROUTE_SCHEDULES,
+            schedules: schedules(),
             routes: ROUTES,
             exceptions: SCHEDULE_EXCEPTIONS,
             events,
@@ -225,7 +257,7 @@ export function createMockServices(deps: MockDeps): Services {
       at: now,
       states,
       missed,
-      suggestions: suggestBackups(states, ROUTES, ROUTE_SCHEDULES, now, missed),
+      suggestions: suggestBackups(states, ROUTES, schedules(), now, missed),
       weekly: weeklyCache.value,
       events: todays,
       shifts: shiftSummaries(todays),
@@ -245,7 +277,7 @@ export function createMockServices(deps: MockDeps): Services {
           listener(
             simulateFleet(
               TRUCKS,
-              ROUTE_SCHEDULES,
+              schedules(),
               ROUTES,
               deps.getSimTime(),
               SCHEDULE_EXCEPTIONS,
@@ -258,8 +290,17 @@ export function createMockServices(deps: MockDeps): Services {
       },
     },
     schedule: {
-      getRouteSchedules: async () => ROUTE_SCHEDULES,
+      getRouteSchedules: async () => schedules(),
       getExceptions: async () => SCHEDULE_EXCEPTIONS,
+      async updateRouteSchedule(change) {
+        await wait(NETWORK_MS);
+        if (!deps.isOnline()) throw new OfflineError();
+        const errors = validateScheduleChange(change, deps.getSimTime());
+        if (errors.length) throw new Error(`Invalid schedule change: ${errors.join(', ')}`);
+        const next = applyScheduleChange(schedules(), change);
+        deps.saveSchedules(next);
+        return next;
+      },
     },
     alerts: {
       subscribeAlerts(listener) {
@@ -302,14 +343,7 @@ export function createMockServices(deps: MockDeps): Services {
         if (dayStart > now) return [];
         const at = Math.min(now, atManilaTime(dayStart, '23:59'));
         const events = deps.getEvents();
-        const states = simulateFleet(
-          TRUCKS,
-          ROUTE_SCHEDULES,
-          ROUTES,
-          at,
-          SCHEDULE_EXCEPTIONS,
-          events,
-        );
+        const states = simulateFleet(TRUCKS, schedules(), ROUTES, at, SCHEDULE_EXCEPTIONS, events);
         return missedFor(states, at, events);
       },
     },
@@ -321,6 +355,77 @@ export function createMockServices(deps: MockDeps): Services {
       nextTicketSeq: deps.nextTicketSeq,
       isOnline: deps.isOnline,
       traceFor,
+      getSchedules: schedules,
+    }),
+    admin: {
+      subscribeConfig(listener) {
+        let last = '';
+        const emit = () => {
+          const config: CityConfig = {
+            smsLeadMinutes: leadAt(deps.getSimTime()),
+            contacts: deps.getContacts(),
+          };
+          const signature = JSON.stringify(config);
+          if (signature === last) return;
+          last = signature;
+          listener(config);
+        };
+        emit();
+        const timer = setInterval(emit, CONFIG_TICK_MS);
+        return () => clearInterval(timer);
+      },
+      async setSmsLeadMinutes(minutes) {
+        await wait(NETWORK_MS);
+        if (!deps.isOnline()) throw new OfflineError();
+        if (!Number.isInteger(minutes) || minutes < SMS_LEAD_MIN || minutes > SMS_LEAD_MAX) {
+          throw new Error(`SMS lead time must be ${SMS_LEAD_MIN}–${SMS_LEAD_MAX} minutes`);
+        }
+        const now = deps.getSimTime();
+        deps.addLeadChange(now, minutes);
+        return { smsLeadMinutes: leadAt(now), contacts: deps.getContacts() };
+      },
+      async setContact(target, info) {
+        await wait(NETWORK_MS);
+        if (!deps.isOnline()) throw new OfflineError();
+        const clean = (v: string | null) => (v && v.trim() ? v.trim() : null);
+        deps.setContact(target, { phone: clean(info.phone), hours: clean(info.hours) });
+        return { smsLeadMinutes: leadAt(deps.getSimTime()), contacts: deps.getContacts() };
+      },
+      subscribeStaff(listener) {
+        let last = '';
+        const emit = () => {
+          const staff = deps.getStaff();
+          const signature = JSON.stringify(staff);
+          if (signature === last) return;
+          last = signature;
+          listener(staff);
+        };
+        emit();
+        const timer = setInterval(emit, CONFIG_TICK_MS);
+        return () => clearInterval(timer);
+      },
+      async saveStaff(user) {
+        await wait(NETWORK_MS);
+        if (!deps.isOnline()) throw new OfflineError();
+        if (!user.name.trim()) throw new Error('A name is required');
+        deps.saveStaff({ ...user, name: user.name.trim() });
+      },
+    },
+    stats: createMockStats({
+      getSimTime: deps.getSimTime,
+      getEvents: deps.getEvents,
+      getSchedules: schedules,
+      missedFor,
+      alertsForDay,
+    }),
+    kolek: createMockKolek({
+      getSimTime: deps.getSimTime,
+      getEvents: deps.getEvents,
+      getSchedules: schedules,
+      getTickets: deps.getTickets,
+      getContacts: deps.getContacts,
+      leadAt,
+      weekly: () => opsSnapshot().weekly,
     }),
     driver: {
       async signIn(truckId, pin) {
@@ -345,7 +450,7 @@ export function createMockServices(deps: MockDeps): Services {
           listener(
             simulateTruck(
               truck,
-              ROUTE_SCHEDULES,
+              schedules(),
               ROUTES,
               deps.getSimTime(),
               SCHEDULE_EXCEPTIONS,

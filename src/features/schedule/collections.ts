@@ -6,8 +6,16 @@
 import { atManilaTime, DAY, manilaDateKey, manilaParts, manilaStartOfDay } from '@/lib/time';
 import type { Route, RouteSchedule, ScheduleException, WasteType } from '@/services/types';
 
+/** Days of schedule the resident screens (and Kolek) look ahead: two weeks. */
+export const LOOKAHEAD_DAYS = 14;
+
 const appliesTo = (e: ScheduleException, routeId: string) =>
   e.routeIds === 'all' || e.routeIds.includes(routeId);
+
+/** Is the schedule record in force on this Manila date ("YYYY-MM-DD")? */
+export const scheduleValidOn = (schedule: RouteSchedule, dateKey: string) =>
+  (!schedule.validFrom || schedule.validFrom <= dateKey) &&
+  (!schedule.validUntil || dateKey <= schedule.validUntil);
 
 export type DayRunStatus =
   | { runs: true; kind: 'regular' }
@@ -22,6 +30,7 @@ export function routeRunsOnDay(
   exceptions: ScheduleException[],
 ): DayRunStatus {
   const key = manilaDateKey(dayMs);
+  if (!scheduleValidOn(schedule, key)) return { runs: false, kind: 'not_scheduled' };
   const movedIn = exceptions.find(
     (e) => e.action === 'move' && e.moveTo === key && appliesTo(e, schedule.routeId),
   );

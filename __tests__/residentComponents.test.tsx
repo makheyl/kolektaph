@@ -33,6 +33,7 @@ describe('resident components', () => {
           minutes: 12,
         }}
         now={manilaEpoch(2026, 9, 29, 7, 28)}
+        barangayId="milagrosa"
         barangayName="Milagrosa"
         nameOf={() => 'Maduya'}
       />,

@@ -378,6 +378,7 @@ describe('reports service (mock backend)', () => {
       },
       nextTicketSeq: () => ++seq,
       isOnline: () => online,
+      getSchedules: () => ROUTE_SCHEDULES,
       traceFor: (s) =>
         simulatedTrace(
           ROUTES.find((r) => r.id === s.routeId)!,

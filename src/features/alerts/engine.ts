@@ -3,9 +3,9 @@
  *
  * Rules (pitch slide 12 + Q&A):
  * - Night-before reminder at 6:00 PM for every barangay collected the next day.
- * - Vicinity alert once the truck is VICINITY_MINUTES (15) or less from a barangay, sent to that
- *   barangay only, once per barangay per day. If the truck is already collecting there when
- *   first observed, a "nandiyan na" variant goes out instead.
+ * - Vicinity alert once the truck is the SMS lead time (City ENRO setting, default 15 minutes)
+ *   or less from a barangay, sent to that barangay only, once per barangay per day. If the
+ *   truck is already collecting there when first observed, a "nandiyan na" variant goes out.
  * - Delay alerts: truck incident (breakdown, flat tire, flood, blocked road; with the new
  *   estimated time) and truck full with the barangay unfinished. Once per barangay per incident.
  * - After a delay, the barangay gets a fresh vicinity alert once the truck is on its way again
@@ -42,6 +42,11 @@ export interface EngineContext {
   barangayName: (id: string) => string;
   /** Filipino weekday names, 0 = Linggo. */
   weekdayFil: (weekday: number) => string;
+  /**
+   * SMS lead time in force at a moment (City ENRO setting; default VICINITY_MINUTES). A function
+   * of time, so changing the setting never rewrites alerts already sent.
+   */
+  vicinityMinutes?: (at: number) => number;
 }
 
 const NIGHT_BEFORE_AT = '18:00';
@@ -133,7 +138,7 @@ export class AlertEngine {
       const moving = truck.status === 'on_route' || truck.status === 'not_started';
       if (moving && visit.state === 'upcoming' && visit.arriveAt != null) {
         const minutes = Math.ceil((visit.arriveAt - now) / MINUTE);
-        if (minutes <= VICINITY_MINUTES) {
+        if (minutes <= (this.ctx.vicinityMinutes?.(now) ?? VICINITY_MINUTES)) {
           send(vKey, {
             ...base,
             kind: 'vicinity',

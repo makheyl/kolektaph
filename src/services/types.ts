@@ -72,6 +72,25 @@ export interface RouteSchedule {
    * window, e.g. 7:00–10:00 AM, while the truck may serve other streets first).
    */
   departAt?: string;
+  /**
+   * First and last Manila day ("YYYY-MM-DD", inclusive) this schedule applies. Missing = no
+   * limit. A schedule change ends the old record the day before and starts a new one, so past
+   * days keep the schedule they actually had.
+   */
+  validFrom?: string;
+  validUntil?: string;
+}
+
+/** A City ENRO change to a route's regular schedule, from a given day on. */
+export interface ScheduleChange {
+  routeId: string;
+  /** First Manila day ("YYYY-MM-DD") of the new schedule. */
+  from: string;
+  truckId: string;
+  days: Weekday[];
+  start: string;
+  windowEnd: string;
+  wasteType: WasteType;
 }
 
 /** A holiday or one-off change to the regular schedule, on a Manila calendar date. */
@@ -492,6 +511,147 @@ export type ClaimResult =
   | { kind: 'please_photo'; passedFrom: number | null; passedTo: number | null }
   | { kind: 'no_gps'; ticketId: string };
 
+// ---------- City settings (City ENRO) ----------
+
+export interface ContactInfo {
+  /** As staff typed it (landline or mobile); null until the office gives one. */
+  phone: string | null;
+  /** Office hours or a short note, e.g. "Lunes–Biyernes, 8 AM–5 PM". */
+  hours: string | null;
+}
+
+export interface CityConfig {
+  /** Minutes before the truck arrives that the "ilabas na" SMS goes out (pitch: 15). */
+  smsLeadMinutes: number;
+  contacts: { enro: ContactInfo; barangays: Record<string, ContactInfo> };
+}
+
+export type ContactTarget = { kind: 'enro' } | { kind: 'barangay'; barangayId: string };
+
+export type StaffRole = 'admin' | 'dispatcher' | 'viewer' | 'barangay';
+
+/** A dashboard account (sample accounts until real sign-in exists). */
+export interface StaffUser {
+  id: string;
+  name: string;
+  role: StaffRole;
+  /** For barangay focal persons: their barangay. */
+  barangayId: string | null;
+  active: boolean;
+}
+
+// ---------- Statistics (City ENRO) ----------
+
+/** One route run on one day (estimated from the simulation; real data: trip logs). */
+export interface RunDayStat {
+  /** Manila midnight. */
+  day: number;
+  routeId: string;
+  truckId: string;
+  trips: number;
+  tonnes: number;
+}
+
+/** One barangay's collection on one day. */
+export interface BarangayDayStat {
+  day: number;
+  barangayId: string;
+  routeId: string;
+  truckId: string;
+  /** Planned collection street length and the part the GPS check counts as served. */
+  collectM: number;
+  servedM: number;
+  /** Estimated tonnes (the run's tonnes split by served street length). */
+  tonnes: number;
+  windowEnd: number;
+  /** When the truck started and finished collecting in the barangay (null = never). */
+  arrivedAt: number | null;
+  finishedAt: number | null;
+  /** When the "malapit na ang truck" SMS went out (null = none). */
+  smsAt: number | null;
+}
+
+export interface DailyStats {
+  runs: RunDayStat[];
+  barangays: BarangayDayStat[];
+}
+
+// ---------- Ask Kolek ----------
+
+export type KolekIntent =
+  | 'greeting'
+  | 'thanks'
+  | 'next_collection'
+  | 'truck_location'
+  | 'how_to_report'
+  | 'emergency'
+  | 'missed'
+  | 'segregation'
+  | 'stats'
+  | 'sms_on'
+  | 'sms_off'
+  | 'contacts'
+  | 'schedule_change'
+  | 'report_status'
+  | 'fees'
+  | 'fallback';
+
+/**
+ * A fact inside a Kolek answer. The app formats it (times, days, names), so every number in an
+ * answer comes from data and none is written into the answer texts.
+ */
+export type KolekValue =
+  | { kind: 'text'; value: string }
+  | { kind: 'number'; value: number }
+  | { kind: 'percent'; value: number }
+  | { kind: 'time'; at: number }
+  | { kind: 'day'; at: number }
+  | { kind: 'window'; start: number; end: number }
+  | { kind: 'minutes'; value: number }
+  /** A barangay's name; null = a road outside any barangay. */
+  | { kind: 'barangay'; id: string | null }
+  | { kind: 'weekdays'; days: Weekday[] }
+  | { kind: 'i18n'; key: string }
+  /** Text that exists in both languages in the data (e.g. a holiday's name). */
+  | { kind: 'localized'; fil: string; en: string };
+
+export interface KolekLine {
+  key: string;
+  values?: Record<string, KolekValue>;
+}
+
+/** A button under an answer that opens a screen (deep link). */
+export interface KolekAction {
+  labelKey: string;
+  href: string;
+  icon: string;
+}
+
+export interface KolekReply {
+  intent: KolekIntent;
+  lines: KolekLine[];
+  actions: KolekAction[];
+  /** Follow-up suggestion chips (ids of `kolek.chips.*`). */
+  suggestions: string[];
+}
+
+export interface KolekMessage {
+  id: string;
+  from: 'resident' | 'kolek';
+  at: number;
+  /** What the resident typed. */
+  text?: string;
+  reply?: KolekReply;
+}
+
+/** What Kolek may know about the resident: only what the app already keeps on the device. */
+export interface KolekContext {
+  barangayId: string | null;
+  smsOn: boolean;
+  /** Ticket numbers of the resident's own reports. */
+  myTicketIds: string[];
+}
+
 // ---------- Services (screens only talk to these) ----------
 
 export interface GeoService {
@@ -509,6 +669,8 @@ export interface FleetService {
 export interface ScheduleService {
   getRouteSchedules(): Promise<RouteSchedule[]>;
   getExceptions(): Promise<ScheduleException[]>;
+  /** City ENRO: change a route's regular schedule from a given day on. */
+  updateRouteSchedule(change: ScheduleChange): Promise<RouteSchedule[]>;
 }
 
 export interface AlertsService {
@@ -540,6 +702,25 @@ export interface ReportsService {
   scheduleRecollection(missed: MissedStreet, day: number): Promise<Ticket>;
 }
 
+export interface AdminService {
+  subscribeConfig(listener: (config: CityConfig) => void): () => void;
+  setSmsLeadMinutes(minutes: number): Promise<CityConfig>;
+  setContact(target: ContactTarget, info: ContactInfo): Promise<CityConfig>;
+  subscribeStaff(listener: (users: StaffUser[]) => void): () => void;
+  saveStaff(user: StaffUser): Promise<void>;
+}
+
+export interface StatsService {
+  /** Collections from `fromDay` to `toDay` (Manila midnights, inclusive), up to now. */
+  getDailyStats(fromDay: number, toDay: number): Promise<DailyStats>;
+}
+
+/** Ask Kolek. Rule-based today; an LLM with retrieval can implement the same interface. */
+export interface KolekProvider {
+  /** Answers the last resident message in `history`. */
+  reply(history: KolekMessage[], context: KolekContext): Promise<KolekReply>;
+}
+
 export interface DriverService {
   /** Truck code + 4-digit PIN (sample accounts in the prototype). Rejects with SignInError. */
   signIn(truckId: string, pin: string): Promise<DriverSession>;
@@ -564,4 +745,7 @@ export interface Services {
   ops: OpsService;
   driver: DriverService;
   reports: ReportsService;
+  admin: AdminService;
+  stats: StatsService;
+  kolek: KolekProvider;
 }

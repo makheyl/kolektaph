@@ -39,6 +39,9 @@ export const sms = {
   delayFull: (p: { barangay: string }) =>
     `KolektaPH: Naantala ang koleksyon sa ${brgyLong(p.barangay)}: puno na ang truck. Magpapadala ng ibang truck. Huwag munang ilabas ang basura.`,
 
+  scheduleChange: (p: { barangay: string; from: string; days: string; range: string }) =>
+    `KolektaPH: Bagong iskedyul ng koleksyon sa ${brgyLong(p.barangay)} simula ${p.from}: tuwing ${p.days}, ${p.range}. Salamat po!`,
+
   welcome: (p: { barangay: string }) =>
     `KolektaPH: Salamat! Ite-text ka namin tungkol sa koleksyon ng basura sa ${brgyLong(p.barangay)}. I-reply ang STOP para itigil.`,
 };
@@ -53,3 +56,32 @@ export const WEEKDAYS_FIL = [
   'Biyernes',
   'Sabado',
 ];
+
+const WEEKDAYS_FIL_SHORT = ['Lin', 'Lun', 'Mar', 'Miy', 'Huw', 'Biy', 'Sab'];
+const MONTHS_FIL_SHORT = [
+  'Ene',
+  'Peb',
+  'Mar',
+  'Abr',
+  'May',
+  'Hun',
+  'Hul',
+  'Ago',
+  'Set',
+  'Okt',
+  'Nob',
+  'Dis',
+];
+
+/** "Martes at Biyernes"; "Lun, Miy at Biy" for three or more; "araw-araw" for every day. */
+export function smsDays(days: number[]): string {
+  const sorted = [...new Set(days)].sort((a, b) => a - b);
+  if (sorted.length === 7) return 'araw-araw';
+  const names = sorted.map((d) => (sorted.length > 2 ? WEEKDAYS_FIL_SHORT : WEEKDAYS_FIL)[d]);
+  return names.length > 1
+    ? `${names.slice(0, -1).join(', ')} at ${names[names.length - 1]}`
+    : names[0];
+}
+
+/** "Okt 12" (month and day, Filipino). */
+export const smsDate = (month: number, day: number) => `${MONTHS_FIL_SHORT[month - 1]} ${day}`;

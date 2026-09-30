@@ -59,7 +59,13 @@ export default function ResidentHome() {
       />
       <SampleDataBadge />
 
-      <StatusCard status={status} now={now} barangayName={props?.name ?? ''} nameOf={nameOf} />
+      <StatusCard
+        status={status}
+        now={now}
+        barangayId={barangayId ?? ''}
+        barangayName={props?.name ?? ''}
+        nameOf={nameOf}
+      />
 
       {status.kind !== 'no_barangay' && status.kind !== 'no_collection_today' ? (
         <Button

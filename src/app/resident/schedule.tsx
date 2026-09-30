@@ -19,10 +19,14 @@ import {
   formatWindow,
 } from '@/features/resident/format';
 import { useResidentToday } from '@/features/resident/useResidentToday';
-import { type CollectionOccurrence, isRunning } from '@/features/schedule/collections';
+import {
+  type CollectionOccurrence,
+  isRunning,
+  scheduleValidOn,
+} from '@/features/schedule/collections';
 import { useBarangays, useRouteSchedules } from '@/features/tracking/hooks';
 import { goBack } from '@/lib/navigation';
-import { parseDateKey } from '@/lib/time';
+import { atManilaTime, formatClock, manilaDateKey, parseDateKey } from '@/lib/time';
 import type { Weekday } from '@/services/types';
 import { useSettings } from '@/stores/settings';
 import { colors, radius, spacing } from '@/theme/tokens';
@@ -41,16 +45,15 @@ export default function ScheduleScreen() {
   const { occurrences, now, routes } = useResidentToday(barangayId);
   const props = barangays?.features.find((f) => f.properties.id === barangayId)?.properties;
 
-  // Regular weekdays for this barangay, e.g. "Martes at Biyernes".
+  // Regular weekdays for this barangay, e.g. "Martes at Biyernes", and announced changes.
+  const todayKey = manilaDateKey(now);
+  const own = (schedules ?? []).filter((s) =>
+    routes?.find((r) => r.id === s.routeId)?.barangayIds.includes(barangayId ?? ''),
+  );
   const regularDays = [
-    ...new Set(
-      (schedules ?? [])
-        .filter((s) =>
-          routes?.find((r) => r.id === s.routeId)?.barangayIds.includes(barangayId ?? ''),
-        )
-        .flatMap((s) => s.days),
-    ),
+    ...new Set(own.filter((s) => scheduleValidOn(s, todayKey)).flatMap((s) => s.days)),
   ].sort() as Weekday[];
+  const upcoming = own.filter((s) => s.validFrom && s.validFrom > todayKey);
 
   const note = (o: CollectionOccurrence) => {
     const reason = o.exception?.reason[language] ?? '';
@@ -102,6 +105,18 @@ export default function ScheduleScreen() {
                   })}
                 </AppText>
               ) : null}
+              {upcoming.map((s) => {
+                const from = parseDateKey(s.validFrom!);
+                return (
+                  <AppText key={s.validFrom} variant="bodyStrong" color={colors.amber}>
+                    {t('resident.schedule.changeFrom', {
+                      day: formatDate(t, from),
+                      days: s.days.map((d) => t(`weekday.${d}`)).join(', '),
+                      window: `${formatClock(atManilaTime(from, s.start))} – ${formatClock(atManilaTime(from, s.windowEnd))}`,
+                    })}
+                  </AppText>
+                );
+              })}
             </View>
           ) : null}
 

@@ -65,6 +65,13 @@ the driver's GPS page shows the offline queue at work.
 
 The 12 sample tickets (KPH-…-000101 to 000112) and their pictures are sample data. Resetting from `/demo` restores them.
 
+## Demo: Ask Kolek and City ENRO settings
+
+- **Ask Kolek** (`/resident/kolek`): ask in Filipino, English or Taglish ("nsan n po ung trak", "saan ilalagay ang baterya", "may koleksyon ba sa pasko?"). Answers come from the schedule, the live truck status, the resident's reports and the City settings, with buttons that open the right screen. Kolek never quotes fees or invents numbers; when unsure, it points to the barangay hall and the City ENRO.
+- **Schedules** (`/enro/schedules`): change a route's days, time, truck or waste type from a chosen day. The page warns when a truck would run two routes at once, shows who is affected and previews the SMS; saving texts the barangays, and the resident Schedule screen and Kolek announce the change.
+- **Statistics** (`/enro/stats`): tonnes per barangay, streets served, on time, "SMS before the truck" and reports by type for the last 7 or 28 days, with a CSV download (sample figures).
+- **Settings** (`/enro/settings`): the SMS lead time (default 15 minutes; changes apply from now), the contact numbers Kolek gives residents, and sample staff accounts with roles.
+
 ## Driver app on a phone (Android)
 
 Real GPS recording needs the Android build: location is recorded by a foreground service only

@@ -6,6 +6,7 @@
  */
 import { useAnnouncements } from './announcements';
 import { useBackend } from './backend';
+import { useCityAdmin } from './cityAdmin';
 import { useDemo } from './demo';
 import { useEnro } from './enro';
 
@@ -14,6 +15,7 @@ const SHARED = {
   'kolektaph.demo': useDemo,
   'kolektaph.announcements': useAnnouncements,
   'kolektaph.enro': useEnro,
+  'kolektaph.admin': useCityAdmin,
 } as const;
 
 let started = false;

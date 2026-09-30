@@ -3,7 +3,7 @@
  * checked against the simulated truck, its GPS trace and the crew's street log, exactly the way
  * a backend would check them against real GPS.
  */
-import { BARANGAYS, ROUTE_SCHEDULES, ROUTES, SCHEDULE_EXCEPTIONS, TRUCKS } from '@/data/carmona';
+import { BARANGAYS, ROUTES, SCHEDULE_EXCEPTIONS, TRUCKS } from '@/data/carmona';
 import { judgeClaim, nearestStreet } from '@/features/claims/missed';
 import { driverStreets, streetMarks } from '@/features/driver/streets';
 import { applyAction, newTicket, ticketNumber, withAutoClose } from '@/features/reports/lifecycle';
@@ -23,6 +23,7 @@ import type {
   MissedStreet,
   NewReport,
   ReportsService,
+  RouteSchedule,
   Ticket,
   TruckEvent,
   TruckState,
@@ -39,6 +40,8 @@ export interface ReportsDeps {
   saveTicket: (t: Ticket) => void;
   nextTicketSeq: () => number;
   isOnline: () => boolean;
+  /** The route schedules in force (City ENRO edits included). */
+  getSchedules: () => RouteSchedule[];
   /** GPS the server has for a truck today (simulated trace in the prototype). */
   traceFor: (state: TruckState) => LngLat[];
 }
@@ -166,7 +169,7 @@ export function createMockReports(deps: ReportsDeps): ReportsService {
       const now = deps.getSimTime();
       const occ = collectionsForBarangay(
         place.barangayId,
-        ROUTE_SCHEDULES,
+        deps.getSchedules(),
         ROUTES,
         SCHEDULE_EXCEPTIONS,
         now,
@@ -183,7 +186,7 @@ export function createMockReports(deps: ReportsDeps): ReportsService {
       const route = ROUTES.find((r) => r.id === today.routeId);
       const events = deps.getEvents();
       const truck = truckDef
-        ? simulateTruck(truckDef, ROUTE_SCHEDULES, ROUTES, now, SCHEDULE_EXCEPTIONS, events)
+        ? simulateTruck(truckDef, deps.getSchedules(), ROUTES, now, SCHEDULE_EXCEPTIONS, events)
         : undefined;
       const streets = route
         ? driverStreets(route).filter((s) => s.barangayId === place.barangayId)

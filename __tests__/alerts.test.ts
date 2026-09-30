@@ -14,7 +14,14 @@ import {
   operationalAlerts,
 } from '@/features/alerts/engine';
 import { smsInfo, smsTimeRange } from '@/features/alerts/sms';
-import { brgyLong, brgyShort, sms, WEEKDAYS_FIL } from '@/features/alerts/templates';
+import {
+  brgyLong,
+  brgyShort,
+  sms,
+  smsDate,
+  smsDays,
+  WEEKDAYS_FIL,
+} from '@/features/alerts/templates';
 import { formatClock, manilaEpoch, MINUTE } from '@/lib/time';
 import type { TruckEvent } from '@/services/types';
 
@@ -79,6 +86,13 @@ describe('SMS templates', () => {
     );
   });
 
+  it('writes schedule days and dates compactly', () => {
+    expect(smsDays([5, 2])).toBe('Martes at Biyernes');
+    expect(smsDays([1, 3, 5])).toBe('Lun, Miy at Biy');
+    expect(smsDays([0, 1, 2, 3, 4, 5, 6])).toBe('araw-araw');
+    expect(smsDate(10, 12)).toBe('Okt 12');
+  });
+
   it('names Poblacion barangays the way residents say them', () => {
     expect(brgyLong('Barangay 1')).toBe('Brgy. 1');
     expect(brgyShort('Milagrosa')).toBe('Milagrosa');
@@ -103,6 +117,18 @@ describe('SMS templates', () => {
           ),
           sms.delayFull({ barangay }),
           sms.welcome({ barangay }),
+          sms.scheduleChange({
+            barangay,
+            from: smsDate(9, 30),
+            days: smsDays([1, 2, 3, 4, 5, 6]),
+            range: '11:30AM-12:30PM',
+          }),
+          sms.scheduleChange({
+            barangay,
+            from: smsDate(12, 31),
+            days: smsDays([3, 4]),
+            range: '11:30AM-12:30PM',
+          }),
         ];
         for (const text of texts) {
           const info = smsInfo(text);

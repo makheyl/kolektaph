@@ -5,11 +5,11 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { formatClock } from '@/lib/time';
+import { type RenderContext, renderLine } from '@/features/kolek/render';
 import { colors, radius, spacing } from '@/theme/tokens';
 
-import { formatRelativeDay, formatWindow } from '../format';
 import type { HomeStatus } from '../homeStatus';
+import { statusText } from '../statusText';
 
 interface Look {
   icon: IconName;
@@ -45,6 +45,7 @@ const LOOKS: Record<Exclude<HomeStatus['kind'], 'no_barangay'>, Look> = {
 interface StatusCardProps {
   status: HomeStatus;
   now: number;
+  barangayId: string;
   barangayName: string;
   /** Resolves a barangay id to its display name (for "Nasa Maduya ang truck"). */
   nameOf: (barangayId: string | null) => string;
@@ -54,8 +55,8 @@ interface StatusCardProps {
  * The answer to "Kailan darating ang truck?". Sits at the top of Home, readable without
  * scrolling, and announced to screen readers when it changes.
  */
-export function StatusCard({ status, now, barangayName, nameOf }: StatusCardProps) {
-  const { t } = useTranslation();
+export function StatusCard({ status, now, barangayId, barangayName, nameOf }: StatusCardProps) {
+  const { t, i18n } = useTranslation();
 
   if (status.kind === 'no_barangay') {
     return (
@@ -72,99 +73,17 @@ export function StatusCard({ status, now, barangayName, nameOf }: StatusCardProp
   }
 
   const look = LOOKS[status.kind];
-  const s = 'resident.home.status';
-  let title = '';
-  let lines: string[] = [];
-  let chip: string | null = null;
-  let showMap = false;
-
-  switch (status.kind) {
-    case 'no_collection_today':
-      title = t(`${s}.noneTodayTitle`);
-      lines = [
-        status.next
-          ? t(`${s}.noneTodayBody`, {
-              day: formatRelativeDay(t, status.next.start, now),
-              window: formatWindow(status.next),
-            })
-          : t(`${s}.noneTodayNoNext`),
-      ];
-      break;
-    case 'before_start':
-      title = t(`${s}.beforeStartTitle`);
-      lines = [t(`${s}.beforeStartBody`, { time: formatClock(status.departAt) })];
-      showMap = true;
-      break;
-    case 'approaching':
-      title = t(`${s}.approachingTitle`);
-      lines = [
-        t(`${s}.approachingBody`, {
-          place: nameOf(status.truckBarangayId) || t('truck.unnamedRoad'),
-          time: formatClock(status.arriveAt),
-        }),
-      ];
-      chip = t(`${s}.approachingIn`, { minutes: t('common.minutes', { count: status.minutes }) });
-      showMap = true;
-      break;
-    case 'bring_out':
-      title = t(`${s}.bringOutTitle`);
-      lines = [t(`${s}.bringOutBody`, { time: formatClock(status.arriveAt) })];
-      chip = t(`${s}.bringOutIn`, { minutes: t('common.minutes', { count: status.minutes }) });
-      showMap = true;
-      break;
-    case 'in_barangay':
-      title = t(`${s}.inBarangayTitle`);
-      lines = [
-        status.streetName ? t(`${s}.inBarangayStreet`, { street: status.streetName }) : '',
-        status.finishAt ? t(`${s}.inBarangayFinish`, { time: formatClock(status.finishAt) }) : '',
-      ].filter(Boolean);
-      showMap = true;
-      break;
-    case 'passed':
-      title = t(`${s}.passedTitle`, { barangay: barangayName });
-      lines = [
-        t(`${s}.passedBody`, { time: formatClock(status.passedAt) }),
-        status.next
-          ? t(`${s}.passedNext`, {
-              day: formatRelativeDay(t, status.next.start, now),
-              window: formatWindow(status.next),
-            })
-          : '',
-      ].filter(Boolean);
-      break;
-    case 'full':
-      title = t(`${s}.fullTitle`);
-      lines = [t(`${s}.fullBody`)];
-      showMap = true;
-      break;
-    case 'breakdown':
-      title = t(`${s}.breakdownTitle`, { incident: t(`incident.${status.incident}`) });
-      lines = [
-        status.arriveAt
-          ? t(`${s}.breakdownArrive`, { time: formatClock(status.arriveAt) })
-          : t(`${s}.breakdownResume`, { time: formatClock(status.resumeAt) }),
-        t(`${s}.breakdownHold`),
-      ];
-      showMap = true;
-      break;
-    case 'paused':
-      title = t(
-        status.reason === 'to_disposal' ? `${s}.pausedDisposalTitle` : `${s}.pausedBreakTitle`,
-      );
-      lines = [
-        t(status.reason === 'to_disposal' ? `${s}.pausedDisposalBody` : `${s}.pausedBreakBody`),
-      ];
-      showMap = true;
-      break;
-    case 'unfinished':
-      title = t(`${s}.unfinishedTitle`);
-      lines = [t(`${s}.unfinishedBody`)];
-      break;
-    case 'no_signal':
-      title = t(`${s}.noSignalTitle`);
-      lines = [t(`${s}.noSignalBody`)];
-      break;
-  }
+  const ctx: RenderContext = {
+    t,
+    now,
+    language: i18n.language === 'en' ? 'en' : 'fil',
+    nameOf: (id) => nameOf(id) || (id === barangayId ? barangayName : ''),
+  };
+  const text = statusText(status, barangayId);
+  const title = renderLine(text.title, ctx);
+  const lines = text.lines.map((l) => renderLine(l, ctx));
+  const chip = text.chip ? renderLine(text.chip, ctx) : null;
+  const showMap = text.showMap;
 
   const textColor = status.kind === 'bring_out' ? colors.navy : colors.text;
 

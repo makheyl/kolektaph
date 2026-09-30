@@ -25,8 +25,9 @@ const NAV: NavItem[] = [
   { href: '/enro/reports', icon: 'file-document-outline', labelKey: 'enro.nav.reports' },
   { href: '/enro/missed', icon: 'map-marker-remove', labelKey: 'enro.nav.missed' },
   { href: '/enro/trucks', icon: 'truck-outline', labelKey: 'enro.nav.trucks' },
-  { icon: 'chart-bar', labelKey: 'enro.nav.stats', sprint: 'S6' },
-  { icon: 'calendar-edit', labelKey: 'enro.nav.schedules', sprint: 'S6' },
+  { href: '/enro/stats', icon: 'chart-bar', labelKey: 'enro.nav.stats' },
+  { href: '/enro/schedules', icon: 'calendar-edit', labelKey: 'enro.nav.schedules' },
+  { href: '/enro/settings', icon: 'cog-outline', labelKey: 'enro.nav.settings' },
 ];
 
 /** City ENRO dashboard shell: sidebar on desktop, top bar with nav chips on smaller screens. */

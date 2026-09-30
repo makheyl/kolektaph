@@ -1,6 +1,8 @@
+import { ROUTE_SCHEDULES } from '@/data/carmona';
 import { isOnline } from '@/lib/network';
 import { useAnnouncements } from '@/stores/announcements';
 import { useBackend } from '@/stores/backend';
+import { useCityAdmin } from '@/stores/cityAdmin';
 import { getDemoEvents, getSimTime } from '@/stores/demo';
 
 import { createMockServices } from './mock';
@@ -21,6 +23,14 @@ export const services: Services = createMockServices({
   getTickets: () => useBackend.getState().tickets,
   saveTicket: (t) => useBackend.getState().saveTicket(t),
   nextTicketSeq: () => useBackend.getState().nextTicketSeq(),
+  getSchedules: () => useCityAdmin.getState().schedules ?? ROUTE_SCHEDULES,
+  saveSchedules: (schedules) => useCityAdmin.getState().setSchedules(schedules),
+  getLeadChanges: () => useCityAdmin.getState().leadChanges,
+  addLeadChange: (at, minutes) => useCityAdmin.getState().addLeadChange(at, minutes),
+  getContacts: () => useCityAdmin.getState().contacts,
+  setContact: (target, info) => useCityAdmin.getState().setContact(target, info),
+  getStaff: () => useCityAdmin.getState().staff,
+  saveStaff: (user) => useCityAdmin.getState().saveStaff(user),
 });
 
 export { OfflineError, SignInError } from './errors';

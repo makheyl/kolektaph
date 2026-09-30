@@ -7,6 +7,7 @@
  * the alert and the missed-streets list always agree.
  */
 import { CONNECTOR_MAX_M } from '@/features/coverage/coverage';
+import { scheduleValidOn } from '@/features/schedule/collections';
 import { metresBetween } from '@/lib/geo';
 import { manilaDateKey } from '@/lib/time';
 import type {
@@ -42,7 +43,9 @@ export function suggestBackups(
   now: number,
   missed: MissedStreet[],
 ): BackupSuggestion[] {
-  const scheduleOf = (routeId: string | null) => schedules.find((s) => s.routeId === routeId);
+  const today = manilaDateKey(now);
+  const scheduleOf = (routeId: string | null) =>
+    schedules.find((s) => s.routeId === routeId && scheduleValidOn(s, today));
   const out: BackupSuggestion[] = [];
 
   for (const full of states.filter((s) => s.status === 'full')) {

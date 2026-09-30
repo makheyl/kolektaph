@@ -20,11 +20,13 @@ export const useTrucks = () =>
 export const useRoutes = () =>
   useQuery({ queryKey: ['routes'], queryFn: services.fleet.getRoutes, ...STATIC });
 
+/** Route schedules; re-read every few seconds so City ENRO changes reach every screen. */
 export const useRouteSchedules = () =>
   useQuery({
     queryKey: ['routeSchedules'],
     queryFn: services.schedule.getRouteSchedules,
-    ...STATIC,
+    staleTime: 2_000,
+    refetchInterval: 3_000,
   });
 
 export const useScheduleExceptions = () =>

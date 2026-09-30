@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 
+import { useCityConfig } from '@/features/admin/hooks';
 import {
   collectionsForBarangay,
+  LOOKAHEAD_DAYS,
   nextCollection,
   nextCollectionAfterToday,
   todaysCollection,
@@ -18,9 +20,6 @@ import { useSettings } from '@/stores/settings';
 
 import { homeStatus } from './homeStatus';
 
-/** Days of schedule the resident screens look ahead. */
-export const LOOKAHEAD_DAYS = 14;
-
 /** Everything the resident screens need to answer "kailan darating ang truck?". */
 export function useResidentToday(barangayOverride?: string | null) {
   const savedBarangay = useSettings((s) => s.barangayId);
@@ -30,6 +29,7 @@ export function useResidentToday(barangayOverride?: string | null) {
   const { data: schedules } = useRouteSchedules();
   const { data: routes } = useRoutes();
   const { data: exceptions } = useScheduleExceptions();
+  const leadMinutes = useCityConfig()?.smsLeadMinutes;
 
   // The schedule only changes when the Manila day changes, not every tick.
   const day = manilaStartOfDay(now);
@@ -59,6 +59,6 @@ export function useResidentToday(barangayOverride?: string | null) {
     states,
     routes,
     ready: !!(schedules && routes && exceptions),
-    status: homeStatus({ barangayId, now, today, nextAfterToday, truck, route }),
+    status: homeStatus({ barangayId, now, today, nextAfterToday, truck, route, leadMinutes }),
   };
 }
