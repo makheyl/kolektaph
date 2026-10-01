@@ -4,11 +4,14 @@
  */
 import { BARANGAYS, ROUTES, SCHEDULE_EXCEPTIONS, TRUCKS } from '@/data/carmona';
 import { answerKolek, type KolekFacts } from '@/features/kolek/answer';
+import { understand } from '@/features/kolek/understand';
 import { withAutoClose } from '@/features/reports/lifecycle';
+import { DAY, manilaParts, manilaStartOfDay } from '@/lib/time';
 import { simulateFleet } from '@/simulator/truckSimulator';
 
 import type {
   CityConfig,
+  DailyStats,
   KolekProvider,
   RouteSchedule,
   Ticket,
@@ -29,6 +32,8 @@ export interface KolekDeps {
   leadAt: (at: number) => number;
   /** This week's figures (computed only when someone asks). */
   weekly: () => WeeklyStats;
+  /** Per-day collection figures (the City ENRO statistics source). */
+  dailyStats: (fromDay: number, toDay: number) => Promise<DailyStats>;
 }
 
 const BARANGAY_NAMES = BARANGAYS.features.map(({ properties: p }) => ({
@@ -46,6 +51,16 @@ export function createMockKolek(deps: KolekDeps): KolekProvider {
       const previous = latestFirst.find((m) => m.from === 'kolek' && m.reply)?.reply?.intent;
       const now = deps.getSimTime();
       const schedules = deps.getSchedules();
+      // Statistics questions ("ngayong buwan", "sa Milagrosa") need the period's figures.
+      const asked = understand(question, BARANGAY_NAMES, previous ?? null);
+      let periodStats: KolekFacts['periodStats'] = null;
+      if (asked.intent === 'stats') {
+        const today = manilaStartOfDay(now);
+        const { day, weekday } = manilaParts(now);
+        const from =
+          asked.period === 'month' ? today - (day - 1) * DAY : today - ((weekday + 6) % 7) * DAY;
+        periodStats = { from, daily: await deps.dailyStats(from, today) };
+      }
       const facts: KolekFacts = {
         now,
         barangays: BARANGAY_NAMES,
@@ -65,6 +80,7 @@ export function createMockKolek(deps: KolekDeps): KolekProvider {
           return deps.weekly();
         },
         contacts: deps.getContacts(),
+        periodStats,
         myTickets: deps
           .getTickets()
           .filter((t) => context.myTicketIds.includes(t.id))

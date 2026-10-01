@@ -1151,7 +1151,48 @@
       "contactBarangayNoPhone": "Barangay Hall ng {{barangay}} (wala pang numero sa app)",
       "contactHours": "Oras: {{hours}}",
       "contactEnro": "City ENRO ng Carmona: {{phone}}",
-      "contactEnroNoPhone": "City ENRO ng Carmona (wala pang numero sa app)"
+      "contactEnroNoPhone": "City ENRO ng Carmona (wala pang numero sa app)",
+      "smsOffer": "Gusto mo bang ma-text mga {{minutes}} minuto bago dumating ang truck?",
+      "statsBarangay": "Mula {{from}}, tinatayang {{tonnes}} tonelada ang nakolekta sa {{barangay}}, at {{served}} ng mga kalye nito ang nadaanan.",
+      "statsCity": "Mula {{from}}, tinatayang {{tonnes}} tonelada ang nakolekta sa Carmona sa {{trips}} biyahe, at {{served}} ng mga kalye ang nadaanan.",
+      "statsOnTime": "{{onTime}} sa {{decided}} koleksyon ang natapos sa oras.",
+      "statsNone": "Wala pang koleksyon sa {{barangay}} mula {{from}}.",
+      "statsNoneCity": "Wala pang koleksyon mula {{from}}."
+    }
+  },
+  "sus": {
+    "title": "Usability test (SUS)",
+    "intro": "Para sa facilitator. Pagkatapos subukan ng kalahok ang app, ipasagot ang 10 pahayag. Gumamit ng code tulad ng P1, hindi pangalan.",
+    "participant": "Code ng kalahok",
+    "participantHint": "hal. P1",
+    "scale": "1 = Lubos na hindi sang-ayon · 5 = Lubos na sang-ayon",
+    "scaleLabel": "{{value}} sa 5",
+    "save": "I-save ang sagot",
+    "incomplete": "Sagutin ang lahat ng 10 pahayag at ilagay ang code.",
+    "saved": "Na-save: {{participant}}, score {{score}}.",
+    "results": "Mga resulta",
+    "none": "Wala pang sagot.",
+    "average": "Average: {{score}} ({{count}} kalahok)",
+    "target": "Target: {{target}} pataas",
+    "targetMet": "Naabot ang target",
+    "targetNotMet": "Hindi pa naabot ang target",
+    "few": "Kulang pa ang kalahok: 5 hanggang 8 ang kailangan.",
+    "row": "{{participant}}: {{score}}",
+    "remove": "Alisin",
+    "export": "I-download ang CSV",
+    "back": "Bumalik sa demo",
+    "open": "Usability test (SUS)",
+    "q": {
+      "1": "Sa tingin ko, gugustuhin kong gamitin nang madalas ang KolektaPH.",
+      "2": "Masyadong komplikado ang KolektaPH kahit hindi naman kailangan.",
+      "3": "Madaling gamitin ang KolektaPH.",
+      "4": "Kakailanganin ko ng tulong ng taong marunong sa teknolohiya para magamit ang KolektaPH.",
+      "5": "Maayos na magkakaugnay ang iba't ibang bahagi ng KolektaPH.",
+      "6": "Maraming hindi magkakatugma sa KolektaPH.",
+      "7": "Sa tingin ko, mabilis na matututunan ng karamihan ang paggamit ng KolektaPH.",
+      "8": "Mahirap at nakakapagod gamitin ang KolektaPH.",
+      "9": "Kampante ako habang ginagamit ang KolektaPH.",
+      "10": "Marami akong kinailangang matutunan bago ko nagamit ang KolektaPH."
     }
   }
 }

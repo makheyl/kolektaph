@@ -264,6 +264,14 @@ export function createMockServices(deps: MockDeps): Services {
     };
   };
 
+  const stats = createMockStats({
+    getSimTime: deps.getSimTime,
+    getEvents: deps.getEvents,
+    getSchedules: schedules,
+    missedFor,
+    alertsForDay,
+  });
+
   return {
     geo: {
       getBarangays: async () => BARANGAYS,
@@ -411,13 +419,7 @@ export function createMockServices(deps: MockDeps): Services {
         deps.saveStaff({ ...user, name: user.name.trim() });
       },
     },
-    stats: createMockStats({
-      getSimTime: deps.getSimTime,
-      getEvents: deps.getEvents,
-      getSchedules: schedules,
-      missedFor,
-      alertsForDay,
-    }),
+    stats,
     kolek: createMockKolek({
       getSimTime: deps.getSimTime,
       getEvents: deps.getEvents,
@@ -426,6 +428,7 @@ export function createMockServices(deps: MockDeps): Services {
       getContacts: deps.getContacts,
       leadAt,
       weekly: () => opsSnapshot().weekly,
+      dailyStats: stats.getDailyStats,
     }),
     driver: {
       async signIn(truckId, pin) {

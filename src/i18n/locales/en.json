@@ -1151,7 +1151,48 @@
       "contactBarangayNoPhone": "{{barangay}} Barangay Hall (no number in the app yet)",
       "contactHours": "Hours: {{hours}}",
       "contactEnro": "Carmona City ENRO: {{phone}}",
-      "contactEnroNoPhone": "Carmona City ENRO (no number in the app yet)"
+      "contactEnroNoPhone": "Carmona City ENRO (no number in the app yet)",
+      "smsOffer": "Would you like a text about {{minutes}} minutes before the truck arrives?",
+      "statsBarangay": "Since {{from}}, about {{tonnes}} tonnes were collected in {{barangay}}, and {{served}} of its streets were served.",
+      "statsCity": "Since {{from}}, about {{tonnes}} tonnes were collected in Carmona in {{trips}} trips, and {{served}} of streets were served.",
+      "statsOnTime": "{{onTime}} of {{decided}} collections finished on time.",
+      "statsNone": "There has been no collection in {{barangay}} since {{from}}.",
+      "statsNoneCity": "There has been no collection since {{from}}."
+    }
+  },
+  "sus": {
+    "title": "Usability test (SUS)",
+    "intro": "For the facilitator. After a participant has tried the app, have them rate the 10 statements. Use a code such as P1, never a name.",
+    "participant": "Participant code",
+    "participantHint": "e.g. P1",
+    "scale": "1 = Strongly disagree · 5 = Strongly agree",
+    "scaleLabel": "{{value}} of 5",
+    "save": "Save the answers",
+    "incomplete": "Answer all 10 statements and enter the code.",
+    "saved": "Saved: {{participant}}, score {{score}}.",
+    "results": "Results",
+    "none": "No answers yet.",
+    "average": "Average: {{score}} ({{count}} participants)",
+    "target": "Target: {{target}} or higher",
+    "targetMet": "Target met",
+    "targetNotMet": "Target not met yet",
+    "few": "Too few participants so far: the plan calls for 5 to 8.",
+    "row": "{{participant}}: {{score}}",
+    "remove": "Remove",
+    "export": "Download CSV",
+    "back": "Back to demo",
+    "open": "Usability test (SUS)",
+    "q": {
+      "1": "I think I would like to use KolektaPH often.",
+      "2": "I found KolektaPH more complicated than it needs to be.",
+      "3": "I thought KolektaPH was easy to use.",
+      "4": "I think I would need help from a technical person to use KolektaPH.",
+      "5": "I found the different parts of KolektaPH worked well together.",
+      "6": "I thought there was too much inconsistency in KolektaPH.",
+      "7": "I think most people would learn to use KolektaPH very quickly.",
+      "8": "I found KolektaPH very awkward to use.",
+      "9": "I felt very confident using KolektaPH.",
+      "10": "I needed to learn a lot of things before I could use KolektaPH."
     }
   }
 }

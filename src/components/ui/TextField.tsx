@@ -84,6 +84,8 @@ const styles = StyleSheet.create({
   multiline: { minHeight: 132, paddingVertical: spacing.md, textAlignVertical: 'top' },
   input: {
     flex: 1,
+    // Browsers give inputs a ~20-character minimum width; let them shrink at 200% text size.
+    minWidth: 0,
     minHeight: touch.large - 4,
     fontFamily: fonts.regular,
     color: colors.text,

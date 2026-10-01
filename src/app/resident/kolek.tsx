@@ -223,7 +223,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  input: { fontFamily: fonts.regular, color: colors.text, paddingVertical: spacing.sm },
+  input: {
+    minWidth: 0,
+    fontFamily: fonts.regular,
+    color: colors.text,
+    paddingVertical: spacing.sm,
+  },
   send: {
     width: touch.min,
     height: touch.min,

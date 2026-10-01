@@ -22,7 +22,10 @@ export interface MapPin {
   label: string;
 }
 
-/** Props shared by KMap.tsx (native) and KMap.web.tsx: both must render the same picture. */
+/**
+ * Props shared by KMap.tsx (native) and KMapMapLibre.web.tsx (web, lazy-loaded by KMap.web.tsx):
+ * both must render the same picture.
+ */
 export interface KMapProps {
   barangays: BarangayCollection;
   meta: CityMeta;

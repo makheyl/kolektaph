@@ -138,7 +138,8 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  // Wraps at 200% text size: the title then goes under the icon instead of running off-screen.
+  titleRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md },
   iconWrap: {
     width: 52,
     height: 52,
@@ -146,7 +147,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { flex: 1 },
+  title: { flexGrow: 1, flexShrink: 1, flexBasis: 180 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

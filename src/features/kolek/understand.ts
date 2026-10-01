@@ -19,6 +19,7 @@ const PHRASES: [RegExp, string][] = [
   [/\bthank you\b/g, 'salamat'],
   [/\bgood (morning|afternoon|evening)\b|\bmagandang (umaga|hapon|gabi|araw)\b/g, 'hello'],
   [/\bthis week\b|\bngayong linggo\b|\bsa linggong ito\b/g, 'thisweek'],
+  [/\bthis month\b|\bngayong buwan\b|\bsa buwang ito\b/g, 'thismonth'],
 ];
 
 /** Word variants → one form. */
@@ -199,7 +200,7 @@ export function dayIn(s: string): DayAsked | null {
   if (has(s, 'bukas')) return { kind: 'tomorrow' };
   const wd = WEEKDAY_WORDS.find(([w]) => has(s, w));
   if (wd) return { kind: 'weekday', day: wd[1] };
-  if (has(s, 'ngayon') && !has(s, 'thisweek')) return { kind: 'today' };
+  if (has(s, 'ngayon') && !has(s, 'thisweek', 'thismonth')) return { kind: 'today' };
   return null;
 }
 
@@ -274,6 +275,8 @@ export interface Understood {
   category: ReportCategory | null;
   item: SortItem | null;
   ticketId: string | null;
+  /** The period a statistics question asks about. */
+  period: 'week' | 'month';
 }
 
 /**
@@ -291,7 +294,8 @@ export function understand(
   const item = sortItemIn(s);
   const barangayId = barangayIn(s, barangays);
   const day = dayIn(s);
-  const base = { normalized: s, barangayId, day, category, item, ticketId };
+  const period = has(s, 'thismonth', 'buwan', 'month', 'buwanan') ? 'month' : 'week';
+  const base = { normalized: s, barangayId, day, category, item, ticketId, period } as const;
   const truck = has(s, 'truck');
   const put = has(s, 'ilalagay', 'saan') && item != null;
 

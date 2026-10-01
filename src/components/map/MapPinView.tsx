@@ -8,7 +8,7 @@ import type { MapPin } from './types';
 /** A report location on the map: an icon in a coloured circle over a pointer. */
 export function MapPinView({ pin }: { pin: MapPin }) {
   return (
-    <View style={styles.wrap} accessible accessibilityLabel={pin.label}>
+    <View style={styles.wrap} accessible accessibilityRole="image" accessibilityLabel={pin.label}>
       <View style={[styles.circle, { backgroundColor: pin.color }]}>
         <Icon name={pin.icon} size={20} color={colors.textOnDark} />
       </View>

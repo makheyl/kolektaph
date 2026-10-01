@@ -86,7 +86,8 @@ export function createMockStats(deps: StatsDeps): StatsService {
           barangayId: b,
           routeId: route.id,
           truckId: s.truckId,
-          collectM: Math.round(collectM),
+          // While the run is still going, only streets the truck has reached were due.
+          collectM: Math.round(Number.isFinite(reachedM) ? passedM : collectM),
           servedM: Math.round(Math.max(0, passedM - missedM)),
           tonnes: 0,
           windowEnd,

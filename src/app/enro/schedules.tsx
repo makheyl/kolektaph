@@ -106,7 +106,14 @@ export default function EnroSchedules() {
   // ---------- Grid: barangay × weekday ----------
   const grid = barangays ? (
     <Panel title={t('enro.schedules.grid')}>
-      <ScrollView horizontal showsHorizontalScrollIndicator>
+      {/* Focusable so keyboard users can scroll the wide table sideways. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator
+        focusable
+        role="region"
+        aria-label={t('enro.schedules.grid')}
+      >
         <View>
           <View style={styles.gridRow}>
             <AppText variant="label" style={[styles.gridName, styles.gridHead]}>

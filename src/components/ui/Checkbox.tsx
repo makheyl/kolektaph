@@ -17,6 +17,7 @@ export function Checkbox({ checked, onChange, label }: CheckboxProps) {
     <Pressable
       accessibilityRole="checkbox"
       accessibilityState={{ checked }}
+      aria-checked={checked}
       accessibilityLabel={label}
       onPress={() => onChange(!checked)}
       style={styles.row}

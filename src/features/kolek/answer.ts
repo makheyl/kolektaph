@@ -26,6 +26,7 @@ import {
 } from '@/lib/time';
 import type {
   CityConfig,
+  DailyStats,
   KolekAction,
   KolekContext,
   KolekIntent,
@@ -40,6 +41,8 @@ import type {
   Weekday,
   WeeklyStats,
 } from '@/services/types';
+
+import { byBarangay, summarize } from '@/features/stats/history';
 
 import { SEGREGATION_LAW, SORT_CLASSES } from './segregation';
 import { type BarangayName, type Understood, understand } from './understand';
@@ -61,6 +64,11 @@ export interface KolekFacts {
   contacts: CityConfig['contacts'];
   /** The resident's own tickets (from the ids kept on the device). */
   myTickets: Ticket[];
+  /**
+   * Collection figures for a statistics question (from the start of the week or month asked
+   * about), when the provider has them. Without it Kolek answers with this week's totals.
+   */
+  periodStats?: { from: number; daily: DailyStats } | null;
 }
 
 /** Suggestion chips (ids of `kolek.chips.*`). */
@@ -147,10 +155,20 @@ const windowOf = (o: { start: number; end: number }) =>
 
 // ---------- Intents ----------
 
-function nextCollectionReply(u: Understood, facts: KolekFacts, barangayId: string): KolekReply {
+function nextCollectionReply(
+  u: Understood,
+  ctx: KolekContext,
+  facts: KolekFacts,
+  barangayId: string,
+): KolekReply {
   const occ = occurrences(facts, barangayId);
   const b = { kind: 'barangay', id: barangayId } as const;
   const actions = [action('schedule', '/resident/schedule', 'calendar')];
+  // Offer the text alert to residents who don't have it yet (pitch slide 13).
+  const offer = ctx.smsOn
+    ? []
+    : [line('smsOffer', { minutes: { kind: 'number', value: facts.leadMinutes } })];
+  if (!ctx.smsOn) actions.push(action('smsOn', '/onboarding/sms?from=settings', 'message-text'));
   const today = manilaStartOfDay(facts.now);
 
   const onDay = (day: number) => occ.find((o) => isRunning(o) && o.day === day);
@@ -175,7 +193,7 @@ function nextCollectionReply(u: Understood, facts: KolekFacts, barangayId: strin
         }),
       );
       if (o.day === today) actions.unshift(action('map', '/resident/map', 'map'));
-      return reply('next_collection', lines, actions);
+      return reply('next_collection', [...lines, ...offer], actions);
     }
     lines.push(line('noCollectionOn', { barangay: b, day: { kind: 'day', at: asked } }));
   }
@@ -206,7 +224,7 @@ function nextCollectionReply(u: Understood, facts: KolekFacts, barangayId: strin
       }),
     );
   }
-  return reply('next_collection', lines, actions);
+  return reply('next_collection', next ? [...lines, ...offer] : lines, actions);
 }
 
 function truckReply(facts: KolekFacts, barangayId: string): KolekReply {
@@ -351,7 +369,48 @@ function sortReply(u: Understood): KolekReply {
   );
 }
 
-function statsReply(facts: KolekFacts): KolekReply {
+function statsReply(u: Understood, facts: KolekFacts): KolekReply {
+  const period = facts.periodStats;
+  if (period) {
+    const from = { kind: 'date', at: period.from } as const;
+    const lines: KolekLine[] = [];
+    if (u.barangayId) {
+      const b = byBarangay(period.daily, facts.now).find((x) => x.barangayId === u.barangayId);
+      if (!b || b.servedRate == null) {
+        lines.push(line('statsNone', { barangay: { kind: 'barangay', id: u.barangayId }, from }));
+      } else {
+        lines.push(
+          line('statsBarangay', {
+            barangay: { kind: 'barangay', id: u.barangayId },
+            from,
+            tonnes: { kind: 'number', value: b.tonnes },
+            served: { kind: 'percent', value: b.servedRate },
+          }),
+        );
+        if (b.decided > 0) {
+          lines.push(
+            line('statsOnTime', {
+              onTime: { kind: 'number', value: b.onTime },
+              decided: { kind: 'number', value: b.decided },
+            }),
+          );
+        }
+      }
+    } else {
+      const s = summarize(period.daily, facts.now);
+      lines.push(
+        s.servedRate == null
+          ? line('statsNoneCity', { from })
+          : line('statsCity', {
+              from,
+              tonnes: { kind: 'number', value: s.tonnes },
+              trips: { kind: 'number', value: s.trips },
+              served: { kind: 'percent', value: s.servedRate },
+            }),
+      );
+    }
+    return reply('stats', [...lines, line('sampleNote')], [], ['next', 'truck']);
+  }
   if (!facts.weekly) return fallbackReply(null, facts);
   return reply(
     'stats',
@@ -494,7 +553,7 @@ export function answerKolek(
     case 'thanks':
       return reply('thanks', [line('thanks')]);
     case 'next_collection':
-      return barangayId ? nextCollectionReply(u, facts, barangayId) : needBarangay(u.intent);
+      return barangayId ? nextCollectionReply(u, ctx, facts, barangayId) : needBarangay(u.intent);
     case 'truck_location':
       return barangayId ? truckReply(facts, barangayId) : needBarangay(u.intent);
     case 'how_to_report':
@@ -506,7 +565,7 @@ export function answerKolek(
     case 'segregation':
       return sortReply(u);
     case 'stats':
-      return statsReply(facts);
+      return statsReply(u, facts);
     case 'sms_on':
     case 'sms_off':
       return smsReply(u.intent, ctx, facts);

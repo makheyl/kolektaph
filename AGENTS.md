@@ -40,7 +40,7 @@ Docs: https://docs.expo.dev/eas/index.md
 - No database or backend in this phase. Screens call only `src/services/` interfaces; mock implementations and the deterministic simulator live behind them. Don't import mock data directly into screens.
 - Domain logic (ETA, vicinity SMS, missed streets, report lifecycle, Kolek intents) is pure TypeScript in `src/features/` and is unit-tested.
 - Every user-facing string goes through i18n (`src/i18n/`). Sample numbers must be labelled as sample data.
-- Maps are MapLibre only: `KMap.web.tsx` (maplibre-gl) and `KMap.tsx` (native, @maplibre/maplibre-react-native), sharing the layer specs in `layers.ts`. Keep both in sync. Don't add react-native-maps.
+- Maps are MapLibre only: `KMapMapLibre.web.tsx` (maplibre-gl, loaded on demand by `KMap.web.tsx` so screens without a map stay light) and `KMap.tsx` (native, @maplibre/maplibre-react-native), sharing the layer specs in `layers.ts`. Keep both in sync. Don't add react-native-maps.
 - Web output is `single` (SPA), because maplibre-gl needs `window` and can't be statically rendered. Its worker is served from `public/maplibre/` (copied on postinstall).
 - Role areas are real URL segments (`src/app/resident`, `driver`, `enro`), not route groups, so the dashboard lives at `/enro`.
 - Asia/Manila time uses the fixed UTC+8 helpers in `src/lib/time.ts` (the Philippines has no DST). Don't add timezone libraries.
@@ -66,6 +66,12 @@ Docs: https://docs.expo.dev/eas/index.md
 - City settings (`stores/cityAdmin.ts`, a stand-in for server tables): edited schedules, SMS lead time as a history of changes (`leadAt(time)`, so sent texts never change), contacts, and sample staff. Contact numbers stay null until the City or barangay gives official ones: never invent numbers. The demo reset restores all of it.
 - Statistics: `services.stats.getDailyStats` replays days (simulation + coverage check + alert log); the summaries and the CSV are pure (`features/stats/history.ts`). `lib/download` saves a file on web and opens the share sheet on phones.
 - Edge-to-edge Android doesn't resize the window for the keyboard, and `KeyboardAvoidingView` measures relative to its parent. Pad by the measured overlap instead (see `app/resident/kolek.tsx`). For decorative views use `aria-hidden`, which works on web and native (`accessibilityElementsHidden` warns on web).
+- Web build: `npm run build:web` exports to `dist/` and generates the service worker (Workbox, `workbox-config.js`). The service worker registers only in production (`src/lib/pwa.web.ts`). Hosting must compress responses and send unknown paths to `index.html`. The page template, manifest and icons are in `public/`.
+- Keep the first web load small (3G): routes are split (`asyncRoutes` on web), and maplibre-gl is not bundled on web: `metro.config.js` redirects the bare `maplibre-gl` import to a stub and `KMapMapLibre.web.tsx` loads it from `public/maplibre/` (copied on postinstall). Expo puts every other node_modules package in the first download, so think before adding a dependency.
+- Fonts are subsets in `assets/fonts/` (`npm run fonts`): icons come from `src/components/ui/iconGlyphs.json` (only icons whose names appear in `src/`), so after using a new icon or an unusual character run `npm run fonts`, or TypeScript rejects the icon name. Don't import `@expo/vector-icons` or `@expo-google-fonts/inter` index files (they ship every font).
+- App icons come from `npm run icons` (`scripts/brand/build-icons.mjs`, needs `rsvg-convert`). Native icon changes show after the next `expo prebuild`/build.
+- Accessibility: axe (WCAG 2.1 A/AA) is clean on every screen and resident screens work at 200% text (see `docs/VERIFICATION.md`). Keep it that way: roles with labels, `aria-checked` on checkboxes, list items inside lists, text that wraps (`flexShrink`, `maxWidth: '100%'`, `minWidth: 0` on inputs).
+- `/sus` is the facilitator's usability-test page (SUS scoring in `features/usability/sus.ts`); participants are codes, never names. `docs/` holds the demo script, usability guide and verification record.
 
 ## Rules
 

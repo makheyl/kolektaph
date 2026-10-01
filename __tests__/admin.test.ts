@@ -291,6 +291,47 @@ describe('statistics', () => {
     expect(coverageByDay(stats)).toHaveLength(1);
   });
 
+  it('feeds Kolek the month-to-date figures for a barangay (pitch slide 13)', async () => {
+    const { services } = makeServices(tue(18));
+    const reply = await services.kolek.reply(
+      [
+        {
+          id: 'q',
+          from: 'resident',
+          at: tue(18),
+          text: 'Ilang tons na ang nakolekta sa Milagrosa ngayong buwan?',
+        },
+      ],
+      { barangayId: 'mabuhay', smsOn: false, myTicketIds: [] },
+    );
+    const from = manilaEpoch(2026, 9, 1);
+    const stats = await services.stats.getDailyStats(from, tue(0));
+    const milagrosa = byBarangay(stats, tue(18)).find((b) => b.barangayId === 'milagrosa')!;
+    expect(reply.lines[0]).toEqual({
+      key: 'kolek.a.statsBarangay',
+      values: {
+        barangay: { kind: 'barangay', id: 'milagrosa' },
+        from: { kind: 'date', at: from },
+        tonnes: { kind: 'number', value: milagrosa.tonnes },
+        served: { kind: 'percent', value: milagrosa.servedRate },
+      },
+    });
+    expect(reply.lines.map((l) => l.key)).toEqual([
+      'kolek.a.statsBarangay',
+      'kolek.a.statsOnTime',
+      'kolek.a.sampleNote',
+    ]);
+  });
+
+  it('does not count streets the truck has not reached yet as unserved', async () => {
+    // 7:25 AM: Truck 2 is still in the Poblacion; Milagrosa is next.
+    const { services } = makeServices(tue(7, 25));
+    const stats = await services.stats.getDailyStats(tue(0), tue(0));
+    const milagrosa = stats.barangays.find((b) => b.barangayId === 'milagrosa')!;
+    expect(milagrosa).toMatchObject({ collectM: 0, servedM: 0, finishedAt: null });
+    expect(summarize(stats, tue(7, 25)).servedRate).toBe(1);
+  });
+
   it('only counts what has happened so far today', async () => {
     const { services } = makeServices(tue(6));
     const stats = await services.stats.getDailyStats(tue(0), tue(0) + 3 * DAY);

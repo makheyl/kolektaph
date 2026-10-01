@@ -558,7 +558,11 @@ export interface BarangayDayStat {
   barangayId: string;
   routeId: string;
   truckId: string;
-  /** Planned collection street length and the part the GPS check counts as served. */
+  /**
+   * Collection street length due so far (the whole barangay once the run or its window has
+   * ended; during the run, only streets the truck has reached) and the part the GPS check
+   * counts as served.
+   */
   collectM: number;
   servedM: number;
   /** Estimated tonnes (the run's tonnes split by served street length). */
@@ -606,6 +610,8 @@ export type KolekValue =
   | { kind: 'percent'; value: number }
   | { kind: 'time'; at: number }
   | { kind: 'day'; at: number }
+  /** Always a calendar date ("Martes, Set 1"), never "today". */
+  | { kind: 'date'; at: number }
   | { kind: 'window'; start: number; end: number }
   | { kind: 'minutes'; value: number }
   /** A barangay's name; null = a road outside any barangay. */

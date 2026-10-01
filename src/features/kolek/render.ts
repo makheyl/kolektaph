@@ -4,7 +4,7 @@
  */
 import type { TFunction } from 'i18next';
 
-import { formatRelativeDay } from '@/features/resident/format';
+import { formatDate, formatRelativeDay } from '@/features/resident/format';
 import { formatClock } from '@/lib/time';
 import type { KolekLine, KolekValue } from '@/services/types';
 
@@ -28,6 +28,8 @@ export function renderValue(value: KolekValue, ctx: RenderContext): string {
       return formatClock(value.at);
     case 'day':
       return formatRelativeDay(ctx.t, value.at, ctx.now);
+    case 'date':
+      return formatDate(ctx.t, value.at);
     case 'window':
       return `${formatClock(value.start)} – ${formatClock(value.end)}`;
     case 'minutes':

@@ -1,0 +1,23 @@
+{
+  "short_name": "KolektaPH",
+  "name": "KolektaPH · Carmona",
+  "description": "Kailan darating ang garbage truck: live na mapa, text alerts at report ng basura para sa Carmona, Cavite.",
+  "lang": "fil",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#15314B",
+  "background_color": "#F4F1EA",
+  "categories": ["utilities", "government"],
+  "icons": [
+    { "src": "/logo192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/logo512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "/maskable512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Mag-report ng problema", "short_name": "Report", "url": "/resident/report" },
+    { "name": "Tanong kay Kolek", "short_name": "Kolek", "url": "/resident/kolek" },
+    { "name": "Mapa ng truck", "short_name": "Mapa", "url": "/resident/map" }
+  ]
+}

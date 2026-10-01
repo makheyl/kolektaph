@@ -58,6 +58,7 @@
     "@types/geojson": "^7946.0.16",
     "@types/jest": "29.5.14",
     "@types/react": "~19.2.2",
+    "axe-core": "^4.13.0",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
     "eslint-config-prettier": "^10.1.8",
@@ -66,7 +67,9 @@
     "jest-expo": "~57.0.5",
     "osmtogeojson": "^3.0.0-beta.5",
     "prettier": "^3.9.9",
-    "typescript": "~6.0.3"
+    "subset-font": "^2.9.0",
+    "typescript": "~6.0.3",
+    "workbox-cli": "^7.4.1"
   },
   "scripts": {
     "start": "expo start",
@@ -79,7 +82,11 @@
     "format": "prettier --write .",
     "doctor": "npx expo-doctor",
     "check": "npm run typecheck && npm run lint && npm test",
-    "postinstall": "node scripts/copy-maplibre-worker.mjs"
+    "postinstall": "node scripts/copy-maplibre-worker.mjs",
+    "build:web": "expo export -p web && workbox generateSW workbox-config.js",
+    "serve:web": "expo serve",
+    "icons": "node scripts/brand/build-icons.mjs",
+    "fonts": "node scripts/fonts/subset-fonts.mjs"
   },
   "private": true,
   "jest": {

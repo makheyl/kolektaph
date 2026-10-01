@@ -102,23 +102,24 @@ export function BarangayPicker({ selectedId, onSelect, allowLocate = true }: Bar
         returnKeyType="search"
       />
 
-      <View accessibilityRole="list">
+      <View role="list">
         {options.map((o) => (
-          <ListRow
-            key={o.id}
-            title={o.label}
-            icon="map-marker-outline"
-            selected={o.id === selectedId}
-            trailing="check"
-            onPress={() => onSelect(o.id)}
-          />
+          <View key={o.id} role="listitem">
+            <ListRow
+              title={o.label}
+              icon="map-marker-outline"
+              selected={o.id === selectedId}
+              trailing="check"
+              onPress={() => onSelect(o.id)}
+            />
+          </View>
         ))}
-        {barangays && options.length === 0 ? (
-          <AppText color={colors.textMuted} style={styles.empty}>
-            {t('onboarding.barangay.noResults', { query })}
-          </AppText>
-        ) : null}
       </View>
+      {barangays && options.length === 0 ? (
+        <AppText color={colors.textMuted} style={styles.empty}>
+          {t('onboarding.barangay.noResults', { query })}
+        </AppText>
+      ) : null}
     </View>
   );
 }

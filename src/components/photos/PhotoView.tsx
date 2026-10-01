@@ -19,13 +19,16 @@ interface PhotoViewProps {
 export function PhotoView({ photo, aspect = 4 / 3, style, accessibilityLabel }: PhotoViewProps) {
   const [width, setWidth] = useState(0);
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+  // An empty label means the photo only decorates something already described (a list card).
+  const decorative = !accessibilityLabel;
   return (
     <View
       style={[styles.frame, { aspectRatio: aspect }, style]}
       onLayout={onLayout}
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel={accessibilityLabel}
+      accessible={!decorative}
+      accessibilityRole={decorative ? undefined : 'image'}
+      accessibilityLabel={decorative ? undefined : accessibilityLabel}
+      aria-hidden={decorative || undefined}
     >
       {photo.kind === 'uri' ? (
         <Image source={{ uri: photo.uri }} style={StyleSheet.absoluteFill} contentFit="cover" />

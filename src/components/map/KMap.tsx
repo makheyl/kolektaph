@@ -31,7 +31,7 @@ import type { KMapProps } from './types';
 
 const PADDING = { top: 40, right: 40, bottom: 40, left: 40 };
 
-/** Native map (MapLibre Native, Android dev build). Keep in sync with KMap.web.tsx. */
+/** Native map (MapLibre Native, Android dev build). Keep in sync with KMapMapLibre.web.tsx. */
 export function KMap({
   barangays,
   meta,

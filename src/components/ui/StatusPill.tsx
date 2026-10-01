@@ -14,7 +14,7 @@ export function StatusPill({ status }: { status: TruckStatus }) {
   return (
     <View style={[styles.pill, { backgroundColor: meta.soft, borderColor: meta.color }]}>
       <Icon name={meta.icon} size={18} color={meta.color} />
-      <AppText variant="label" color={meta.color}>
+      <AppText variant="label" color={meta.color} style={styles.label}>
         {t(`truck.status.${status}`)}
       </AppText>
     </View>
@@ -26,10 +26,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
+    maxWidth: '100%',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.pill,
     borderWidth: 1.5,
   },
+  label: { flexShrink: 1 },
 });

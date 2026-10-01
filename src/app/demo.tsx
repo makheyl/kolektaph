@@ -140,6 +140,12 @@ export default function DemoScreen() {
             {t('demo.bridgeHint')}
           </AppText>
         ) : null}
+        <Button
+          variant="secondary"
+          icon="clipboard-check-outline"
+          label={t('sus.open')}
+          onPress={() => router.push('/sus')}
+        />
       </Section>
 
       <Section title={t('demo.clockTitle')}>

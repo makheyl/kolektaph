@@ -28,6 +28,23 @@ npm run android      # build and install the Android development build (first bu
 npm start            # dev server only (the installed dev build connects to it)
 ```
 
+## Web build (installable, works offline)
+
+```bash
+npm run build:web        # export to dist/ and generate the service worker
+npx serve -s dist        # try it locally (compresses and handles deep links)
+```
+
+Host `dist/` on any static host that compresses responses and sends unknown paths to
+`index.html`. `npm run fonts` rebuilds the reduced fonts after you use a new icon, and
+`npm run icons` rebuilds the app icons.
+
+## Documents
+
+- [docs/DEMO.md](docs/DEMO.md): demo script for pitch slides 10–15 and 17, with screenshots.
+- [docs/USABILITY_TEST.md](docs/USABILITY_TEST.md): usability test guide; record SUS answers at `/sus`.
+- [docs/VERIFICATION.md](docs/VERIFICATION.md): what was verified and what is still open.
+
 ## Quality checks
 
 ```bash

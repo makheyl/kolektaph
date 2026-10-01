@@ -187,6 +187,21 @@ describe('Kolek: understanding Taglish', () => {
     expect(DEFAULT_CHIPS.every((id) => id in CHIP_INTENTS)).toBe(true);
   });
 
+  it("understands the pitch deck's sample questions (slide 13)", () => {
+    expect(understand('Kailan po ang next na kolekta sa Milagrosa?', NAMES)).toMatchObject({
+      intent: 'next_collection',
+      barangayId: 'milagrosa',
+    });
+    expect(understand('May nagtapon ng basura sa bakanteng lote.', NAMES)).toMatchObject({
+      intent: 'how_to_report',
+      category: 'DUMPING',
+    });
+    expect(
+      understand('Ilang tons na ang nakolekta sa Milagrosa ngayong buwan?', NAMES),
+    ).toMatchObject({ intent: 'stats', barangayId: 'milagrosa', period: 'month' });
+    expect(understand('ilang tonelada ngayong linggo', NAMES).period).toBe('week');
+  });
+
   it('keeps the topic for a follow-up that only names a place or a day', () => {
     const r = ask('e sa Mabuhay?', 'next_collection');
     expect(r.intent).toBe('next_collection');
@@ -206,6 +221,14 @@ describe('Kolek: answers come from data', () => {
       key: 'kolek.a.nextCollection',
       values: { window: { kind: 'window', start: today.start, end: today.end } },
     });
+  });
+
+  it('offers the text alert with the schedule, unless it is already on', () => {
+    const offer = ask('Kailan ang susunod na koleksyon?');
+    expect(offer.lines.map((l) => l.key)).toContain('kolek.a.smsOffer');
+    expect(offer.actions.map((a) => a.href)).toContain('/onboarding/sms?from=settings');
+    const on = ask('Kailan ang susunod na koleksyon?', null, { ...CTX, smsOn: true });
+    expect(on.lines.map((l) => l.key)).not.toContain('kolek.a.smsOffer');
   });
 
   it('says when there is no collection on the day asked, and gives the next one', () => {

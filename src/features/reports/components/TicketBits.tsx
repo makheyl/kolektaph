@@ -39,7 +39,7 @@ export function TicketStatusPill({ status }: { status: TicketStatus }) {
   return (
     <View style={[styles.pill, { backgroundColor: meta.soft, borderColor: meta.color }]}>
       <Icon name={meta.icon} size={16} color={meta.color} />
-      <AppText variant="label" color={meta.color}>
+      <AppText variant="label" color={meta.color} style={styles.pillLabel}>
         {t(`reports.status.${status}`)}
       </AppText>
     </View>
@@ -257,12 +257,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
+    maxWidth: '100%',
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.pill,
     borderWidth: 1.5,
   },
+  pillLabel: { flexShrink: 1 },
   tile: {
     flexDirection: 'row',
     alignItems: 'center',
