@@ -44,3 +44,8 @@ example
 
 # maplibre-gl worker files, copied from node_modules on postinstall
 /public/maplibre/
+
+# pilot database: the generated seed and the one-time seed token are never committed
+seed.json
+token.txt
+/supabase/.temp/

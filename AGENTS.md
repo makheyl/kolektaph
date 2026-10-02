@@ -37,7 +37,8 @@ Docs: https://docs.expo.dev/eas/index.md
 ## Project: KolektaPH
 
 - Users are ordinary Carmona residents (including seniors and people on low-end phones), truck drivers, and City ENRO staff. Resident UI is Filipino-first (English toggle), uses large text and touch targets, and never relies on colour alone.
-- No database or backend in this phase. Screens call only `src/services/` interfaces; mock implementations and the deterministic simulator live behind them. Don't import mock data directly into screens.
+- The app is not connected to a backend yet. Screens call only `src/services/` interfaces; mock implementations and the deterministic simulator live behind them. Don't import mock data directly into screens.
+- A pilot Supabase database lives in `supabase/` (read `supabase/README.md` first). No API role can write a table: every write is an entry-point function, and each one is safe to repeat. Store only what a person or device enters; anything the app can calculate stays calculated. Change the schema only with a new migration (never edit an applied one), keep `supabase/tests` passing, and rebuild the seed with `npx tsx scripts/db/build-seed.ts` instead of typing data. Only the publishable key may appear in the app or the repo.
 - Domain logic (ETA, vicinity SMS, missed streets, report lifecycle, Kolek intents) is pure TypeScript in `src/features/` and is unit-tested.
 - Every user-facing string goes through i18n (`src/i18n/`). Sample numbers must be labelled as sample data.
 - Maps are MapLibre only: `KMapMapLibre.web.tsx` (maplibre-gl, loaded on demand by `KMap.web.tsx` so screens without a map stay light) and `KMap.tsx` (native, @maplibre/maplibre-react-native), sharing the layer specs in `layers.ts`. Keep both in sync. Don't add react-native-maps.
