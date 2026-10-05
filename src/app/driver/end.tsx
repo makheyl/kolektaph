@@ -16,6 +16,7 @@ import { driverStreets, streetMarks, streetProgress } from '@/features/driver/st
 import { syncNow, usePending } from '@/features/driver/sync';
 import { useRoutes, useSimNow } from '@/features/tracking/hooks';
 import { goBack } from '@/lib/navigation';
+import { services } from '@/services';
 import { useDriver, useDriverLive } from '@/stores/driver';
 import { useGps } from '@/stores/gps';
 import { colors, spacing } from '@/theme/tokens';
@@ -153,6 +154,8 @@ export default function EndShift() {
             disabled={pending.total > 0}
             onPress={() =>
               leave(() => {
+                // Tell the server too (it never blocks leaving; see DriverService.signOut).
+                void services.driver.signOut();
                 signOut();
                 router.replace('/driver/sign-in');
               })

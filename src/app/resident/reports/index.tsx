@@ -22,6 +22,7 @@ export default function MyReports() {
   const { t } = useTranslation();
   const tickets = useMyTickets();
   const pending = useMyReports((s) => s.pending);
+  const dequeue = useMyReports((s) => s.dequeue);
   const seen = useMyReports((s) => s.seen);
   const { data: barangays } = useBarangays();
   const nameOf = (id: string | null) =>
@@ -40,17 +41,34 @@ export default function MyReports() {
         }
       />
       {pending.map((p) => (
-        <Card key={p.localId} style={styles.pending}>
+        <Card key={p.localId} style={p.refused ? styles.refused : styles.pending}>
           <View style={styles.row}>
-            <Icon name="cloud-upload-outline" size={24} color={colors.navy} />
+            <Icon
+              name={p.refused ? 'alert' : 'cloud-upload-outline'}
+              size={24}
+              color={p.refused ? colors.red : colors.navy}
+            />
             <View style={styles.flex}>
               <AppText variant="bodyStrong">{t(`reports.category.${p.report.category}`)}</AppText>
               <AppText variant="label" color={colors.textMuted}>
-                {t('reports.mine.pending')} · {formatClock(p.savedAt)}
+                {t(p.refused ? 'reports.mine.refused' : 'reports.mine.pending')} ·{' '}
+                {formatClock(p.savedAt)}
               </AppText>
-              <AppText variant="caption">{t('reports.mine.pendingHint')}</AppText>
+              <AppText variant="caption">
+                {p.refused
+                  ? t(`reports.refused.${p.refused}`, { defaultValue: t('reports.refused.other') })
+                  : t('reports.mine.pendingHint')}
+              </AppText>
             </View>
           </View>
+          {p.refused ? (
+            <Button
+              variant="secondary"
+              icon="delete-outline"
+              label={t('reports.mine.remove')}
+              onPress={() => dequeue(p.localId)}
+            />
+          ) : null}
         </Card>
       ))}
       {tickets.length === 0 && pending.length === 0 ? (
@@ -78,6 +96,7 @@ export default function MyReports() {
 
 const styles = StyleSheet.create({
   pending: { backgroundColor: colors.yellowSoft, borderColor: colors.yellow },
+  refused: { backgroundColor: colors.redSoft, borderColor: colors.red },
   row: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
   flex: { flex: 1 },
 });

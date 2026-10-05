@@ -5,6 +5,13 @@
  */
 import type { GpsFix, GpsSource, TruckEvent, UploadBatch } from '@/services/types';
 
+/**
+ * A shift's start and end get ids made from the shift's own id, so the phone's copy and the
+ * server's copy of the same moment are recognised as one.
+ */
+export const shiftStartId = (shiftId: string) => `${shiftId}|start`;
+export const shiftEndId = (shiftId: string) => `${shiftId}|end`;
+
 /** Load and status taps can be undone for this long before they are sent. */
 export const UNDO_MS = 5_000;
 /** GPS fixes per upload request. */
@@ -34,13 +41,15 @@ export interface GpsQueue {
   fixes: GpsFix[];
   /** Fixes [0, sentCount) are on the server. */
   sentCount: number;
+  /** Why the server refuses this shift's GPS for good (null = it is being sent). */
+  blocked?: string | null;
 }
 
 /** Items waiting for upload: unsynced events plus unsent GPS fixes. */
 export function pendingCounts(outbox: OutboxItem[], gps: GpsQueue) {
   return {
     events: outbox.filter((o) => !o.synced).length,
-    fixes: Math.max(0, gps.fixes.length - gps.sentCount),
+    fixes: gps.blocked ? 0 : Math.max(0, gps.fixes.length - gps.sentCount),
   };
 }
 
@@ -52,7 +61,7 @@ export function buildBatch(
   deviceNow: number,
 ): UploadBatch | null {
   const events = readyEvents(outbox, deviceNow);
-  const fixes = gps.fixes.slice(gps.sentCount, gps.sentCount + GPS_BATCH);
+  const fixes = gps.blocked ? [] : gps.fixes.slice(gps.sentCount, gps.sentCount + GPS_BATCH);
   if (!events.length && !fixes.length) return null;
   return {
     truckId,

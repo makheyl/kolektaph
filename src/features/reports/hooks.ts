@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { useIsOnline } from '@/lib/network';
-import { OfflineError, services } from '@/services';
+import { OfflineError, ServerError, services } from '@/services';
 import type { Ticket } from '@/services/types';
 import { useDemo } from '@/stores/demo';
 import { useMyReports } from '@/stores/myReports';
@@ -31,6 +31,7 @@ export async function sendPendingReports(): Promise<number> {
   let sent = 0;
   try {
     for (const p of useMyReports.getState().pending) {
+      if (p.refused) continue;
       try {
         const ticket = await services.reports.submit(p.report);
         useMyReports.getState().dequeue(p.localId);
@@ -38,7 +39,10 @@ export async function sendPendingReports(): Promise<number> {
         sent += 1;
       } catch (e) {
         if (e instanceof OfflineError) break;
-        throw e;
+        if (!(e instanceof ServerError)) throw e;
+        // "Too many for now" may pass later; any other refusal will not, so stop retrying it.
+        if (e.status === 429 || e.status >= 500) break;
+        useMyReports.getState().markRefused(p.localId, e.code);
       }
     }
   } finally {
@@ -50,7 +54,7 @@ export async function sendPendingReports(): Promise<number> {
 /** Retries saved reports whenever the phone is back online. */
 export function usePendingReportsSync(): void {
   const online = useIsOnline();
-  const pending = useMyReports((s) => s.pending.length);
+  const pending = useMyReports((s) => s.pending.filter((p) => !p.refused).length);
   useEffect(() => {
     if (online && pending > 0) void sendPendingReports();
   }, [online, pending]);

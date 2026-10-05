@@ -30,7 +30,8 @@ import { useBarangays, useCityMeta, useSimNow } from '@/features/tracking/hooks'
 import { barangayAt } from '@/lib/geo';
 import { maskPhMobile } from '@/lib/phone';
 import { formatClock } from '@/lib/time';
-import { OfflineError, services } from '@/services';
+import { randomUuid } from '@/lib/uuid';
+import { OfflineError, ServerError, services } from '@/services';
 import type {
   LngLat,
   NewReport,
@@ -84,6 +85,10 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
   const [textMe, setTextMe] = useState(true);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<Ticket | null>(null);
+  /** Why the server refused the report (its short reason), shown on the review step. */
+  const [refused, setRefused] = useState<string | null>(null);
+  // One reference per report, made when it is written: sending it again files it only once.
+  const [clientRef, setClientRef] = useState(randomUuid);
 
   const reset = () => {
     setStep(1);
@@ -101,6 +106,8 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
     setSize('bags');
     setNote('');
     setSent(null);
+    setRefused(null);
+    setClientRef(randomUuid());
   };
 
   if (!barangays || !meta) return <Screen>{null}</Screen>;
@@ -133,20 +140,30 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
       nearSensitive,
       note: note.trim(),
       contact: sms && textMe ? sms.mobile : null,
+      clientRef,
     };
     setSending(true);
+    setRefused(null);
     try {
       const ticket = await services.reports.submit(report);
       addTicket(ticket.id);
       markSeen(ticket.id, ticket.history.length);
       setSent(ticket);
+      setStep('done');
     } catch (e) {
-      if (!(e instanceof OfflineError)) throw e;
-      queue(report, now);
-      setSent(null);
+      if (e instanceof OfflineError) {
+        // No signal: keep it on the phone and send it when signal returns.
+        queue(report, now);
+        setSent(null);
+        setStep('done');
+      } else if (e instanceof ServerError) {
+        // The server answered and refused: stay here and say why.
+        setRefused(e.code);
+      } else {
+        throw e;
+      }
     } finally {
       setSending(false);
-      setStep('done');
     }
   };
 
@@ -440,6 +457,13 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
           <AppText variant="caption" color={colors.textMuted}>
             {t('reports.wizard.privacy')}
           </AppText>
+          {refused ? (
+            <Card style={styles.warn} accessibilityLiveRegion="assertive">
+              <AppText variant="bodyStrong" color={colors.red}>
+                {t(`reports.refused.${refused}`, { defaultValue: t('reports.refused.other') })}
+              </AppText>
+            </Card>
+          ) : null}
           <Button
             icon="send"
             variant="success"

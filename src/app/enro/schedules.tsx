@@ -12,6 +12,7 @@ import { Screen } from '@/components/ui/Screen';
 import { SmsBubble } from '@/components/ui/SmsBubble';
 import { TextField } from '@/components/ui/TextField';
 import { WasteBadge } from '@/components/ui/WasteBadge';
+import { useStaffRights } from '@/features/admin/hooks';
 import { smsInfo, smsTimeRange } from '@/features/alerts/sms';
 import { sms, smsDate, smsDays } from '@/features/alerts/templates';
 import { Panel } from '@/features/enro/components/Panel';
@@ -67,6 +68,7 @@ export default function EnroSchedules() {
   const { data: exceptions = [] } = useScheduleExceptions();
   const { data: barangays } = useBarangays();
   const { data: registrations = {} } = useSmsRegistrations();
+  const rights = useStaffRights();
   const [mode, setMode] = useState<Mode>({ kind: 'view' });
   const [draft, setDraft] = useState<ScheduleChange | null>(null);
   const [saving, setSaving] = useState(false);
@@ -202,12 +204,14 @@ export default function EnroSchedules() {
                 })}
               </AppText>
             ))}
-            <Button
-              variant="secondary"
-              icon="calendar-edit"
-              label={t('enro.schedules.edit')}
-              onPress={() => startEdit(r.id)}
-            />
+            {rights.act ? (
+              <Button
+                variant="secondary"
+                icon="calendar-edit"
+                label={t('enro.schedules.edit')}
+                onPress={() => startEdit(r.id)}
+              />
+            ) : null}
           </Card>
         );
       })}

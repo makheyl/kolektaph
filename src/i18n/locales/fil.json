@@ -74,7 +74,12 @@
     "clearEvents": "I-reset ang lahat ng demo data",
     "activeEvents": "{{count}} pangyayari ang naka-set",
     "bridgeHint": "Tip: buksan ang Driver at ang City ENRO sa magkahiwalay na tab. Konektado sila, parang dalawang device na iisa ang server.",
-    "resetTickets": "Ibinalik din ang mga halimbawang report."
+    "resetTickets": "Ibinalik din ang mga halimbawang report.",
+    "sharedHint": "Iisa ang oras ng demo para sa lahat ng device. Admin lang ng City ENRO ang makakapagpalit nito, makakapagdagdag ng sira, o makakapag-reset ng data.",
+    "signInAdmin": "Mag-sign in bilang admin ng City ENRO",
+    "failed": "Hindi natuloy. Subukan ulit.",
+    "resetConfirm": "Ire-reset nito ang demo data para sa lahat ng device: babalik sa sample ang mga ulat ng truck, ticket, anunsyo at setting.",
+    "resetYes": "Oo, i-reset lahat"
   },
   "truck": {
     "status": {
@@ -147,7 +152,9 @@
       "otpLabel": "6-digit code",
       "otpInvalid": "Mali ang code. Subukan ulit.",
       "verify": "Kumpirmahin",
-      "changeNumber": "Palitan ang number"
+      "changeNumber": "Palitan ang number",
+      "offline": "Walang signal. Kailangan ng signal para i-on ang text. Subukan ulit.",
+      "failed": "Hindi na-on ang text. Subukan ulit mamaya."
     },
     "done": "Handa na!"
   },
@@ -252,9 +259,11 @@
       "privacy": "Paunawa sa privacy",
       "deleteData": "Burahin ang data ko",
       "deleteConfirmTitle": "Burahin ang data mo?",
-      "deleteConfirmBody": "Mabubura ang barangay at number mo sa device na ito, at hihinto ang mga text.",
+      "deleteConfirmBody": "Mabubura ang barangay at number mo sa device na ito at sa listahan ng lungsod, at hihinto ang mga text. Mananatili sa lungsod ang mga report na naipadala mo, pero hindi na nakaugnay sa phone na ito.",
       "deleteConfirm": "Oo, burahin",
-      "switchRole": "Bumalik sa demo"
+      "switchRole": "Bumalik sa demo",
+      "needsSignal": "Walang signal. Kailangan ng signal para ma-update din ang listahan ng lungsod.",
+      "notDone": "Hindi natuloy. Subukan ulit."
     },
     "alerts": {
       "title": "Mga abiso",
@@ -270,13 +279,13 @@
     "title": "Paunawa sa privacy",
     "draft": "Draft para sa prototype. Ire-review pa ng Data Protection Officer ng lungsod.",
     "collectTitle": "Ano ang kinukuha namin",
-    "collectBody": "Ang barangay mo lang. Kung gusto mong ma-text, ang mobile number mo rin. Hindi namin kailangan ang pangalan, address o ID mo.",
+    "collectBody": "Ang barangay mo lang. Kung gusto mong ma-text, ang mobile number mo rin. Kung magpadala ka ng report: ang mga litrato, ang lugar na itinuro mo at ang tala mo. Hindi namin kailangan ang pangalan, address o ID mo.",
     "whyTitle": "Bakit",
     "whyBody": "Para maipakita ang iskedyul ng barangay mo at ma-text ka bago dumating ang truck.",
     "whoTitle": "Sino ang makakakita",
-    "whoBody": "Ang City ENRO lang, para sa pagpapadala ng paalala. Hindi ito ibebenta o ibibigay sa iba.",
+    "whoBody": "Ang City ENRO lang, para magpadala ng paalala at aksyunan ang mga report. Makikita ng crew ng truck na ipinadala ang litrato at lugar ng report. Hindi ito ibebenta o ibibigay sa iba.",
     "rightsTitle": "Ang karapatan mo",
-    "rightsBody": "Puwede mong itigil ang text anumang oras (reply STOP) at burahin ang data mo sa Mga setting. Sumusunod ito sa Data Privacy Act of 2012 (RA 10173)."
+    "rightsBody": "Puwede mong itigil ang text anumang oras (reply STOP) at burahin ang data mo sa Mga setting. Mananatili sa lungsod bilang tala ang mga report na naipadala mo, pero hindi na nakaugnay sa phone mo. Sumusunod ito sa Data Privacy Act of 2012 (RA 10173)."
   },
   "alert": {
     "kind": {
@@ -465,7 +474,19 @@
       "collectHint": "Kailangan ang larawan pagkatapos.",
       "done": "Nagawa.",
       "missedFrom": "Kalye: {{street}} · {{day}}",
-      "dispatched": "{{mode}} · {{truck}}"
+      "dispatched": "{{mode}} · {{truck}}",
+      "wantsTexts": "gustong ma-text ng update",
+      "basis": {
+        "gps": "Ayon sa GPS, hindi dumaan ang truck.",
+        "not_passed": "Ayon sa GPS, hindi dumaan ang truck.",
+        "no_gps": "Walang GPS data sa oras na iyon: kailangang tingnan sa lugar.",
+        "truck_full": "Napuno ang truck bago makarating sa kalye.",
+        "road_blocked": "Itinala ng crew na sarado ang daan.",
+        "skipped": "Itinala ng crew na nilaktawan ang kalye.",
+        "no_garbage": "Itinala ng crew: walang basura sa labas.",
+        "not_segregated": "Itinala ng crew: hindi naka-segregate.",
+        "other": "Itinala ng crew na nilaktawan ang kalye."
+      }
     },
     "missed": {
       "title": "Kalyeng hindi nadaanan",
@@ -602,8 +623,38 @@
       "barangayFor": "Barangay",
       "add": "Idagdag",
       "nameRequired": "Ilagay ang pangalan o posisyon.",
-      "pickBarangay": "Pumili ng barangay para sa barangay focal."
-    }
+      "pickBarangay": "Pumili ng barangay para sa barangay focal.",
+      "accountsTitle": "Mga user at tungkulin",
+      "accountsBody": "Bawat account ay login ng City ENRO. Gawin muna ang login sa Supabase dashboard (Authentication, tapos Users), saka ito bigyan ng pangalan at tungkulin dito.",
+      "loginId": "Login ID (User UID)",
+      "loginIdHint": "Kopyahin mula sa Supabase dashboard: Authentication, tapos Users.",
+      "loginIdInvalid": "I-paste ang User UID ng login (36 na character).",
+      "refused": {
+        "unknown_login": "Walang login na may ganitong ID. Gawin muna ito sa Supabase dashboard.",
+        "last_admin": "Kailangang may isang aktibong admin palagi.",
+        "not_allowed": "Hindi ito mababago ng tungkulin mo.",
+        "bad_barangay": "Kailangan ng barangay ang barangay focal."
+      }
+    },
+    "signIn": {
+      "title": "Mag-sign in",
+      "body": "Para sa mga kawani ng City ENRO. Ang administrator ng lungsod ang gumagawa ng account.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Mag-sign in",
+      "busy": "Nagsa-sign in…",
+      "missing": "Ilagay ang email at password.",
+      "wrong": "Mali ang email o password.",
+      "offline": "Walang signal. Kailangan ng signal para mag-sign in.",
+      "notStaff": "Wala pang tungkulin sa City ENRO ang login na ito. Ipadagdag ito sa administrator.",
+      "tooMany": "Masyadong maraming subok. Maghintay ng ilang minuto.",
+      "checking": "Sinusuri ang sign-in mo…",
+      "help": "Nakalimutan ang password? Ipa-reset ito sa administrator.",
+      "signOut": "Mag-sign out"
+    },
+    "notSaved": "Hindi nai-save. Subukan ulit.",
+    "viewOnly": "Makikita mo ito pero hindi mo mababago sa tungkulin mo.",
+    "adminOnly": "Admin lang ang makakapagbago nito."
   },
   "incident": {
     "breakdown": "Sira ang truck",
@@ -632,7 +683,11 @@
       "offline": "Walang signal. Kailangan ng signal para mag-sign in.",
       "demoPin": "Demo PIN: {{pin}}",
       "changeTruck": "Ibang truck",
-      "checking": "Sinusuri…"
+      "checking": "Sinusuri…",
+      "locked": "Maraming maling PIN. Naka-lock ang truck na ito hanggang {{time}}.",
+      "wrongPinLeft": "Mali ang PIN. Natitirang subok bago ma-lock ang truck: {{count}}.",
+      "failed": "Hindi nakapag-sign in. Subukan ulit.",
+      "again": "Natapos na ang sign-in ng truck. Ilagay ulit ang PIN. Ligtas sa phone na ito ang shift at ang mga hindi pa naipapadalang report."
     },
     "start": {
       "title": "Simulan ang shift",
@@ -795,7 +850,9 @@
       "notificationTitle": "KolektaPH: naka-shift",
       "notificationBody": "Kinukuha ang lokasyon ng truck habang naka-shift lang.",
       "mapTitle": "Na-record na ruta",
-      "noFixes": "Wala pang na-record na lokasyon."
+      "noFixes": "Wala pang na-record na lokasyon.",
+      "refused": "Mga report na hindi tinanggap ng server",
+      "blocked": "Hindi tinatanggap ng server ang GPS ng shift na ito ({{reason}}). Nananatili sa phone na ito ang recording."
     },
     "tasks": {
       "title": "Espesyal na koleksyon",
@@ -968,7 +1025,9 @@
       "new": "Mag-report",
       "updated": "May bago",
       "linkFromHome": "Aking mga report",
-      "count": "{{count}} report"
+      "count": "{{count}} report",
+      "refused": "Hindi tinanggap",
+      "remove": "Alisin"
     },
     "detail": {
       "title": "Report {{ticket}}",
@@ -988,7 +1047,15 @@
       "due": "Target: {{time}}",
       "mergedInto": "Parehong lugar at problema ng {{ticket}}; doon na susundan.",
       "notFound": "Hindi makita ang report.",
-      "sample": "Halimbawang report"
+      "sample": "Halimbawang report",
+      "notSent": "Hindi natuloy. Subukan ulit."
+    },
+    "refused": {
+      "rate_limited": "Masyado nang maraming report mula sa phone na ito sa ngayon. Subukan ulit mamaya.",
+      "busy": "Abala ang sistema ngayon. Subukan ulit pagkalipas ng ilang minuto.",
+      "outside_city": "Nasa labas ng Carmona ang lugar na iyon. Ilipat ang pin.",
+      "anonymous_provider_disabled": "Hindi pa bukas ang pagtanggap ng report sa server. Subukan ulit mamaya.",
+      "other": "Hindi tinanggap ang report. Pakisuri at subukan ulit."
     }
   },
   "claims": {
@@ -1045,7 +1112,13 @@
     },
     "ticket": "Ticket: {{ticket}}",
     "seeTicket": "Tingnan ang ticket",
-    "homeLink": "Hindi nadaanan ang kalye namin"
+    "homeLink": "Hindi nadaanan ang kalye namin",
+    "refused": {
+      "offline": "Walang signal. Kailangan ng signal para maitala ito. Subukan ulit.",
+      "rate_limited": "Naabot na ng phone na ito ang limit ng report ng hindi nadaanang kalye ngayong araw.",
+      "anonymous_provider_disabled": "Hindi pa bukas ang pagtanggap ng report sa server. Subukan ulit mamaya.",
+      "other": "Hindi namin ito nasuri ngayon. Subukan ulit."
+    }
   },
   "kolek": {
     "title": "Tanong kay Kolek",

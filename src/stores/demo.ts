@@ -14,6 +14,8 @@ interface DemoState {
   jumpTo: (simMs: number) => void;
   setSpeed: (speed: number) => void;
   goLive: () => void;
+  /** The clock as the server keeps it (when the app follows a server). */
+  setClock: (clock: ClockConfig) => void;
   addEvent: (event: TruckEvent) => void;
   clearEvents: () => void;
 }
@@ -27,6 +29,7 @@ export const useDemo = create<DemoState>()(
       jumpTo: (simMs) => set({ clock: jumpTo(get().clock, simMs) }),
       setSpeed: (speed) => set({ clock: withSpeed(get().clock, speed) }),
       goLive: () => set({ clock: LIVE_CLOCK }),
+      setClock: (clock) => set({ clock }),
       addEvent: (event) => set({ events: [...get().events, event] }),
       clearEvents: () => set({ events: [] }),
     }),

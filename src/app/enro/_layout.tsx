@@ -6,6 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
 import { Chip } from '@/components/ui/Chip';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { useStaffAuth } from '@/features/admin/hooks';
+import { StaffSignIn } from '@/features/enro/components/StaffSignIn';
+import { services } from '@/services';
 import { useSettings } from '@/stores/settings';
 import { colors, fonts, radius, spacing, touch } from '@/theme/tokens';
 
@@ -36,7 +39,16 @@ export default function EnroLayout() {
   const { width } = useWindowDimensions();
   const pathname = usePathname();
   const { language, setLanguage } = useSettings();
+  const auth = useStaffAuth();
   const isActive = (href?: Href) => href === pathname;
+
+  // On the server's data the dashboard is for City ENRO staff only.
+  if (auth.status !== 'signed_in') return <StaffSignIn checking={auth.status === 'loading'} />;
+  // The sample data has no accounts, so there is nobody to show or to sign out.
+  const who = services.auth.required
+    ? `${auth.staff.name} · ${t(`enro.settings.roles.${auth.staff.role}`)}`
+    : null;
+  const signOut = () => void services.auth.signOut();
 
   if (width < WIDE) {
     return (
@@ -63,7 +75,13 @@ export default function EnroLayout() {
               />
             ))}
             <Chip label={t('enro.nav.backToDemo')} onPress={() => router.replace('/demo')} />
+            {who ? <Chip label={t('enro.signIn.signOut')} onPress={signOut} /> : null}
           </ScrollView>
+          {who ? (
+            <AppText variant="caption" color={colors.mint}>
+              {who}
+            </AppText>
+          ) : null}
         </SafeAreaView>
         <Slot />
       </View>
@@ -129,6 +147,19 @@ export default function EnroLayout() {
             />
             <Chip label="English" selected={language === 'en'} onPress={() => setLanguage('en')} />
           </View>
+          {who ? (
+            <>
+              <AppText variant="caption" color={colors.mint} style={styles.who}>
+                {who}
+              </AppText>
+              <Pressable accessibilityRole="button" onPress={signOut} style={styles.navItem}>
+                <Icon name="logout" size={22} color={colors.mint} />
+                <AppText variant="label" color={colors.mint}>
+                  {t('enro.signIn.signOut')}
+                </AppText>
+              </Pressable>
+            </>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             onPress={() => router.replace('/demo')}
@@ -180,6 +211,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   sidebarFooter: { gap: spacing.md },
+  who: { paddingHorizontal: spacing.md },
   langRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   topBar: {
     backgroundColor: colors.navyDark,

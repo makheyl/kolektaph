@@ -74,7 +74,12 @@
     "clearEvents": "Reset all demo data",
     "activeEvents": "{{count}} scenario events set",
     "bridgeHint": "Tip: open the Driver and City ENRO views in separate tabs. They are connected, like two devices sharing one server.",
-    "resetTickets": "The sample reports were restored too."
+    "resetTickets": "The sample reports were restored too.",
+    "sharedHint": "The demo clock is shared: every device sees the same time. Only a City ENRO admin can move it, add a breakdown or reset the data.",
+    "signInAdmin": "Sign in as City ENRO admin",
+    "failed": "That did not go through. Please try again.",
+    "resetConfirm": "This resets the demo data for every device: truck reports, tickets, announcements and settings go back to the samples.",
+    "resetYes": "Yes, reset everything"
   },
   "truck": {
     "status": {
@@ -147,7 +152,9 @@
       "otpLabel": "6-digit code",
       "otpInvalid": "Wrong code. Please try again.",
       "verify": "Confirm",
-      "changeNumber": "Change number"
+      "changeNumber": "Change number",
+      "offline": "No signal. Turning on texts needs a connection. Please try again.",
+      "failed": "Could not turn on texts. Please try again later."
     },
     "done": "All set!"
   },
@@ -252,9 +259,11 @@
       "privacy": "Privacy notice",
       "deleteData": "Delete my data",
       "deleteConfirmTitle": "Delete your data?",
-      "deleteConfirmBody": "Your barangay and number will be removed from this device, and texts will stop.",
+      "deleteConfirmBody": "Your barangay and number will be removed from this device and from the City's list, and texts will stop. Reports you sent stay with the City, no longer linked to this phone.",
       "deleteConfirm": "Yes, delete",
-      "switchRole": "Back to demo"
+      "switchRole": "Back to demo",
+      "needsSignal": "No signal. This needs a connection so the City's list is updated too.",
+      "notDone": "That did not go through. Please try again."
     },
     "alerts": {
       "title": "Alerts",
@@ -270,13 +279,13 @@
     "title": "Privacy notice",
     "draft": "Prototype draft. To be reviewed by the city's Data Protection Officer.",
     "collectTitle": "What we collect",
-    "collectBody": "Only your barangay. If you want text alerts, also your mobile number. We don't need your name, address or ID.",
+    "collectBody": "Only your barangay. If you want text alerts, also your mobile number. If you send a report: its photos, the place you pinned and your note. We don't need your name, address or ID.",
     "whyTitle": "Why",
     "whyBody": "To show your barangay's schedule and text you before the truck arrives.",
     "whoTitle": "Who can see it",
-    "whoBody": "Only the City ENRO, to send reminders. It is never sold or shared.",
+    "whoBody": "Only the City ENRO, to send reminders and act on reports. The truck crew sent to a report sees its photos and place. It is never sold or shared.",
     "rightsTitle": "Your rights",
-    "rightsBody": "You can stop texts anytime (reply STOP) and delete your data in Settings. This follows the Data Privacy Act of 2012 (RA 10173)."
+    "rightsBody": "You can stop texts anytime (reply STOP) and delete your data in Settings. Reports you sent stay with the City as records, no longer linked to your phone. This follows the Data Privacy Act of 2012 (RA 10173)."
   },
   "alert": {
     "kind": {
@@ -465,7 +474,19 @@
       "collectHint": "An after photo is required.",
       "done": "Done.",
       "missedFrom": "Street: {{street}} · {{day}}",
-      "dispatched": "{{mode}} · {{truck}}"
+      "dispatched": "{{mode}} · {{truck}}",
+      "wantsTexts": "wants text updates",
+      "basis": {
+        "gps": "GPS shows the truck did not pass.",
+        "not_passed": "GPS shows the truck did not pass.",
+        "no_gps": "No GPS data for that time: needs a check on site.",
+        "truck_full": "The truck was full before it reached the street.",
+        "road_blocked": "The crew logged the road as blocked.",
+        "skipped": "The crew logged the street as skipped.",
+        "no_garbage": "The crew logged: no garbage out.",
+        "not_segregated": "The crew logged: not segregated.",
+        "other": "The crew logged the street as skipped."
+      }
     },
     "missed": {
       "title": "Missed streets",
@@ -602,8 +623,38 @@
       "barangayFor": "Barangay",
       "add": "Add",
       "nameRequired": "Enter a name or position.",
-      "pickBarangay": "Choose a barangay for a barangay focal person."
-    }
+      "pickBarangay": "Choose a barangay for a barangay focal person.",
+      "accountsTitle": "Users and roles",
+      "accountsBody": "Each account is a City ENRO login. Create the login in the Supabase dashboard (Authentication, then Users), then give it a name and a role here.",
+      "loginId": "Login ID (User UID)",
+      "loginIdHint": "Copy it from the Supabase dashboard: Authentication, then Users.",
+      "loginIdInvalid": "Paste the login's User UID (36 characters).",
+      "refused": {
+        "unknown_login": "No login has this ID. Create it in the Supabase dashboard first.",
+        "last_admin": "There must always be one active admin.",
+        "not_allowed": "Your role cannot change this.",
+        "bad_barangay": "A barangay focal person needs a barangay."
+      }
+    },
+    "signIn": {
+      "title": "Sign in",
+      "body": "For City ENRO staff. Accounts are made by the City's administrator.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "busy": "Signing in…",
+      "missing": "Enter your email and password.",
+      "wrong": "Wrong email or password.",
+      "offline": "No signal. Signing in needs a connection.",
+      "notStaff": "This login has no City ENRO role yet. Ask the administrator to add it.",
+      "tooMany": "Too many tries. Please wait a few minutes.",
+      "checking": "Checking your sign-in…",
+      "help": "Forgot your password? Ask the administrator to reset it.",
+      "signOut": "Sign out"
+    },
+    "notSaved": "Not saved. Please try again.",
+    "viewOnly": "Your role can view this but not change it.",
+    "adminOnly": "Only an admin can change this."
   },
   "incident": {
     "breakdown": "Truck broke down",
@@ -632,7 +683,11 @@
       "offline": "No signal. Signing in needs a connection.",
       "demoPin": "Demo PIN: {{pin}}",
       "changeTruck": "Another truck",
-      "checking": "Checking…"
+      "checking": "Checking…",
+      "locked": "Too many wrong PINs. This truck is locked until {{time}}.",
+      "wrongPinLeft": "Wrong PIN. Tries left before the truck is locked: {{count}}.",
+      "failed": "Could not sign in. Please try again.",
+      "again": "The truck's sign-in has ended. Enter the PIN again. Your shift and unsent reports are safe on this phone."
     },
     "start": {
       "title": "Start the shift",
@@ -795,7 +850,9 @@
       "notificationTitle": "KolektaPH: on shift",
       "notificationBody": "The truck's location is recorded during the shift only.",
       "mapTitle": "Recorded route",
-      "noFixes": "No location recorded yet."
+      "noFixes": "No location recorded yet.",
+      "refused": "Reports the server refused",
+      "blocked": "The server is not accepting this shift's GPS ({{reason}}). The recording stays on this phone."
     },
     "tasks": {
       "title": "Special pickups",
@@ -968,7 +1025,9 @@
       "new": "Report a problem",
       "updated": "Updated",
       "linkFromHome": "My reports",
-      "count": "{{count}} reports"
+      "count": "{{count}} reports",
+      "refused": "Not accepted",
+      "remove": "Remove"
     },
     "detail": {
       "title": "Report {{ticket}}",
@@ -988,7 +1047,15 @@
       "due": "Target: {{time}}",
       "mergedInto": "Same place and problem as {{ticket}}; followed up there.",
       "notFound": "Report not found.",
-      "sample": "Sample report"
+      "sample": "Sample report",
+      "notSent": "That did not go through. Please try again."
+    },
+    "refused": {
+      "rate_limited": "Too many reports from this phone for now. Please try again later.",
+      "busy": "The system is very busy right now. Please try again in a few minutes.",
+      "outside_city": "That place is outside Carmona. Please move the pin.",
+      "anonymous_provider_disabled": "Reports are not open on the server yet. Please try again later.",
+      "other": "The report was not accepted. Please check it and try again."
     }
   },
   "claims": {
@@ -1045,7 +1112,13 @@
     },
     "ticket": "Ticket: {{ticket}}",
     "seeTicket": "View the ticket",
-    "homeLink": "The truck missed our street"
+    "homeLink": "The truck missed our street",
+    "refused": {
+      "offline": "No signal. Filing this needs a connection. Please try again.",
+      "rate_limited": "This phone has reached today's limit for missed-street reports.",
+      "anonymous_provider_disabled": "Reports are not open on the server yet. Please try again later.",
+      "other": "We could not check that just now. Please try again."
+    }
   },
   "kolek": {
     "title": "Ask Kolek",

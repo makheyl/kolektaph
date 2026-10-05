@@ -4,10 +4,11 @@
  * a backend would check them against real GPS.
  */
 import { BARANGAYS, ROUTES, SCHEDULE_EXCEPTIONS, TRUCKS } from '@/data/carmona';
-import { judgeClaim, nearestStreet } from '@/features/claims/missed';
-import { driverStreets, streetMarks } from '@/features/driver/streets';
+import { type ClaimVerdict, judgeClaim, nearestStreet } from '@/features/claims/missed';
+import { type DriverStreet, driverStreets, streetMarks } from '@/features/driver/streets';
 import { applyAction, newTicket, ticketNumber, withAutoClose } from '@/features/reports/lifecycle';
 import {
+  type CollectionOccurrence,
   collectionsForBarangay,
   nextCollectionAfterToday,
   todaysCollection,
@@ -18,6 +19,7 @@ import { simulateTruck } from '@/simulator/truckSimulator';
 
 import { OfflineError } from '../errors';
 import type {
+  ClaimPlace,
   ClaimResult,
   LngLat,
   MissedStreet,
@@ -33,17 +35,97 @@ const TICK_MS = 2000;
 const NETWORK_MS = 300;
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export interface ReportsDeps {
+/** What the "Hindi nadaanan" check needs to know (the same for every backend). */
+export interface ClaimDeps {
   getSimTime: () => number;
   getEvents: () => TruckEvent[];
-  getTickets: () => Ticket[];
-  saveTicket: (t: Ticket) => void;
-  nextTicketSeq: () => number;
-  isOnline: () => boolean;
   /** The route schedules in force (City ENRO edits included). */
   getSchedules: () => RouteSchedule[];
   /** GPS the server has for a truck today (simulated trace in the prototype). */
   traceFor: (state: TruckState) => LngLat[];
+}
+
+export interface ReportsDeps extends ClaimDeps {
+  getTickets: () => Ticket[];
+  saveTicket: (t: Ticket) => void;
+  nextTicketSeq: () => number;
+  isOnline: () => boolean;
+}
+
+/** What a claim amounts to, and what a ticket about it would say. */
+export type ClaimEvaluation =
+  | { collection: null; nextStart: number | null }
+  | {
+      collection: CollectionOccurrence;
+      verdict: ClaimVerdict;
+      street: DriverStreet | null;
+      location: LngLat;
+    };
+
+/**
+ * Checks a claim against the truck, its GPS trace and the crew's street log (HAKOT §10.2).
+ * Filing a ticket about it is up to the backend.
+ */
+export function evaluateClaim(deps: ClaimDeps, place: ClaimPlace): ClaimEvaluation {
+  const now = deps.getSimTime();
+  const occ = collectionsForBarangay(
+    place.barangayId,
+    deps.getSchedules(),
+    ROUTES,
+    SCHEDULE_EXCEPTIONS,
+    now,
+    14,
+  );
+  const today = todaysCollection(occ, now);
+  if (!today) {
+    return { collection: null, nextStart: nextCollectionAfterToday(occ, now)?.start ?? null };
+  }
+  const truckDef = TRUCKS.find((t) => t.id === today.truckId);
+  const route = ROUTES.find((r) => r.id === today.routeId);
+  const events = deps.getEvents();
+  const truck = truckDef
+    ? simulateTruck(truckDef, deps.getSchedules(), ROUTES, now, SCHEDULE_EXCEPTIONS, events)
+    : undefined;
+  const streets = route
+    ? driverStreets(route).filter((s) => s.barangayId === place.barangayId)
+    : [];
+  const street =
+    (place.streetKey ? streets.find((s) => s.key === place.streetKey) : null) ??
+    (place.point && route ? nearestStreet(streets, route, place.point) : null);
+  const dayEvents = events.filter(
+    (e) => e.truckId === today.truckId && manilaStartOfDay(e.at) === today.day,
+  );
+  const mark = street && route ? (streetMarks(dayEvents, route.id).get(street.key) ?? null) : null;
+  const trace =
+    truck && truck.routeId && truck.status !== 'not_started' ? deps.traceFor(truck) : [];
+
+  const verdict = judgeClaim({
+    now,
+    today,
+    truck,
+    route,
+    street,
+    point: place.point,
+    trace,
+    mark,
+  });
+
+  const labelPoint = BARANGAYS.features.find((f) => f.properties.id === place.barangayId)!
+    .properties.labelPoint;
+  const location: LngLat =
+    place.point ??
+    (street && route
+      ? (route.segments.find((s) => s.id === street.segmentIds[0])?.coordinates[0] ?? labelPoint)
+      : labelPoint);
+  return { collection: today, verdict, street: street ?? null, location };
+}
+
+/** The street a missed-street entry is about, as the key the driver app and the server use. */
+export function missedStreetKey(missed: MissedStreet): string | null {
+  const route = ROUTES.find((r) => r.id === missed.routeId);
+  return route
+    ? (driverStreets(route).find((s) => s.segmentIds.includes(missed.segmentIds[0]))?.key ?? null)
+    : null;
 }
 
 export function createMockReports(deps: ReportsDeps): ReportsService {
@@ -166,61 +248,9 @@ export function createMockReports(deps: ReportsDeps): ReportsService {
 
     async checkMissed(place): Promise<ClaimResult> {
       await wait(NETWORK_MS);
-      const now = deps.getSimTime();
-      const occ = collectionsForBarangay(
-        place.barangayId,
-        deps.getSchedules(),
-        ROUTES,
-        SCHEDULE_EXCEPTIONS,
-        now,
-        14,
-      );
-      const today = todaysCollection(occ, now);
-      if (!today) {
-        return {
-          kind: 'no_collection_today',
-          nextStart: nextCollectionAfterToday(occ, now)?.start ?? null,
-        };
-      }
-      const truckDef = TRUCKS.find((t) => t.id === today.truckId);
-      const route = ROUTES.find((r) => r.id === today.routeId);
-      const events = deps.getEvents();
-      const truck = truckDef
-        ? simulateTruck(truckDef, deps.getSchedules(), ROUTES, now, SCHEDULE_EXCEPTIONS, events)
-        : undefined;
-      const streets = route
-        ? driverStreets(route).filter((s) => s.barangayId === place.barangayId)
-        : [];
-      const street =
-        (place.streetKey ? streets.find((s) => s.key === place.streetKey) : null) ??
-        (place.point && route ? nearestStreet(streets, route, place.point) : null);
-      const dayEvents = events.filter(
-        (e) => e.truckId === today.truckId && manilaStartOfDay(e.at) === today.day,
-      );
-      const mark =
-        street && route ? (streetMarks(dayEvents, route.id).get(street.key) ?? null) : null;
-      const trace =
-        truck && truck.routeId && truck.status !== 'not_started' ? deps.traceFor(truck) : [];
-
-      const verdict = judgeClaim({
-        now,
-        today,
-        truck,
-        route,
-        street,
-        point: place.point,
-        trace,
-        mark,
-      });
-
-      const location: LngLat =
-        place.point ??
-        (street && route
-          ? (route.segments.find((s) => s.id === street.segmentIds[0])?.coordinates[0] ??
-            BARANGAYS.features.find((f) => f.properties.id === place.barangayId)!.properties
-              .labelPoint)
-          : BARANGAYS.features.find((f) => f.properties.id === place.barangayId)!.properties
-              .labelPoint);
+      const claim = evaluateClaim(deps, place);
+      if (!claim.collection) return { kind: 'no_collection_today', nextStart: claim.nextStart };
+      const { collection: today, verdict, street, location } = claim;
       const ticketFor = (verified: boolean, note: string) =>
         missedTicket({
           barangayId: place.barangayId,
@@ -265,14 +295,10 @@ export function createMockReports(deps: ReportsDeps): ReportsService {
         seg?.coordinates[0] ??
         BARANGAYS.features.find((f) => f.properties.id === missed.barangayId)!.properties
           .labelPoint;
-      const streetKey = route
-        ? (driverStreets(route).find((s) => s.segmentIds.includes(missed.segmentIds[0]))?.key ??
-          null)
-        : null;
       return missedTicket({
         barangayId: missed.barangayId,
         routeId: missed.routeId,
-        streetKey,
+        streetKey: missedStreetKey(missed),
         streetName: missed.name,
         location,
         day,

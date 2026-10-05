@@ -18,6 +18,13 @@ interface GpsState extends GpsQueue {
   append: (fixes: GpsFix[]) => number;
   /** The server has fixes [0, upTo) of this shift. */
   markSent: (shiftId: string, upTo: number) => void;
+  /**
+   * What the server says it holds: fixes [0, count). Unlike markSent this can also move back,
+   * so after a gap the phone sends again from where the server really is.
+   */
+  setSent: (shiftId: string, count: number) => void;
+  /** The server refuses this shift's GPS for good: stop sending it (the log stays on the phone). */
+  block: (shiftId: string, reason: string) => void;
   clear: () => void;
 }
 
@@ -34,8 +41,17 @@ export const useGps = create<GpsState>()(
       sentCount: 0,
       rejected: 0,
       lastDeliveredAt: null,
+      blocked: null,
       begin: (shiftId, source) =>
-        set({ shiftId, source, fixes: [], sentCount: 0, rejected: 0, lastDeliveredAt: null }),
+        set({
+          shiftId,
+          source,
+          fixes: [],
+          sentCount: 0,
+          rejected: 0,
+          lastDeliveredAt: null,
+          blocked: null,
+        }),
       append: (incoming) => {
         const { shift } = useDriver.getState();
         const { fixes, shiftId, rejected } = get();
@@ -56,17 +72,25 @@ export const useGps = create<GpsState>()(
         if (get().shiftId !== shiftId) return;
         set({ sentCount: Math.max(get().sentCount, Math.min(upTo, get().fixes.length)) });
       },
-      clear: () => set({ shiftId: null, fixes: [], sentCount: 0, rejected: 0 }),
+      setSent: (shiftId, count) => {
+        if (get().shiftId !== shiftId) return;
+        set({ sentCount: Math.max(0, Math.min(count, get().fixes.length)) });
+      },
+      block: (shiftId, reason) => {
+        if (get().shiftId === shiftId) set({ blocked: reason });
+      },
+      clear: () => set({ shiftId: null, fixes: [], sentCount: 0, rejected: 0, blocked: null }),
     }),
     {
       name: 'kolektaph.gps',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: ({ shiftId, source, fixes, sentCount, rejected }) => ({
+      partialize: ({ shiftId, source, fixes, sentCount, rejected, blocked }) => ({
         shiftId,
         source,
         fixes,
         sentCount,
         rejected,
+        blocked,
       }),
     },
   ),

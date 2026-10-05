@@ -38,7 +38,9 @@ import type {
   RouteSchedule,
   Services,
   ShiftSummary,
+  StaffSession,
   StaffUser,
+  SuggestionDecision,
   Ticket,
   TruckEvent,
   TruckState,
@@ -84,7 +86,30 @@ export interface MockDeps {
   setContact: (target: ContactTarget, info: ContactInfo) => void;
   getStaff: () => StaffUser[];
   saveStaff: (user: StaffUser) => void;
+  /** Registered SMS numbers per barangay (default: the sample counts). */
+  getRegistrations?: () => Record<string, number>;
+  /** What the server holds of a shift's GPS, without the fixes (default: from getTraces). */
+  getGpsSummary?: (shiftId: string) => ShiftSummary['gps'] | null;
+  /** Staff decisions on backup-truck suggestions. */
+  getDecisions?: () => OpsSnapshot['decisions'];
+  saveDecision?: (suggestionId: string, decision: SuggestionDecision, at: number) => void;
+  /** The demo controls: this device's demo clock, demo incidents, and the reset. */
+  demo?: {
+    jumpTo: (simMs: number) => void;
+    setSpeed: (speed: number) => void;
+    goLive: () => void;
+    addIncident: (event: TruckEvent) => void;
+    reset: () => void;
+  };
 }
+
+/** The sample data has no accounts: the dashboard opens as this sample admin. */
+const SAMPLE_ADMIN: StaffSession = {
+  id: 'u-admin',
+  name: 'ENRO Admin',
+  role: 'admin',
+  barangayId: null,
+};
 
 const barangayName = (id: string) =>
   BARANGAYS.features.find((f) => f.properties.id === id)?.properties.name ?? id;
@@ -101,6 +126,7 @@ export function createMockServices(deps: MockDeps): Services {
     for (const c of deps.getLeadChanges()) if (c.at <= at) minutes = c.minutes;
     return minutes;
   };
+  const registrations = () => deps.getRegistrations?.() ?? SMS_REGISTRATIONS;
   /** Changes whenever a setting that affects the replayed day changes. */
   const configKey = () => JSON.stringify([deps.getSchedules(), deps.getLeadChanges()]);
 
@@ -110,7 +136,7 @@ export function createMockServices(deps: MockDeps): Services {
     exceptions: SCHEDULE_EXCEPTIONS,
     trucks: TRUCKS,
     events,
-    registrations: SMS_REGISTRATIONS,
+    registrations: registrations(),
     barangayName,
     weekdayFil: (w) => WEEKDAYS_FIL[w],
     vicinityMinutes: leadAt,
@@ -136,7 +162,9 @@ export function createMockServices(deps: MockDeps): Services {
     barangayIds: a.barangayIds,
     sentAt: a.sentAt,
     text: a.text,
-    recipients: a.barangayIds.reduce((sum, b) => sum + (SMS_REGISTRATIONS[b] ?? 0), 0),
+    // The server records the count when it sends; the sample data works it out.
+    recipients:
+      a.recipients ?? a.barangayIds.reduce((sum, b) => sum + (registrations()[b] ?? 0), 0),
     segments: smsInfo(a.text).segments,
   });
 
@@ -173,12 +201,21 @@ export function createMockServices(deps: MockDeps): Services {
 
   let weeklyCache: { key: string; value: OpsSnapshot['weekly'] } | null = null;
 
-  const shiftSummaries = (events: TruckEvent[]): ShiftSummary[] => {
-    const traces = deps.getTraces();
-    return events.flatMap((e) => {
+  const gpsSummary = (shiftId: string): ShiftSummary['gps'] => {
+    const known = deps.getGpsSummary?.(shiftId);
+    if (known) return known;
+    const trace = deps.getTraces()[shiftId];
+    return {
+      points: trace?.fixes.length ?? 0,
+      lastFixAt: trace?.fixes[trace.fixes.length - 1]?.t ?? null,
+      source: trace?.source ?? null,
+    };
+  };
+
+  const shiftSummaries = (events: TruckEvent[]): ShiftSummary[] =>
+    events.flatMap((e) => {
       if (e.kind !== 'shift_start') return [];
       const end = events.find((x) => x.kind === 'shift_end' && x.shiftId === e.shiftId);
-      const trace = traces[e.shiftId];
       return [
         {
           shiftId: e.shiftId,
@@ -187,15 +224,10 @@ export function createMockServices(deps: MockDeps): Services {
           startedAt: e.at,
           endedAt: end?.at ?? null,
           crew: e.crew,
-          gps: {
-            points: trace?.fixes.length ?? 0,
-            lastFixAt: trace?.fixes[trace.fixes.length - 1]?.t ?? null,
-            source: trace?.source ?? null,
-          },
+          gps: gpsSummary(e.shiftId),
         },
       ];
     });
-  };
 
   /** Missed streets by `now` for the given fleet states (GPS check + crew skip reasons). */
   const missedFor = (states: TruckState[], now: number, events: TruckEvent[]): MissedStreet[] => {
@@ -258,6 +290,7 @@ export function createMockServices(deps: MockDeps): Services {
       states,
       missed,
       suggestions: suggestBackups(states, ROUTES, schedules(), now, missed),
+      decisions: deps.getDecisions?.() ?? {},
       weekly: weeklyCache.value,
       events: todays,
       shifts: shiftSummaries(todays),
@@ -335,7 +368,7 @@ export function createMockServices(deps: MockDeps): Services {
         deps.addAnnouncement(a);
         return announcementAlert(a);
       },
-      getSmsRegistrations: async () => SMS_REGISTRATIONS,
+      getSmsRegistrations: async () => registrations(),
     },
     ops: {
       subscribeOps(listener) {
@@ -353,6 +386,9 @@ export function createMockServices(deps: MockDeps): Services {
         const events = deps.getEvents();
         const states = simulateFleet(TRUCKS, schedules(), ROUTES, at, SCHEDULE_EXCEPTIONS, events);
         return missedFor(states, at, events);
+      },
+      async decideSuggestion(suggestion, decision) {
+        deps.saveDecision?.(suggestion.id, decision, deps.getSimTime());
       },
     },
     reports: createMockReports({
@@ -438,10 +474,18 @@ export function createMockServices(deps: MockDeps): Services {
         if (pin !== DRIVER_DEMO_PIN) throw new SignInError('wrong_pin');
         return { truckId, signedInAt: deps.getSimTime() };
       },
+      signOut: async () => {},
       async upload(batch) {
         await wait(NETWORK_MS);
         if (!deps.isOnline()) throw new OfflineError();
         deps.receiveUpload(batch);
+        return {
+          accepted: batch.events.map((e) => e.id),
+          rejected: [],
+          gps: batch.gps
+            ? { nextIndex: batch.gps.fromIndex + batch.gps.fixes.length, blocked: null }
+            : null,
+        };
       },
       subscribeOwnTruck(truckId, getLocalEvents, listener) {
         const truck = TRUCKS.find((t) => t.id === truckId);
@@ -464,6 +508,46 @@ export function createMockServices(deps: MockDeps): Services {
         emit();
         const timer = setInterval(emit, TICK_MS);
         return () => clearInterval(timer);
+      },
+    },
+    // The sample data keeps the text sign-up on the device only (see stores/settings).
+    resident: {
+      subscribeSms: async () => {},
+      unsubscribeSms: async () => {},
+      forgetMe: async () => {},
+    },
+    auth: {
+      required: false,
+      subscribe(listener) {
+        listener({ status: 'signed_in', staff: SAMPLE_ADMIN });
+        return () => {};
+      },
+      signIn: async () => SAMPLE_ADMIN,
+      signOut: async () => {},
+    },
+    demo: {
+      shared: false,
+      jumpTo: async (simMs) => deps.demo?.jumpTo(simMs),
+      setSpeed: async (speed) => deps.demo?.setSpeed(speed),
+      goLive: async () => deps.demo?.goLive(),
+      async breakdown(truckId) {
+        const at = deps.getSimTime();
+        deps.demo?.addIncident({
+          id: `demo-breakdown|${truckId}|${at}`,
+          kind: 'incident',
+          incident: 'breakdown',
+          source: 'demo',
+          truckId,
+          at,
+          minutes: 120,
+        });
+      },
+      reset: async () => deps.demo?.reset(),
+    },
+    photos: {
+      // Sample photos are bundled and camera photos stay on the device: nothing to fetch.
+      getUrl: async () => {
+        throw new Error('The sample data has no stored photos');
       },
     },
   };

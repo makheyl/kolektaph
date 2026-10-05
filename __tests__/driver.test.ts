@@ -14,8 +14,11 @@ import {
   buildBatch,
   GPS_BATCH,
   type OutboxItem,
+  pendingCounts,
   readyEvents,
   retryDelayMs,
+  shiftEndId,
+  shiftStartId,
 } from '@/features/driver/outbox';
 import {
   driverStreets,
@@ -27,6 +30,8 @@ import { suggestBackups } from '@/features/load/backup';
 import { manilaEpoch, MINUTE } from '@/lib/time';
 import type { GpsFix, Route, TruckEvent, TruckEventInput } from '@/services/types';
 import { useBackend } from '@/stores/backend';
+import { useDriver } from '@/stores/driver';
+import { useGps } from '@/stores/gps';
 import { simulatedTrace, simulateFleet, simulateTruck } from '@/simulator/truckSimulator';
 
 const tue = (h: number, m = 0) => manilaEpoch(2026, 9, 29, h, m);
@@ -374,5 +379,79 @@ describe('recording keeps up with a 1-hour shift', () => {
     expect(traceStats(accepted).gaps).toEqual([]);
     expect(traceStats(accepted).durationMs).toBe(719 * 5_000);
     expect(MINUTE).toBe(60_000);
+  });
+});
+
+describe('the phone and the server agree on what was sent', () => {
+  beforeEach(() => {
+    useDriver.setState({
+      session: { truckId: 't2', signedInAt: 0 },
+      shift: null,
+      outbox: [],
+      sync: {
+        lastOkAt: null,
+        failures: 0,
+        nextTryAt: 0,
+        lastError: null,
+        refused: 0,
+        lastRefusal: null,
+      },
+    });
+  });
+
+  it('a shift start and end get ids made from the shift, so both copies are one', () => {
+    useDriver
+      .getState()
+      .startShift({ routeId: 'r-poblacion-milagrosa', crew: 3, gpsSource: 'demo' });
+    const { shiftId } = useDriver.getState().shift!;
+    useDriver.getState().report({ kind: 'status', status: 'on_route' });
+    useDriver.getState().endShift();
+    const events = useDriver.getState().outbox.map((o) => o.event);
+    expect(events.map((e) => e.id)).toEqual([
+      shiftStartId(shiftId),
+      expect.stringMatching(/^t2\|status\|/),
+      shiftEndId(shiftId),
+    ]);
+    // Every report names its shift, so the upload can say which shift it belongs to.
+    expect(events.every((e) => e.shiftId === shiftId)).toBe(true);
+    // Ids must fit the server's rule for event and shift ids.
+    expect(events.every((e) => /^[A-Za-z0-9|_.:-]{8,80}$/.test(e.id))).toBe(true);
+    expect(shiftId).toMatch(/^[A-Za-z0-9|_.:-]{8,80}$/);
+  });
+
+  it('reports the server refused for good are dropped and counted, the rest stay', () => {
+    useDriver.getState().startShift({ routeId: null, crew: 2, gpsSource: 'demo' });
+    const a = useDriver.getState().report({ kind: 'load', load: 0.5 });
+    const b = useDriver.getState().report({ kind: 'status', status: 'full' });
+    useDriver.getState().dropRefused([{ id: a, reason: 'bad_time' }]);
+    expect(useDriver.getState().outbox.map((o) => o.event.id)).not.toContain(a);
+    expect(useDriver.getState().outbox.map((o) => o.event.id)).toContain(b);
+    expect(useDriver.getState().sync).toMatchObject({ refused: 1, lastRefusal: 'bad_time' });
+  });
+
+  it('after a gap the phone sends GPS again from where the server really is', () => {
+    useGps.getState().begin('s1', 'phone');
+    useGps.setState({
+      fixes: [0, 1, 2, 3, 4].map((t) => ({ t, lng: 121, lat: 14, acc: 5 })),
+      sentCount: 4,
+    });
+    useGps.getState().setSent('s1', 2);
+    expect(useGps.getState().sentCount).toBe(2);
+    useGps.getState().setSent('other-shift', 0);
+    expect(useGps.getState().sentCount).toBe(2);
+    useGps.getState().setSent('s1', 99);
+    expect(useGps.getState().sentCount).toBe(5);
+  });
+
+  it('GPS the server refuses for good is no longer sent, and no longer counts as waiting', () => {
+    const queue = {
+      shiftId: 's1',
+      source: 'phone' as const,
+      fixes: [0, 1, 2].map((t) => ({ t, lng: 121, lat: 14, acc: 5 })),
+      sentCount: 1,
+    };
+    expect(buildBatch('t2', [], queue, 0)?.gps?.fixes).toHaveLength(2);
+    expect(buildBatch('t2', [], { ...queue, blocked: 'bad_fixes' }, 0)).toBeNull();
+    expect(pendingCounts([], { ...queue, blocked: 'bad_fixes' }).fixes).toBe(0);
   });
 });

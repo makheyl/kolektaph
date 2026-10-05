@@ -16,16 +16,50 @@ import { barangayLabel } from '@/features/resident/format';
 import { useBarangays } from '@/features/tracking/hooks';
 import { goBack } from '@/lib/navigation';
 import { maskPhMobile } from '@/lib/phone';
+import { OfflineError, services } from '@/services';
 import { useMyReports } from '@/stores/myReports';
 import { useSettings } from '@/stores/settings';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
-  const { language, setLanguage, largeText, setLargeText, barangayId, sms, setSms, deleteMyData } =
-    useSettings();
+  const {
+    language,
+    setLanguage,
+    largeText,
+    setLargeText,
+    barangayId,
+    sms,
+    setSms,
+    markSmsSynced,
+    deleteMyData,
+  } = useSettings();
   const { data: barangays } = useBarangays();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy] = useState(false);
+  /** Which change could not reach the server, and why (no signal, or refused). */
+  const [failed, setFailed] = useState<{ what: 'sms' | 'delete'; offline: boolean } | null>(null);
+
+  /** The server must hear it first: otherwise texts would go on after the app says "off". */
+  const withServer = async (what: 'sms' | 'delete', change: () => Promise<void>) => {
+    setBusy(true);
+    setFailed(null);
+    try {
+      await change();
+      return true;
+    } catch (e) {
+      setFailed({ what, offline: e instanceof OfflineError });
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+  const failure = (what: 'sms' | 'delete') =>
+    failed?.what === what ? (
+      <AppText variant="label" color={colors.red} accessibilityLiveRegion="polite">
+        {t(failed.offline ? 'resident.settings.needsSignal' : 'resident.settings.notDone')}
+      </AppText>
+    ) : null;
   const props = barangays?.features.find((f) => f.properties.id === barangayId)?.properties;
 
   return (
@@ -76,7 +110,12 @@ export default function SettingsScreen() {
               variant="secondary"
               icon="message-off-outline"
               label={t('resident.settings.smsTurnOff')}
-              onPress={() => setSms(null)}
+              disabled={busy}
+              onPress={async () => {
+                if (!(await withServer('sms', () => services.resident.unsubscribeSms()))) return;
+                setSms(null);
+                markSmsSynced(null);
+              }}
             />
           ) : (
             <Button
@@ -88,6 +127,7 @@ export default function SettingsScreen() {
               }
             />
           )}
+          {failure('sms')}
         </Card>
       </Section>
 
@@ -114,13 +154,17 @@ export default function SettingsScreen() {
             variant="danger"
             icon="delete"
             label={t('resident.settings.deleteConfirm')}
-            onPress={() => {
+            disabled={busy}
+            onPress={async () => {
+              // The server forgets this device first (its text sign-up goes with it).
+              if (!(await withServer('delete', () => services.resident.forgetMe()))) return;
               deleteMyData();
               // Report numbers and the claim street are the resident's data too.
               useMyReports.getState().clear();
               router.replace('/onboarding/language');
             }}
           />
+          {failure('delete')}
           <Button
             variant="secondary"
             label={t('common.cancel')}

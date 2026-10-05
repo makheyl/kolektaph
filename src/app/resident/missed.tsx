@@ -19,7 +19,7 @@ import { formatRelativeDay } from '@/features/resident/format';
 import { useBarangays, useRoutes, useSimNow } from '@/features/tracking/hooks';
 import { goBack } from '@/lib/navigation';
 import { formatClock } from '@/lib/time';
-import { services } from '@/services';
+import { OfflineError, ServerError, services } from '@/services';
 import type { ClaimResult } from '@/services/types';
 import { useMyReports } from '@/stores/myReports';
 import { useSettings } from '@/stores/settings';
@@ -51,6 +51,8 @@ export default function MissedClaim() {
   const [checking, setChecking] = useState(false);
   const [locating, setLocating] = useState(false);
   const [result, setResult] = useState<ClaimResult | null>(null);
+  /** Why the check could not be finished: no signal, or the server refused (its reason). */
+  const [problem, setProblem] = useState<string | null>(null);
 
   const streets = useMemo(() => {
     if (!barangayId) return [];
@@ -101,10 +103,16 @@ export default function MissedClaim() {
   const check = async () => {
     if (!place) return;
     setChecking(true);
+    setProblem(null);
     try {
       const r = await services.reports.checkMissed(place);
       if ('ticketId' in r) addTicket(r.ticketId);
       setResult(r);
+    } catch (e) {
+      setResult(null);
+      setProblem(
+        e instanceof OfflineError ? 'offline' : e instanceof ServerError ? e.code : 'other',
+      );
     } finally {
       setChecking(false);
     }
@@ -210,6 +218,14 @@ export default function MissedClaim() {
         />
       ) : null}
 
+      {problem ? (
+        <Card style={styles.problem} accessibilityLiveRegion="assertive">
+          <AppText variant="bodyStrong" color={colors.red}>
+            {t(`claims.refused.${problem}`, { defaultValue: t('claims.refused.other') })}
+          </AppText>
+        </Card>
+      ) : null}
+
       {result ? (
         <View
           style={[
@@ -272,5 +288,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   flex: { flex: 1 },
   result: { borderWidth: 2, borderRadius: 16, padding: spacing.lg, gap: spacing.md },
+  problem: { backgroundColor: colors.redSoft, borderColor: colors.red },
   guide: { gap: spacing.xs },
 });

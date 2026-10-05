@@ -16,7 +16,8 @@ import { TextField } from '@/components/ui/TextField';
 import { barangayLabel } from '@/features/resident/format';
 import { useBarangays } from '@/features/tracking/hooks';
 import { maskPhMobile, normalizePhMobile } from '@/lib/phone';
-import { useSettings } from '@/stores/settings';
+import { OfflineError, services } from '@/services';
+import { smsKey, useSettings } from '@/stores/settings';
 import { colors, spacing } from '@/theme/tokens';
 
 type Phase = { kind: 'form' } | { kind: 'otp'; mobile: string; code: string };
@@ -29,7 +30,7 @@ export default function SmsStep() {
   const { t } = useTranslation();
   const { from } = useLocalSearchParams<{ from?: string }>();
   const fromSettings = from === 'settings';
-  const { barangayId, setSms, completeOnboarding, setRole } = useSettings();
+  const { barangayId, setSms, markSmsSynced, completeOnboarding, setRole } = useSettings();
   const { data: barangays } = useBarangays();
   const barangay = barangays?.features.find((f) => f.properties.id === barangayId);
 
@@ -38,6 +39,7 @@ export default function SmsStep() {
   const [consent, setConsent] = useState(false);
   const [otpInput, setOtpInput] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const finish = () => {
     if (fromSettings) {
@@ -59,11 +61,23 @@ export default function SmsStep() {
     setPhase({ kind: 'otp', mobile, code });
   };
 
-  const verify = () => {
-    if (phase.kind !== 'otp' || !barangayId) return;
+  const verify = async () => {
+    if (phase.kind !== 'otp' || !barangayId || busy) return;
     if (otpInput.trim() !== phase.code) return setError(t('onboarding.sms.otpInvalid'));
-    setSms({ mobile: phase.mobile, barangayId, optedInAt: Date.now() });
-    finish();
+    const sms = { mobile: phase.mobile, barangayId, optedInAt: Date.now() };
+    setBusy(true);
+    setError(null);
+    try {
+      // The sign-up is confirmed with the server before the app says it is on.
+      await services.resident.subscribeSms(sms.mobile, sms.barangayId);
+      setSms(sms);
+      markSmsSynced(smsKey(sms));
+      finish();
+    } catch (e) {
+      setError(t(e instanceof OfflineError ? 'onboarding.sms.offline' : 'onboarding.sms.failed'));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const header = (
@@ -117,7 +131,8 @@ export default function SmsStep() {
           variant="success"
           icon="check"
           label={t('onboarding.sms.verify')}
-          onPress={verify}
+          disabled={busy}
+          onPress={() => void verify()}
         />
         <Button
           variant="secondary"

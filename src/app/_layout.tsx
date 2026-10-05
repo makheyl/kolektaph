@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FontDisplay, useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -11,12 +11,15 @@ import '@/features/driver/recorder';
 import i18n from '@/i18n';
 import { watchNetwork } from '@/lib/network';
 import { registerServiceWorker } from '@/lib/pwa';
+import { services } from '@/services';
+import { areaOf, useArea } from '@/stores/area';
 import { useSettings, useSettingsHydrated } from '@/stores/settings';
 import { startTabSync } from '@/stores/tabSync';
 
 void SplashScreen.preventAutoHideAsync();
-// Web demo: tabs share the mock server (driver tab ↔ City ENRO tab).
-startTabSync();
+// Web demo on the sample data: tabs share the stand-in server (driver tab ↔ City ENRO tab).
+// With a real server every tab simply asks the server.
+if (!services.demo.shared) startTabSync();
 // Offline queues (driver reports, resident reports) need to know when signal returns.
 watchNetwork();
 registerServiceWorker();
@@ -44,6 +47,11 @@ export default function RootLayout() {
   const language = useSettings((s) => s.language);
   // Wait for saved settings so returning residents never see onboarding flash by.
   const hydrated = useSettingsHydrated();
+  // Which app is on screen (resident, driver, City ENRO) decides whose data the app reads.
+  const pathname = usePathname();
+  useEffect(() => {
+    useArea.setState({ area: areaOf(pathname) });
+  }, [pathname]);
 
   useEffect(() => {
     void i18n.changeLanguage(language);

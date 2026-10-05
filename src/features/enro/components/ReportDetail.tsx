@@ -10,6 +10,7 @@ import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { Icon } from '@/components/ui/Icon';
+import { useStaffRights } from '@/features/admin/hooks';
 import { CATEGORY_META, responseDue } from '@/features/reports/categories';
 import {
   PriorityPill,
@@ -73,16 +74,22 @@ export function ReportDetail(props: ReportDetailProps) {
   );
   const [after, setAfter] = useState<PhotoRef | null>(null);
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const rights = useStaffRights();
 
   const act = async (action: TicketAction) => {
     setBusy(true);
+    setFailed(false);
     try {
       await services.reports.act(ticket.id, action, 'enro');
+    } catch {
+      setFailed(true);
     } finally {
       setBusy(false);
     }
   };
-  const can = (action: TicketAction) => canApply(ticket, action, 'enro', now);
+  // Viewers and barangay focal persons read reports; only dispatchers and admins act on them.
+  const can = (action: TicketAction) => rights.act && canApply(ticket, action, 'enro', now);
   const due =
     mode === 'next_schedule' && sugg?.mode === 'next_schedule'
       ? sugg.due
@@ -158,11 +165,22 @@ export function ReportDetail(props: ReportDetailProps) {
             {ticket.nearWaterway ? ` · ${t('reports.wizard.nearWaterway')}` : ''}
             {ticket.nearSensitive ? ` · ${t('reports.wizard.nearSensitive')}` : ''}
           </AppText>
-          {ticket.note ? <AppText>“{ticket.note}”</AppText> : null}
+          {ticket.note ? (
+            <AppText>
+              {/* A missed-collection ticket's note is the reason it was filed, as a code. */}
+              {ticket.missed
+                ? t(`enro.reports.basis.${ticket.note}`, { defaultValue: ticket.note })
+                : `“${ticket.note}”`}
+            </AppText>
+          ) : null}
           <AppText variant="label" color={colors.textMuted}>
             {t('enro.reports.reporter')}:{' '}
-            {ticket.contact ? maskPhMobile(ticket.contact) : t('enro.reports.noContact')} ·{' '}
-            {formatRelativeDay(t, ticket.createdAt, now)}, {formatClock(ticket.createdAt)}
+            {ticket.contact
+              ? maskPhMobile(ticket.contact)
+              : ticket.notify
+                ? t('enro.reports.wantsTexts')
+                : t('enro.reports.noContact')}{' '}
+            · {formatRelativeDay(t, ticket.createdAt, now)}, {formatClock(ticket.createdAt)}
           </AppText>
         </View>
       </Panel>
@@ -184,7 +202,7 @@ export function ReportDetail(props: ReportDetailProps) {
         </View>
       </Panel>
 
-      {suggestion && ['submitted', 'verified'].includes(ticket.status) ? (
+      {rights.act && suggestion && ['submitted', 'verified'].includes(ticket.status) ? (
         <Panel title={t('enro.reports.suggestionTitle')}>
           <View style={styles.suggestion}>
             <Icon name="lightbulb-on-outline" size={22} color={colors.navy} />
@@ -225,7 +243,19 @@ export function ReportDetail(props: ReportDetailProps) {
         </Panel>
       ) : null}
 
-      {['submitted', 'verified', 'scheduled', 'in_progress'].includes(ticket.status) ? (
+      {failed ? (
+        <AppText variant="bodyStrong" color={colors.red} accessibilityLiveRegion="polite">
+          {t('enro.notSaved')}
+        </AppText>
+      ) : null}
+
+      {!rights.act &&
+      ['submitted', 'verified', 'scheduled', 'in_progress'].includes(ticket.status) ? (
+        <AppText color={colors.textMuted}>{t('enro.viewOnly')}</AppText>
+      ) : null}
+
+      {rights.act &&
+      ['submitted', 'verified', 'scheduled', 'in_progress'].includes(ticket.status) ? (
         <Panel title={t('enro.reports.actions')}>
           {can({ type: 'verify' }) ? (
             <Button

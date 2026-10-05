@@ -111,7 +111,7 @@ select pg_temp.eq(
 -- ---------- Functions ----------
 select pg_temp.eq(
   (select count(*)::int from pg_proc p where p.pronamespace = 'public'::regnamespace),
-  31, '31 entry points in public');
+  33, '33 functions in public: 31 entry points and the two reads the app repeats');
 select pg_temp.eq(
   (select count(*)::int from pg_proc p
    where p.pronamespace = 'public'::regnamespace and p.prosecdef),
@@ -132,7 +132,7 @@ select pg_temp.eq(
 select pg_temp.eq(
   (select string_agg(p.proname, ' ' order by p.proname) from pg_proc p
    where p.pronamespace = 'public'::regnamespace and has_function_privilege('anon', p.oid, 'EXECUTE')),
-  'clock', 'without sign-in the only callable entry point is clock');
+  'clock pulse', 'without sign-in only clock and pulse can be called, and both only read');
 select pg_temp.eq(
   (select string_agg(p.proname, ' ' order by p.proname) from pg_proc p
    where p.pronamespace = 'private'::regnamespace and has_function_privilege('anon', p.oid, 'EXECUTE')),
@@ -142,7 +142,7 @@ select pg_temp.eq(
   (select count(*)::int from pg_proc p
    where p.pronamespace = 'public'::regnamespace
      and has_function_privilege('authenticated', p.oid, 'EXECUTE')),
-  31, 'a signed-in caller can call all 31 entry points (each checks who is calling)');
+  33, 'a signed-in caller can call all 33 (each entry point checks who is calling)');
 select pg_temp.eq(
   (select string_agg(p.proname, ' ' order by p.proname) from pg_proc p
    where p.pronamespace = 'private'::regnamespace

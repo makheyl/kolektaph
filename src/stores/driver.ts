@@ -2,7 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { type OutboxItem, markSynced, UNDO_MS } from '@/features/driver/outbox';
+import {
+  markSynced,
+  type OutboxItem,
+  shiftEndId,
+  shiftStartId,
+  UNDO_MS,
+} from '@/features/driver/outbox';
 import type {
   DriverSession,
   GpsSource,
@@ -32,7 +38,11 @@ export interface SyncStatus {
   failures: number;
   /** Device time before which no retry is attempted (backoff). */
   nextTryAt: number;
-  lastError: 'offline' | 'error' | null;
+  /** 'signin' = the truck sign-in has ended: the crew enters the PIN again, nothing is lost. */
+  lastError: 'offline' | 'error' | 'signin' | null;
+  /** Reports the server refused for good this shift (they are dropped, not retried). */
+  refused?: number;
+  lastRefusal?: string | null;
 }
 
 interface DriverState {
@@ -52,13 +62,22 @@ interface DriverState {
   /** Forgets a finished shift once everything is uploaded. */
   clearShift: () => void;
   markSynced: (eventIds: string[]) => void;
+  /** Removes reports the server refused for good, and remembers how many and why. */
+  dropRefused: (refused: { id: string; reason: string }[]) => void;
   setSync: (sync: Partial<SyncStatus>) => void;
 }
 
 const newId = (prefix: string) =>
   `${prefix}|${Date.now().toString(36)}|${Math.random().toString(36).slice(2, 8)}`;
 
-const IDLE_SYNC: SyncStatus = { lastOkAt: null, failures: 0, nextTryAt: 0, lastError: null };
+const IDLE_SYNC: SyncStatus = {
+  lastOkAt: null,
+  failures: 0,
+  nextTryAt: 0,
+  lastError: null,
+  refused: 0,
+  lastRefusal: null,
+};
 
 /**
  * The driver phone's own state: who is signed in, the running shift and every report of it
@@ -89,7 +108,7 @@ export const useDriver = create<DriverState>()(
           endedAtDevice: null,
         };
         const event: TruckEvent = {
-          id: newId(`${session.truckId}|shift_start`),
+          id: shiftStartId(shift.shiftId),
           truckId: session.truckId,
           at,
           source: 'driver',
@@ -100,7 +119,11 @@ export const useDriver = create<DriverState>()(
         };
         // Reports from an earlier, fully uploaded shift are no longer needed on the phone.
         const outbox = get().outbox.filter((o) => !o.synced);
-        set({ shift, outbox: [...outbox, { event, holdUntil: 0, synced: false }] });
+        set({
+          shift,
+          outbox: [...outbox, { event, holdUntil: 0, synced: false }],
+          sync: { ...get().sync, refused: 0, lastRefusal: null },
+        });
       },
       report: (input, opts) => {
         const { shift } = get();
@@ -111,6 +134,7 @@ export const useDriver = create<DriverState>()(
           truckId: shift.truckId,
           at: getSimTime(),
           source: 'driver',
+          shiftId: shift.shiftId,
         } as TruckEvent;
         const holdUntil = opts?.undoable ? Date.now() + UNDO_MS : 0;
         set({ outbox: [...get().outbox, { event, holdUntil, synced: false }] });
@@ -127,7 +151,7 @@ export const useDriver = create<DriverState>()(
         if (!shift || shift.endedAt != null) return;
         const at = getSimTime();
         const event: TruckEvent = {
-          id: newId(`${shift.truckId}|shift_end`),
+          id: shiftEndId(shift.shiftId),
           truckId: shift.truckId,
           at,
           source: 'driver',
@@ -146,13 +170,39 @@ export const useDriver = create<DriverState>()(
         set({ shift: null, outbox: [] });
       },
       markSynced: (ids) => set({ outbox: markSynced(get().outbox, ids) }),
+      dropRefused: (refused) => {
+        if (!refused.length) return;
+        const gone = new Set(refused.map((r) => r.id));
+        const { sync } = get();
+        set({
+          outbox: get().outbox.filter((o) => !gone.has(o.event.id)),
+          sync: {
+            ...sync,
+            refused: (sync.refused ?? 0) + refused.length,
+            lastRefusal: refused[refused.length - 1].reason,
+          },
+        });
+      },
       setSync: (sync) => set({ sync: { ...get().sync, ...sync } }),
     }),
     {
       name: 'kolektaph.driver',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({ session: s.session, shift: s.shift, outbox: s.outbox, sync: s.sync }),
+      // v2: every report names its shift. Reports queued by an older version get the shift
+      // they were made in (the one running at the time).
+      migrate: (persisted) => {
+        const state = persisted as Pick<DriverState, 'session' | 'shift' | 'outbox' | 'sync'>;
+        let current = state.shift?.shiftId;
+        const outbox = (state.outbox ?? []).map((o) => {
+          if (o.event.kind === 'shift_start') current = o.event.shiftId;
+          return o.event.shiftId || !current
+            ? o
+            : { ...o, event: { ...o.event, shiftId: current } as TruckEvent };
+        });
+        return { ...state, outbox };
+      },
     },
   ),
 );

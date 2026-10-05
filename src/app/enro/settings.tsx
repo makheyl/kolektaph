@@ -10,12 +10,12 @@ import { SampleDataBadge } from '@/components/ui/SampleDataBadge';
 import { Screen } from '@/components/ui/Screen';
 import { SmsBubble } from '@/components/ui/SmsBubble';
 import { TextField } from '@/components/ui/TextField';
-import { useCityConfig, useStaff } from '@/features/admin/hooks';
+import { useCityConfig, useStaff, useStaffRights } from '@/features/admin/hooks';
 import { sms } from '@/features/alerts/templates';
 import { Panel } from '@/features/enro/components/Panel';
 import { useBarangays } from '@/features/tracking/hooks';
-import { services } from '@/services';
-import type { ContactInfo, ContactTarget, StaffRole } from '@/services/types';
+import { ServerError, services } from '@/services';
+import type { ContactInfo, ContactTarget, StaffRole, StaffUser } from '@/services/types';
 import { colors, spacing } from '@/theme/tokens';
 
 const LEAD_CHOICES = [10, 15, 20, 30];
@@ -23,6 +23,9 @@ const ROLES: StaffRole[] = ['admin', 'dispatcher', 'viewer', 'barangay'];
 const TWO_COLUMNS = 1200;
 /** Digits, spaces, ( ) + - only, with at least 7 digits (landline or mobile). */
 const isPhone = (v: string) => /^[0-9+()\-\s]+$/.test(v) && v.replace(/\D/g, '').length >= 7;
+/** A login's id as the Supabase dashboard shows it. */
+const isLoginId = (v: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
 /**
  * City ENRO settings (plan §6.3): SMS lead time, the contact numbers Kolek gives residents,
@@ -34,6 +37,9 @@ export default function EnroSettings() {
   const wide = width >= TWO_COLUMNS;
   const config = useCityConfig();
   const staff = useStaff();
+  const rights = useStaffRights();
+  /** On the server, accounts are real City ENRO logins, each made in the Supabase dashboard. */
+  const realAccounts = services.auth.required;
   const { data: barangays } = useBarangays();
 
   // SMS lead time
@@ -49,6 +55,29 @@ export default function EnroSettings() {
   const [role, setRole] = useState<StaffRole>('dispatcher');
   const [userBarangay, setUserBarangay] = useState<string | null>(null);
   const [userError, setUserError] = useState<string | null>(null);
+  const [loginId, setLoginId] = useState('');
+  const [failed, setFailed] = useState<string | null>(null);
+
+  /** Runs a change and says so when the server refuses it or cannot be reached. */
+  const attempt = async (where: string, change: () => Promise<unknown>) => {
+    setFailed(null);
+    try {
+      await change();
+      return true;
+    } catch (e) {
+      const code = e instanceof ServerError ? e.code : '';
+      setFailed(
+        `${where}|${t(`enro.settings.refused.${code}`, { defaultValue: t('enro.notSaved') })}`,
+      );
+      return false;
+    }
+  };
+  const failure = (where: string) =>
+    failed?.startsWith(`${where}|`) ? (
+      <AppText variant="label" color={colors.red} accessibilityLiveRegion="polite">
+        {failed.slice(where.length + 1)}
+      </AppText>
+    ) : null;
 
   if (!config || !barangays) {
     return (
@@ -86,16 +115,22 @@ export default function EnroSettings() {
       <SmsBubble
         text={sms.vicinity({ barangay: 'Milagrosa', minutes: chosenLead, eta: '7:40 AM' })}
       />
-      <Button
-        icon="content-save-outline"
-        label={t('enro.settings.leadSave', { minutes: chosenLead })}
-        disabled={chosenLead === config.smsLeadMinutes}
-        onPress={async () => {
-          await services.admin.setSmsLeadMinutes(chosenLead);
-          setLead(null);
-          setLeadSaved(true);
-        }}
-      />
+      {rights.admin ? (
+        <Button
+          icon="content-save-outline"
+          label={t('enro.settings.leadSave', { minutes: chosenLead })}
+          disabled={chosenLead === config.smsLeadMinutes}
+          onPress={async () => {
+            if (!(await attempt('lead', () => services.admin.setSmsLeadMinutes(chosenLead))))
+              return;
+            setLead(null);
+            setLeadSaved(true);
+          }}
+        />
+      ) : (
+        <AppText color={colors.textMuted}>{t('enro.adminOnly')}</AppText>
+      )}
+      {failure('lead')}
       {leadSaved ? (
         <AppText color={colors.green} accessibilityLiveRegion="polite">
           {t('enro.settings.leadSaved')}
@@ -126,8 +161,11 @@ export default function EnroSettings() {
       setPhoneError(t('enro.settings.phoneInvalid'));
       return;
     }
-    await services.admin.setContact(editing.target, { phone, hours });
-    setEditing(null);
+    if (
+      await attempt('contact', () => services.admin.setContact(editing.target, { phone, hours }))
+    ) {
+      setEditing(null);
+    }
   };
 
   const contactsPanel = (
@@ -166,6 +204,7 @@ export default function EnroSettings() {
                 onPress={() => setEditing(null)}
               />
             </View>
+            {failure('contact')}
           </Card>
         ) : (
           <View key={row.key} style={styles.contactRow}>
@@ -176,17 +215,20 @@ export default function EnroSettings() {
                 {row.info.hours ? ` · ${row.info.hours}` : ''}
               </AppText>
             </View>
-            <Button
-              variant="secondary"
-              icon="pencil-outline"
-              label={t('enro.settings.editContact')}
-              onPress={() => {
-                setEditing({ key: row.key, target: row.target });
-                setPhone(row.info.phone ?? '');
-                setHours(row.info.hours ?? '');
-                setPhoneError(null);
-              }}
-            />
+            {rights.admin ? (
+              <Button
+                variant="secondary"
+                icon="pencil-outline"
+                label={t('enro.settings.editContact')}
+                onPress={() => {
+                  setEditing({ key: row.key, target: row.target });
+                  setPhone(row.info.phone ?? '');
+                  setHours(row.info.hours ?? '');
+                  setPhoneError(null);
+                  setFailed(null);
+                }}
+              />
+            ) : null}
           </View>
         ),
       )}
@@ -197,16 +239,25 @@ export default function EnroSettings() {
   const addUser = async () => {
     if (!name.trim()) return setUserError(t('enro.settings.nameRequired'));
     if (role === 'barangay' && !userBarangay) return setUserError(t('enro.settings.pickBarangay'));
-    await services.admin.saveStaff({
-      id: `u-${Date.now().toString(36)}`,
-      name,
-      role,
-      barangayId: role === 'barangay' ? userBarangay : null,
-      active: true,
-    });
+    if (realAccounts && !isLoginId(loginId.trim())) {
+      return setUserError(t('enro.settings.loginIdInvalid'));
+    }
+    const saved = await attempt('add', () =>
+      services.admin.saveStaff({
+        id: realAccounts ? loginId.trim().toLowerCase() : `u-${Date.now().toString(36)}`,
+        name,
+        role,
+        barangayId: role === 'barangay' ? userBarangay : null,
+        active: true,
+      }),
+    );
+    if (!saved) return;
     setName('');
+    setLoginId('');
     setUserError(null);
   };
+  const changeUser = (u: StaffUser, change: Partial<StaffUser>) =>
+    void attempt(`user:${u.id}`, () => services.admin.saveStaff({ ...u, ...change }));
 
   const barangayChips = (selected: string | null, onSelect: (id: string) => void) => (
     <ScrollView
@@ -226,9 +277,12 @@ export default function EnroSettings() {
   );
 
   const usersPanel = (
-    <Panel title={t('enro.settings.usersTitle')}>
-      <SampleDataBadge />
-      <AppText color={colors.textMuted}>{t('enro.settings.usersBody')}</AppText>
+    <Panel title={t(realAccounts ? 'enro.settings.accountsTitle' : 'enro.settings.usersTitle')}>
+      {realAccounts ? null : <SampleDataBadge />}
+      <AppText color={colors.textMuted}>
+        {t(realAccounts ? 'enro.settings.accountsBody' : 'enro.settings.usersBody')}
+      </AppText>
+      {rights.admin ? null : <AppText color={colors.textMuted}>{t('enro.adminOnly')}</AppText>}
       {ROLES.map((r) => (
         <AppText key={r}>
           <AppText variant="bodyStrong">{t(`enro.settings.roles.${r}`)}: </AppText>
@@ -246,57 +300,86 @@ export default function EnroSettings() {
                 {u.active ? t('enro.settings.active') : t('enro.settings.inactive')}
               </AppText>
             </View>
-            <Button
-              variant="secondary"
-              icon={u.active ? 'account-off-outline' : 'account-check-outline'}
-              label={u.active ? t('enro.settings.deactivate') : t('enro.settings.activate')}
-              onPress={() => void services.admin.saveStaff({ ...u, active: !u.active })}
-            />
+            {rights.admin ? (
+              <Button
+                variant="secondary"
+                icon={u.active ? 'account-off-outline' : 'account-check-outline'}
+                label={u.active ? t('enro.settings.deactivate') : t('enro.settings.activate')}
+                onPress={() => changeUser(u, { active: !u.active })}
+              />
+            ) : null}
           </View>
+          {rights.admin ? (
+            <>
+              <AppText variant="label">{t('enro.settings.role')}</AppText>
+              <View style={styles.chips}>
+                {ROLES.filter((r) => r !== 'barangay' || u.barangayId).map((r) => (
+                  <Chip
+                    key={r}
+                    label={t(`enro.settings.roles.${r}`)}
+                    selected={u.role === r}
+                    onPress={() =>
+                      changeUser(u, { role: r, barangayId: r === 'barangay' ? u.barangayId : null })
+                    }
+                  />
+                ))}
+              </View>
+            </>
+          ) : null}
+          {failure(`user:${u.id}`)}
+        </Card>
+      ))}
+      {rights.admin ? (
+        <Card>
+          <AppText variant="heading">{t('enro.settings.addUser')}</AppText>
+          <TextField
+            label={t('enro.settings.name')}
+            hint={t('enro.settings.nameHint')}
+            value={name}
+            onChangeText={(v) => {
+              setName(v);
+              setUserError(null);
+            }}
+            error={userError}
+          />
           <AppText variant="label">{t('enro.settings.role')}</AppText>
           <View style={styles.chips}>
-            {ROLES.filter((r) => r !== 'barangay' || u.barangayId).map((r) => (
+            {ROLES.map((r) => (
               <Chip
                 key={r}
                 label={t(`enro.settings.roles.${r}`)}
-                selected={u.role === r}
-                onPress={() => void services.admin.saveStaff({ ...u, role: r })}
+                selected={role === r}
+                onPress={() => setRole(r)}
               />
             ))}
           </View>
-        </Card>
-      ))}
-      <Card>
-        <AppText variant="heading">{t('enro.settings.addUser')}</AppText>
-        <TextField
-          label={t('enro.settings.name')}
-          hint={t('enro.settings.nameHint')}
-          value={name}
-          onChangeText={(v) => {
-            setName(v);
-            setUserError(null);
-          }}
-          error={userError}
-        />
-        <AppText variant="label">{t('enro.settings.role')}</AppText>
-        <View style={styles.chips}>
-          {ROLES.map((r) => (
-            <Chip
-              key={r}
-              label={t(`enro.settings.roles.${r}`)}
-              selected={role === r}
-              onPress={() => setRole(r)}
+          {role === 'barangay' ? (
+            <>
+              <AppText variant="label">{t('enro.settings.barangayFor')}</AppText>
+              {barangayChips(userBarangay, setUserBarangay)}
+            </>
+          ) : null}
+          {realAccounts ? (
+            <TextField
+              label={t('enro.settings.loginId')}
+              hint={t('enro.settings.loginIdHint')}
+              value={loginId}
+              onChangeText={(v) => {
+                setLoginId(v);
+                setUserError(null);
+              }}
+              autoCapitalize="none"
+              autoCorrect={false}
             />
-          ))}
-        </View>
-        {role === 'barangay' ? (
-          <>
-            <AppText variant="label">{t('enro.settings.barangayFor')}</AppText>
-            {barangayChips(userBarangay, setUserBarangay)}
-          </>
-        ) : null}
-        <Button icon="account-plus" label={t('enro.settings.add')} onPress={() => void addUser()} />
-      </Card>
+          ) : null}
+          <Button
+            icon="account-plus"
+            label={t('enro.settings.add')}
+            onPress={() => void addUser()}
+          />
+          {failure('add')}
+        </Card>
+      ) : null}
     </Panel>
   );
 

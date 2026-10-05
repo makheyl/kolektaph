@@ -16,6 +16,7 @@ import { SampleDataBadge } from '@/components/ui/SampleDataBadge';
 import { Screen } from '@/components/ui/Screen';
 import { Section } from '@/components/ui/Section';
 import { StatusPill } from '@/components/ui/StatusPill';
+import { useStaffRights } from '@/features/admin/hooks';
 import {
   useBarangays,
   useCityMeta,
@@ -25,12 +26,10 @@ import {
   useTruckStates,
 } from '@/features/tracking/hooks';
 import { formatClock, manilaParts } from '@/lib/time';
+import { services } from '@/services';
 import type { TruckState } from '@/services/types';
 import { DEMO_PRESET_IDS, demoPresetTime } from '@/simulator/presets';
-import { useBackend } from '@/stores/backend';
-import { getSimTime, useDemo } from '@/stores/demo';
-import { useCityAdmin } from '@/stores/cityAdmin';
-import { useEnro } from '@/stores/enro';
+import { useDemo } from '@/stores/demo';
 import { useKolekChat } from '@/stores/kolekChat';
 import { useMyReports } from '@/stores/myReports';
 import { type Role, useSettings } from '@/stores/settings';
@@ -51,16 +50,32 @@ export default function DemoScreen() {
   const states = useTruckStates();
   const now = useSimNow();
 
-  const { clock, jumpTo, setSpeed, goLive, events, addEvent, clearEvents } = useDemo();
+  const clock = useDemo((s) => s.clock);
   const [breakdownTruck, setBreakdownTruck] = useState('t2');
-  const driverEvents = useBackend((s) => s.events.length);
-  const resetBackend = useBackend((s) => s.reset);
-  const resetDecisions = useEnro((s) => s.reset);
   const clearMyReports = useMyReports((s) => s.clear);
-  const resetAdmin = useCityAdmin((s) => s.reset);
   const clearKolek = useKolekChat((s) => s.clear);
   const queryClient = useQueryClient();
   const { language, setLanguage, largeText, setLargeText, setRole } = useSettings();
+  // On a server the demo clock is one clock for every device, and only an admin may move it.
+  const shared = services.demo.shared;
+  const rights = useStaffRights();
+  const canControl = !shared || rights.admin;
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const control = async (change: () => Promise<void>) => {
+    setBusy(true);
+    setFailed(false);
+    try {
+      await change();
+      return true;
+    } catch {
+      setFailed(true);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const barangayName = (id: string | null) =>
     barangays?.features.find((f) => f.properties.id === id)?.properties.name ?? '';
@@ -89,6 +104,14 @@ export default function DemoScreen() {
   };
 
   const { weekday } = manilaParts(now);
+
+  const reset = async () => {
+    if (!(await control(() => services.demo.reset()))) return;
+    // The ticket numbers start over, so this device's own list must too.
+    clearMyReports();
+    clearKolek();
+    void queryClient.invalidateQueries({ queryKey: ['routeSchedules'] });
+  };
 
   const controls = (
     <View style={styles.column}>
@@ -148,6 +171,23 @@ export default function DemoScreen() {
         />
       </Section>
 
+      {shared && !rights.admin ? (
+        <Card style={styles.notice}>
+          <AppText>{t('demo.sharedHint')}</AppText>
+          <Button
+            variant="secondary"
+            icon="shield-lock-outline"
+            label={t('demo.signInAdmin')}
+            onPress={() => openRole('enro')}
+          />
+        </Card>
+      ) : null}
+      {failed ? (
+        <AppText variant="bodyStrong" color={colors.red} accessibilityLiveRegion="polite">
+          {t('demo.failed')}
+        </AppText>
+      ) : null}
+
       <Section title={t('demo.clockTitle')}>
         <Card>
           <AppText variant="label" color={colors.textMuted}>
@@ -163,7 +203,10 @@ export default function DemoScreen() {
                 key={id}
                 variant="secondary"
                 label={t(`demo.presets.${id}`)}
-                onPress={() => jumpTo(demoPresetTime(id, Date.now()))}
+                disabled={!canControl || busy}
+                onPress={() =>
+                  void control(() => services.demo.jumpTo(demoPresetTime(id, Date.now())))
+                }
               />
             ))}
           </View>
@@ -174,7 +217,9 @@ export default function DemoScreen() {
                 key={sp}
                 label={`×${sp}`}
                 selected={clock.mode === 'demo' && clock.speed === sp}
-                onPress={() => setSpeed(sp)}
+                onPress={() =>
+                  canControl && !busy && void control(() => services.demo.setSpeed(sp))
+                }
               />
             ))}
           </View>
@@ -183,7 +228,8 @@ export default function DemoScreen() {
               variant="primary"
               icon="clock-outline"
               label={t('demo.goLive')}
-              onPress={goLive}
+              disabled={!canControl || busy}
+              onPress={() => void control(() => services.demo.goLive())}
             />
           ) : null}
         </Card>
@@ -210,39 +256,38 @@ export default function DemoScreen() {
             label={t('demo.breakdown', {
               truck: trucks?.find((tr) => tr.id === breakdownTruck)?.name ?? '',
             })}
-            onPress={() => {
-              const at = getSimTime();
-              addEvent({
-                id: `demo-breakdown|${breakdownTruck}|${at}`,
-                kind: 'incident',
-                incident: 'breakdown',
-                source: 'demo',
-                truckId: breakdownTruck,
-                at,
-                minutes: 120,
-              });
-            }}
+            disabled={!canControl || busy}
+            onPress={() => void control(() => services.demo.breakdown(breakdownTruck))}
           />
-          {events.length + driverEvents ? (
-            <AppText variant="label">
-              {t('demo.activeEvents', { count: events.length + driverEvents })}
-            </AppText>
-          ) : null}
-          <Button
-            variant="secondary"
-            icon="restore"
-            label={t('demo.clearEvents')}
-            onPress={() => {
-              clearEvents();
-              resetBackend();
-              resetDecisions();
-              // The ticket numbers start over, so the resident's list must too.
-              clearMyReports();
-              resetAdmin();
-              clearKolek();
-              void queryClient.invalidateQueries({ queryKey: ['routeSchedules'] });
-            }}
-          />
+          {confirmReset ? (
+            // On a server the reset empties the shared data for every device: ask once more.
+            <View style={styles.confirm} accessibilityLiveRegion="polite">
+              <AppText variant="bodyStrong">{t('demo.resetConfirm')}</AppText>
+              <Button
+                variant="danger"
+                icon="restore"
+                label={t('demo.resetYes')}
+                disabled={busy}
+                onPress={() => {
+                  setConfirmReset(false);
+                  void reset();
+                }}
+              />
+              <Button
+                variant="secondary"
+                label={t('common.cancel')}
+                onPress={() => setConfirmReset(false)}
+              />
+            </View>
+          ) : (
+            <Button
+              variant="secondary"
+              icon="restore"
+              label={t('demo.clearEvents')}
+              disabled={!canControl || busy}
+              onPress={() => (shared ? setConfirmReset(true) : void reset())}
+            />
+          )}
         </Card>
       </Section>
     </View>
@@ -300,6 +345,8 @@ const styles = StyleSheet.create({
   header: { gap: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   presets: { gap: spacing.sm },
+  notice: { backgroundColor: colors.yellowSoft, borderColor: colors.yellow },
+  confirm: { gap: spacing.sm },
   map: {
     width: '100%',
     borderRadius: 16,

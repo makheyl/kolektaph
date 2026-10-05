@@ -4,6 +4,7 @@ import type { ColorValue } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { usePendingReportsSync } from '@/features/reports/hooks';
+import { useSmsSignupSync } from '@/features/resident/useSmsSignup';
 import { useSettings } from '@/stores/settings';
 import { colors, fonts } from '@/theme/tokens';
 
@@ -20,6 +21,7 @@ export default function ResidentLayout() {
   const { t } = useTranslation();
   const onboarded = useSettings((s) => s.onboarded);
   usePendingReportsSync();
+  useSmsSignupSync();
   if (!onboarded) return <Redirect href="/onboarding/language" />;
 
   return (

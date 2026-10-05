@@ -10,6 +10,7 @@ import { SampleDataBadge } from '@/components/ui/SampleDataBadge';
 import { Screen } from '@/components/ui/Screen';
 import { SmsBubble } from '@/components/ui/SmsBubble';
 import { TextField } from '@/components/ui/TextField';
+import { useStaffRights } from '@/features/admin/hooks';
 import { ALERT_META } from '@/features/alerts/alertMeta';
 import { smsInfo } from '@/features/alerts/sms';
 import { Panel } from '@/features/enro/components/Panel';
@@ -48,6 +49,7 @@ export default function SmsCenter() {
   const states = useTruckStates();
   const { data: barangays } = useBarangays();
   const { data: registrations = {} } = useSmsRegistrations();
+  const rights = useStaffRights();
 
   const [targets, setTargets] = useState<string[]>([]);
   const [template, setTemplate] = useState<(typeof TEMPLATES)[number]>('tplCustom');
@@ -82,14 +84,19 @@ export default function SmsCenter() {
     setConfirming(true);
   };
   const send = async () => {
-    const sent = await services.alerts.sendAnnouncement({
-      barangayIds: targets,
-      text: text.trim(),
-    });
-    setSentAt(sent.sentAt);
-    setConfirming(false);
-    setText('');
-    setTemplate('tplCustom');
+    try {
+      const sent = await services.alerts.sendAnnouncement({
+        barangayIds: targets,
+        text: text.trim(),
+      });
+      setSentAt(sent.sentAt);
+      setText('');
+      setTemplate('tplCustom');
+    } catch {
+      setError(t('enro.notSaved'));
+    } finally {
+      setConfirming(false);
+    }
   };
 
   // "Did the text arrive before the truck?" for today's 15-minute alerts.
@@ -153,6 +160,7 @@ export default function SmsCenter() {
           setSentAt(null);
         }}
         multiline
+        maxLength={480}
         error={error}
       />
       <AppText
@@ -180,7 +188,9 @@ export default function SmsCenter() {
         })}
       </AppText>
 
-      {confirming ? (
+      {!rights.act ? (
+        <AppText color={colors.textMuted}>{t('enro.viewOnly')}</AppText>
+      ) : confirming ? (
         <View style={styles.confirm} accessibilityLiveRegion="polite">
           <AppText variant="heading">
             {t('enro.sms.confirmTitle', { count: numbers.toLocaleString('en-PH') })}

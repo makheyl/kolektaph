@@ -3,9 +3,9 @@
 A free-plan Supabase project that holds the prototype's data: `kolektaph-pilot`, Singapore
 (`ap-southeast-1`), project ref `mxitciwrvcxitwkfszbd`, Postgres 17.
 
-**Status: Stage 1, database only.** The schema, access rules, entry points, mock data and tests
-are in place. The app is **not connected yet**: it still runs on the mock services in
-`src/services/mock`. Stage 2 adds `src/services/supabase/` behind the same `Services` interface.
+**Status: the app is connected (Stage 2).** `src/services/supabase/` implements the app's
+`Services` interface on this database; the app uses it when the build is given the project's
+address (`.env.example`), and the sample services in `src/services/mock` otherwise.
 
 All data in it is sample data, the same as the app's.
 
@@ -115,6 +115,8 @@ All are functions in `public` that run as the caller and hand over to an impleme
 | `sms_subscriber_counts`                                                                                 | staff             | Sign-ups per barangay (counts only).                                        |
 | `demo_clock_set`, `demo_clock_clear`, `demo_incident`, `demo_reset`                                     | admin             | The shared demo clock, a demo incident, back to the seeded state.           |
 | `clock`                                                                                                 | anyone            | Server time and the demo clock.                                             |
+| `pulse`                                                                                                 | anyone            | Read only: what a device asks every few seconds (see below).                |
+| `shift_gps`                                                                                             | signed in         | Read only: GPS fixes per shift and the last fix's time, without the fixes.  |
 
 Three behaviours to know before wiring the app:
 
@@ -127,6 +129,34 @@ Three behaviours to know before wiring the app:
   phone, not retried. The GPS answer includes `next_index`: the phone continues from there.
 - **The demo clock** is one shared clock in the database, set by an admin. Everything the server
   stamps follows it, so a demo is the same moment on every device.
+
+## How the app uses it
+
+- **One small read keeps a device up to date.** Every few seconds (3 s in the dashboard, 4 s on
+  a truck phone, 5 s for residents; never while the app is hidden) the app calls
+  `pulse(p_seq)`. The answer holds the server's time and the shared demo clock, the caller's
+  rights (staff role, signed-in truck), the truck events with `seq` above `p_seq`, and a
+  fingerprint of each set of rows the caller can read (shifts, schedules, lead time, contacts,
+  announcements, tickets; for signed-in callers also decisions, staff and GPS). The app reads a
+  set again only when its fingerprint changed. Writers of `truck_events` take one lock, so
+  `seq` follows commit order and "after the last one seen" never skips a row. An idle device
+  costs about half a kilobyte per tick.
+- **The app still calculates.** Truck positions, alerts, missed streets, statistics and Kolek's
+  answers come from the same simulator and domain code as on the sample data, run on the rows
+  read from here. Nothing calculated is written back.
+- **Two identities per device.** A guest identity (anonymous sign-in) is made the first time a
+  device reports, signs up for texts or signs in to a truck; it owns the resident's reports and
+  the truck sign-in. The City ENRO login is kept separately and used only by the dashboard, so a
+  staff sign-in never replaces (and loses) the guest identity, and a driver tab and a dashboard
+  tab can share one browser.
+- **Every write is safe to repeat.** Reports carry a reference made on the device when they are
+  written; photos are uploaded under names worked out from it; announcements reuse their
+  reference until one gets through; crew taps keep the ids the phone gave them; GPS goes by
+  index, and the phone follows the `next_index` the server answers (back to it after a gap).
+  An event the server refuses for good is dropped by the phone, not retried.
+- **Offline.** Reads that fail keep the last copy; the public settings (schedules, lead time,
+  contacts, announcements) are also saved on the device. Resident reports and crew taps wait in
+  their queues as before.
 
 ## Running the tests
 
@@ -144,6 +174,7 @@ tool. The run always ends with an error on purpose: its message is the report (f
 | `05_driver.sql`               | 49     | PIN lockout, the upload (repeats, refusals, GPS tail and gap)                       |
 | `06_city.sql`                 | 73     | Text alerts, announcements, lead time, contacts, schedules, staff, "delete my data" |
 | `07_demo_and_maintenance.sql` | 31     | The clock, demo incident, reset, the daily clean-up                                 |
+| `08_sync.sql`                 | 41     | `pulse` and `shift_gps`: new events only, fingerprints per caller, clock, reset     |
 
 `02_seed.sql` holds checksums printed by `npx tsx scripts/db/build-seed.ts --expect`. If the data
 in `src/data/carmona` changes, re-seed and paste the new values. Tests 4 and 7 use dates in October
@@ -151,7 +182,7 @@ in `src/data/carmona` changes, re-seed and paste the new values. Tests 4 and 7 u
 
 ## Rebuilding from scratch
 
-1. Create a Supabase project and apply `supabase/migrations` in order.
+1. Create a Supabase project and apply `supabase/migrations` in order (ten files).
 2. Build the seed from the app's own data: `npx tsx scripts/db/build-seed.ts seed.json`.
 3. Load it. With database access: `select private.seed_load('<contents of seed.json>'::jsonb);`.
    Without it: follow `supabase/seed/one_time_door.sql`.
@@ -196,3 +227,10 @@ in `src/data/carmona` changes, re-seed and paste the new values. Tests 4 and 7 u
   the database files it under Barangay 4.
 - Photo files of deleted reports are not removed automatically (`demo_reset` lists them).
 - The demo controls and `demo_clock` are for the prototype only; drop them for production.
+- Live updates use `pulse` every few seconds, not Realtime websockets (no extra library in the
+  first download; the 200-connection limit does not apply). Add Realtime later if seconds of
+  delay are too much.
+- A second resident who claims the same missed street gets the first claimant's ticket number
+  but cannot open it (tickets are visible to their reporter); a follow-up table would fix that.
+- Staff logins are made in the Supabase dashboard; an admin then gives one a role by pasting its
+  User UID in `/enro/settings`.

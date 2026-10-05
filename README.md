@@ -12,9 +12,12 @@ One Expo (React Native) codebase, three apps:
 | Driver              | Android development build (background GPS during shifts) | Garbage truck drivers   |
 | City ENRO dashboard | Web, desktop-first                                       | City environment office |
 
-**Current phase:** UI/UX and core functionality on mock data and a deterministic truck simulator. Screens talk only to the service interfaces in `src/services/`, so a real backend can replace the mocks.
+**Current phase:** a working prototype on a **pilot database** (Supabase, free plan; see [`supabase/`](supabase/README.md)). Screens talk only to the service interfaces in `src/services/`, which have two implementations:
 
-A **pilot database** (Supabase, free plan) is built and tested under [`supabase/`](supabase/README.md): tables, access rules, entry points and the same sample data. The app is **not connected to it yet**; it still runs on the mock services.
+- **Pilot database**, when the build is given its address (`.env.local`, see below). Reports, crew taps, GPS, schedules, announcements, text sign-ups and City settings are stored there, and every device sees the same data and the same demo clock.
+- **Sample data on the device**, when it is not. Everything runs offline in the browser or phone, with no server at all (this is also what the tests use).
+
+Both run the same calculations: the deterministic truck simulator, the alerts, the missed-street check and the statistics. All data in either is sample data.
 
 ## Requirements
 
@@ -25,6 +28,7 @@ A **pilot database** (Supabase, free plan) is built and tested under [`supabase/
 
 ```bash
 npm install
+cp .env.example .env.local   # use the pilot database (leave it out to run on sample data only)
 npm run web          # resident / ENRO web app at http://localhost:8081
 npm run android      # build and install the Android development build (first build is slow)
 npm start            # dev server only (the installed dev build connects to it)
@@ -62,12 +66,12 @@ npm run format       # prettier
 src/app/          routes only (expo-router): /demo, /resident, /driver, /enro
 src/components/   UI kit and the platform-split map (KMap.tsx native / KMap.web.tsx)
 src/features/     pure TypeScript domain logic (ETA, alerts, coverage, reports, Kolek)
-src/services/     service interfaces + mock implementations
+src/services/     service interfaces; mock/ = sample data on the device, supabase/ = pilot database
 src/simulator/    deterministic truck simulator and demo clock
 src/data/carmona/ sample barangays, routes, trucks and schedules (sample data)
 src/i18n/         Filipino (default) and English strings
 __tests__/        Jest tests
-supabase/         pilot database: migrations, SQL tests, seed door (not wired to the app yet)
+supabase/         pilot database: migrations, SQL tests, seed door
 scripts/db/       builds the database seed from src/data/carmona
 ```
 
@@ -75,10 +79,21 @@ scripts/db/       builds the database seed from src/data/carmona
 
 ## Demo: driver ↔ City ENRO
 
-On the web, open `/driver` and `/enro` in two tabs of the same browser. They share the mock
-server (localStorage), so a driver's tap (e.g. **PUNO**) shows up on Live Operations within a
-couple of seconds. The demo PIN for every truck is `1234`. "Demo: gayahin ang walang signal" on
-the driver's GPS page shows the offline queue at work.
+Open `/driver` and `/enro` in two tabs (or on two devices). A driver's tap (e.g. **PUNO**) shows up
+on Live Operations within a few seconds. The demo PIN for every truck is `1234` (sample data; set
+real PINs before real crews use it). "Demo: gayahin ang walang signal" on the driver's GPS page
+shows the offline queue at work.
+
+On the pilot database:
+
+- The City ENRO dashboard needs a staff login. Logins are made in the Supabase dashboard
+  (Authentication → Users) and given a role by an admin (`/enro/settings`, or the SQL in
+  `supabase/README.md` for the first admin).
+- The demo clock is one clock for every device, and only a City ENRO admin can move it, add a
+  sample breakdown or reset the demo data (`/demo`).
+- Residents and truck phones use a guest identity, made the first time they send something.
+  **Anonymous sign-ins** must be on in the Supabase dashboard (Authentication → Sign In /
+  Providers) for reports, text sign-ups and truck sign-in to work.
 
 ## Demo: reports and "Hindi nadaanan"
 

@@ -8,6 +8,8 @@ export interface PendingReport {
   localId: string;
   report: NewReport;
   savedAt: number;
+  /** Set when the server refused it for good (its reason): kept to show, not sent again. */
+  refused?: string;
 }
 
 interface MyReportsState {
@@ -22,6 +24,7 @@ interface MyReportsState {
   addTicket: (id: string) => void;
   queue: (report: NewReport, savedAt: number) => string;
   dequeue: (localId: string) => void;
+  markRefused: (localId: string, reason: string) => void;
   setClaimPlace: (place: ClaimPlace | null) => void;
   markSeen: (id: string, historyLength: number) => void;
   clear: () => void;
@@ -48,6 +51,12 @@ export const useMyReports = create<MyReportsState>()(
         return localId;
       },
       dequeue: (localId) => set({ pending: get().pending.filter((p) => p.localId !== localId) }),
+      markRefused: (localId, reason) =>
+        set({
+          pending: get().pending.map((p) =>
+            p.localId === localId ? { ...p, refused: reason } : p,
+          ),
+        }),
       setClaimPlace: (claimPlace) => set({ claimPlace }),
       markSeen: (id, historyLength) => set({ seen: { ...get().seen, [id]: historyLength } }),
       clear: () => set({ ticketIds: [], pending: [], claimPlace: null, seen: {} }),

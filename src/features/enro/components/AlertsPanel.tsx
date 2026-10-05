@@ -1,12 +1,14 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
+import { useStaffRights } from '@/features/admin/hooks';
 import { formatClock } from '@/lib/time';
-import type { OpsSnapshot, Truck } from '@/services/types';
-import { useEnro } from '@/stores/enro';
+import { services } from '@/services';
+import type { BackupSuggestion, OpsSnapshot, SuggestionDecision, Truck } from '@/services/types';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 import { formatDistance, percent } from '../format';
@@ -24,8 +26,21 @@ interface AlertsPanelProps {
  */
 export function AlertsPanel({ ops, trucks, nameOf }: AlertsPanelProps) {
   const { t } = useTranslation();
-  const { decisions, decide } = useEnro();
+  const rights = useStaffRights();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
   const truckName = (id: string) => trucks.find((tr) => tr.id === id)?.name ?? id;
+  const decide = async (sg: BackupSuggestion, decision: SuggestionDecision) => {
+    setBusy(sg.id);
+    setFailed(null);
+    try {
+      await services.ops.decideSuggestion(sg, decision);
+    } catch {
+      setFailed(sg.id);
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const fullWithoutSuggestion = ops.states.filter(
     (s) => s.status === 'full' && !ops.suggestions.some((sg) => sg.fullTruckId === s.truckId),
@@ -38,7 +53,7 @@ export function AlertsPanel({ ops, trucks, nameOf }: AlertsPanelProps) {
       {empty ? <AppText color={colors.textMuted}>{t('enro.live.noAlerts')}</AppText> : null}
 
       {ops.suggestions.map((sg) => {
-        const decision = decisions[sg.id];
+        const decision = ops.decisions[sg.id];
         return (
           <View key={sg.id} style={styles.alert} accessibilityLiveRegion="polite">
             <View style={styles.titleRow}>
@@ -70,25 +85,32 @@ export function AlertsPanel({ ops, trucks, nameOf }: AlertsPanelProps) {
                     })
                   : t('enro.live.dismissed', { time: formatClock(decision.at) })}
               </AppText>
-            ) : (
+            ) : rights.act ? (
               <View style={styles.actions}>
                 <View style={styles.flex}>
                   <Button
                     variant="success"
                     icon="truck-fast"
                     label={t('enro.live.dispatch')}
-                    onPress={() => decide(sg.id, 'dispatched', ops.at)}
+                    disabled={busy === sg.id}
+                    onPress={() => void decide(sg, 'dispatched')}
                   />
                 </View>
                 <View style={styles.flex}>
                   <Button
                     variant="secondary"
                     label={t('enro.live.dismiss')}
-                    onPress={() => decide(sg.id, 'dismissed', ops.at)}
+                    disabled={busy === sg.id}
+                    onPress={() => void decide(sg, 'dismissed')}
                   />
                 </View>
               </View>
-            )}
+            ) : null}
+            {failed === sg.id ? (
+              <AppText variant="label" color={colors.red} accessibilityLiveRegion="polite">
+                {t('enro.notSaved')}
+              </AppText>
+            ) : null}
             <AppText variant="caption" color={colors.textMuted}>
               {t('enro.live.humansDecide')}
             </AppText>

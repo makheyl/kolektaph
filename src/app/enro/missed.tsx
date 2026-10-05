@@ -8,6 +8,7 @@ import { Chip } from '@/components/ui/Chip';
 import { Icon } from '@/components/ui/Icon';
 import { SampleDataBadge } from '@/components/ui/SampleDataBadge';
 import { Screen } from '@/components/ui/Screen';
+import { useStaffRights } from '@/features/admin/hooks';
 import { formatDistance } from '@/features/enro/format';
 import { Panel } from '@/features/enro/components/Panel';
 import { useTickets } from '@/features/reports/hooks';
@@ -33,7 +34,9 @@ export default function EnroMissed() {
   const { data: barangays } = useBarangays();
   const { data: trucks = [] } = useTrucks();
   const tickets = useTickets();
+  const rights = useStaffRights();
   const [busy, setBusy] = useState<string | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
 
   const nameOf = (id: string) =>
     barangays?.features.find((f) => f.properties.id === id)?.properties.name ?? id;
@@ -103,7 +106,7 @@ export default function EnroMissed() {
                   <AppText variant="label" color={colors.green}>
                     ✓ {t('enro.missed.scheduled', { ticket: ticket.id })}
                   </AppText>
-                ) : (
+                ) : rights.act ? (
                   <View style={styles.action}>
                     <Button
                       variant="secondary"
@@ -112,15 +115,23 @@ export default function EnroMissed() {
                       disabled={busy === m.id}
                       onPress={async () => {
                         setBusy(m.id);
+                        setFailed(null);
                         try {
                           await services.reports.scheduleRecollection(m, day);
+                        } catch {
+                          setFailed(m.id);
                         } finally {
                           setBusy(null);
                         }
                       }}
                     />
+                    {failed === m.id ? (
+                      <AppText variant="label" color={colors.red} accessibilityLiveRegion="polite">
+                        {t('enro.notSaved')}
+                      </AppText>
+                    ) : null}
                   </View>
-                )}
+                ) : null}
               </View>
             );
           })}

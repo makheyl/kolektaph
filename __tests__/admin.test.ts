@@ -358,3 +358,56 @@ describe('statistics', () => {
     expect(rows.every((r) => r.open <= r.total)).toBe(true);
   });
 });
+
+describe('decisions on backup-truck suggestions', () => {
+  it('go through the service and come back with the live picture', async () => {
+    const decisions: Record<string, { decision: 'dispatched' | 'dismissed'; at: number }> = {};
+    const clock = { t: tue(8) };
+    const services = createMockServices({
+      getSimTime: () => clock.t,
+      getEvents: () => [],
+      getAnnouncements: () => [],
+      addAnnouncement: () => {},
+      receiveUpload: () => {},
+      getTraces: () => ({}),
+      isOnline: () => true,
+      getTickets: () => [],
+      saveTicket: () => {},
+      nextTicketSeq: () => 1,
+      getSchedules: () => ROUTE_SCHEDULES,
+      saveSchedules: () => {},
+      getLeadChanges: () => [],
+      addLeadChange: () => {},
+      getContacts: () => ({ enro: { phone: null, hours: null }, barangays: {} }),
+      setContact: () => {},
+      getStaff: () => [],
+      saveStaff: () => {},
+      getDecisions: () => decisions,
+      saveDecision: (id, decision, at) => (decisions[id] = { decision, at }),
+    });
+    const suggestion = {
+      id: 'backup|2026-09-29|r-mabuhay',
+      fullTruckId: 't3',
+      routeId: 'r-mabuhay',
+      barangayId: 'mabuhay',
+      streetsLeft: 3,
+      candidateTruckId: 't1',
+      candidateLoad: 0.4,
+      distanceM: 900,
+    };
+    await services.ops.decideSuggestion(suggestion, 'dispatched');
+    let snapshot: { decisions: typeof decisions } | null = null;
+    services.ops.subscribeOps((s) => (snapshot = s))();
+    expect(snapshot!.decisions).toEqual({
+      'backup|2026-09-29|r-mabuhay': { decision: 'dispatched', at: tue(8) },
+    });
+  });
+
+  it('on the sample data the dashboard opens as a sample admin, without a login', () => {
+    const { services } = makeServices();
+    let state: unknown = null;
+    services.auth.subscribe((s) => (state = s))();
+    expect(services.auth.required).toBe(false);
+    expect(state).toMatchObject({ status: 'signed_in', staff: { role: 'admin' } });
+  });
+});

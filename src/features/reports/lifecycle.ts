@@ -151,11 +151,14 @@ export function newTicket(
   report: NewReport,
   meta: { at: number; barangayId: string | null; source?: Ticket['source'] },
 ): Ticket {
+  // The device's reference only matters while sending; it is not part of the ticket.
+  const { clientRef, ...fields } = report;
   return {
-    ...report,
+    ...fields,
     id,
     barangayId: meta.barangayId,
     source: meta.source ?? 'resident',
+    notify: report.contact != null,
     createdAt: meta.at,
     status: 'submitted',
     history: [

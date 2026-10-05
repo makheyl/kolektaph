@@ -37,6 +37,7 @@ export default function TicketDetail() {
   const markSeen = useMyReports((s) => s.markSeen);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const ticket = tickets.find((x) => x.id === id);
 
   const historyLength = ticket?.history.length ?? 0;
@@ -67,8 +68,11 @@ export default function TicketDetail() {
   const canRate = canApply(ticket, { type: 'rate', stars: 5 }, 'resident', now);
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
+    setFailed(false);
     try {
       await fn();
+    } catch {
+      setFailed(true);
     } finally {
       setBusy(false);
     }
@@ -125,6 +129,12 @@ export default function TicketDetail() {
             </View>
           </View>
         </Section>
+      ) : null}
+
+      {failed ? (
+        <AppText variant="bodyStrong" color={colors.red} accessibilityLiveRegion="polite">
+          {t('reports.detail.notSent')}
+        </AppText>
       ) : null}
 
       {canReopen && collected ? (

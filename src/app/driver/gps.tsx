@@ -39,6 +39,7 @@ export default function DriverGps() {
   const fixes = useGps((s) => s.fixes);
   const sentCount = useGps((s) => s.sentCount);
   const rejected = useGps((s) => s.rejected);
+  const gpsBlocked = useGps((s) => s.blocked);
   const pending = usePending();
   const online = useIsOnline();
   const simulateOffline = useNetwork((s) => s.simulateOffline);
@@ -75,6 +76,15 @@ export default function DriverGps() {
     [t('driver.gps.distance'), formatDistance(t, stats.distanceM)],
     [t('driver.gps.duration'), formatShiftDuration(stats.durationMs)],
     [t('driver.gps.rejected'), String(rejected)],
+    // Only when it happened: reports the server refused for good (they are not sent again).
+    ...(sync.refused
+      ? [
+          [t('driver.gps.refused'), `${sync.refused} · ${sync.lastRefusal ?? ''}`] as [
+            string,
+            string,
+          ],
+        ]
+      : []),
   ];
 
   return (
@@ -131,6 +141,11 @@ export default function DriverGps() {
         ) : (
           <AppText color={colors.green}>✓ {t('driver.gps.noGaps')}</AppText>
         )}
+        {gpsBlocked ? (
+          <AppText color={colors.red} accessibilityLiveRegion="polite">
+            {t('driver.gps.blocked', { reason: gpsBlocked })}
+          </AppText>
+        ) : null}
       </Card>
 
       <Card>

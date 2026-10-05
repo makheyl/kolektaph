@@ -8,7 +8,9 @@ in the app are sample data.
 | Check                               | Result                                                             |
 | ----------------------------------- | ------------------------------------------------------------------ |
 | Static checks                       | Pass: `expo-doctor` 21/21, `tsc`, `expo lint`, Prettier            |
-| Unit tests                          | Pass: 224 tests in 20 suites                                       |
+| Unit tests                          | Pass: 286 tests in 22 suites (2 October 2026)                      |
+| Pilot database: SQL tests           | Pass: 415 checks in 8 files (see `supabase/README.md`)             |
+| Pilot database: web app connected   | Pass for public reads; guest and staff flows wait on two settings  |
 | Web, resident (phone width)         | Pass                                                               |
 | Web, City ENRO (desktop width)      | Pass                                                               |
 | Android (emulator, dev build)       | Pass                                                               |
@@ -100,6 +102,26 @@ Without compression the same page weighs 4.7 MB.
 - Checked: with the server stopped, the app still opens from the cache, including deep links.
 - The service worker is registered only in production builds, and new versions take over on
   the next visit.
+
+## Pilot database (Stage 2, 2 October 2026)
+
+- **The app on the database:** with `.env.local`, the web app reads the shared clock, schedules,
+  truck events, announcements and sample tickets from the pilot database through `pulse` (one
+  request per tick; a set is read again only when its fingerprint changes). Checked in the
+  browser: the demo page (server time, trucks computed from the stored schedule, the shared
+  clock notice for non-admins), resident Home and alerts, "Aking mga report", the City ENRO
+  sign-in screen.
+- **Refusals are shown, not lost:** with anonymous sign-ins still off on the project, sending a
+  report stays on the review step with a message (the guest identity could not be made); a
+  refused pending report is kept with a "Remove" button instead of being retried forever.
+- **First load:** 493 KB of compressed JavaScript (479 KB before): the client is written on
+  `fetch` instead of adding `@supabase/supabase-js` (about 45 KB more).
+- **Not yet checked end to end:** resident reports, text sign-up, truck sign-in and uploads
+  (they need **Anonymous sign-ins** turned on in the Supabase dashboard), and the City ENRO
+  dashboard signed in (needs the admin's password typed by a person). Their database side is
+  covered by the SQL tests (04, 05, 06, 08) and their client side by unit tests with a fake
+  server (`__tests__/supabaseClient.test.ts`). Photo upload from the Android app (file bytes
+  through `expo-file-system`) has not run on a phone yet.
 
 ## Still open before the pilot
 

@@ -191,6 +191,8 @@ interface TruckEventBase {
   at: number;
   /** Reported from the driver app, or triggered from the demo controls. */
   source: 'driver' | 'demo';
+  /** The driver shift it was reported in (none for a demo incident). */
+  shiftId?: string;
 }
 
 /**
@@ -276,6 +278,8 @@ export interface Announcement {
   barangayIds: string[];
   text: string;
   sentAt: number;
+  /** Numbers it went to, when the server recorded that at send time. */
+  recipients?: number;
 }
 
 // ---------- Operations (City ENRO) ----------
@@ -326,11 +330,16 @@ export interface ShiftSummary {
   gps: { points: number; lastFixAt: number | null; source: GpsSource | null };
 }
 
+/** What staff decided on a backup-truck suggestion (the system suggests; people decide). */
+export type SuggestionDecision = 'dispatched' | 'dismissed';
+
 export interface OpsSnapshot {
   at: number;
   states: TruckState[];
   missed: MissedStreet[];
   suggestions: BackupSuggestion[];
+  /** Staff decisions on suggestions, by suggestion id. */
+  decisions: Record<string, { decision: SuggestionDecision; at: number }>;
   weekly: WeeklyStats;
   /** Today's truck events received so far (all trucks), oldest first. */
   events: TruckEvent[];
@@ -355,6 +364,20 @@ export interface UploadBatch {
     /** Index of the first fix in the shift's trace, so a retried upload never duplicates. */
     fromIndex: number;
     fixes: GpsFix[];
+  } | null;
+}
+
+/** What the server did with an upload. */
+export interface UploadResult {
+  /** Events the server now has (stored now, or already had from an earlier try). */
+  accepted: string[];
+  /** Events the server refused for good; the phone drops them instead of retrying. */
+  rejected: { id: string; reason: string }[];
+  gps: {
+    /** The server holds fixes [0, nextIndex) of the shift's trace: the phone continues there. */
+    nextIndex: number;
+    /** Set when the server refuses this shift's GPS for good (no further GPS is sent for it). */
+    blocked: string | null;
   } | null;
 }
 
@@ -400,8 +423,14 @@ export type SamplePhotoId =
   | 'street'
   | 'clean';
 
-/** A photo: a compressed file/data URI from the camera, or a bundled sample picture. */
-export type PhotoRef = { kind: 'uri'; uri: string } | { kind: 'sample'; id: SamplePhotoId };
+/**
+ * A photo: a compressed file/data URI from the camera, a bundled sample picture, or a photo
+ * already stored on the server (shown through a short-lived link from the photo service).
+ */
+export type PhotoRef =
+  | { kind: 'uri'; uri: string }
+  | { kind: 'sample'; id: SamplePhotoId }
+  | { kind: 'remote'; path: string };
 
 export type TicketActor = 'resident' | 'enro' | 'driver' | 'system';
 
@@ -447,8 +476,10 @@ export interface Ticket {
   note: string;
   /** resident = Snap & Report; claim = "Hindi nadaanan"; enro = re-collection from the dashboard. */
   source: 'resident' | 'claim' | 'enro';
-  /** Optional mobile for status texts (E.164); shown masked. */
+  /** Optional mobile for status texts (E.164); shown masked. The server never returns it. */
   contact: string | null;
+  /** The reporter asked for status texts (the server keeps the number with the sign-up only). */
+  notify: boolean;
   createdAt: number;
   status: TicketStatus;
   history: TicketEvent[];
@@ -479,6 +510,11 @@ export interface NewReport {
   nearSensitive: boolean;
   note: string;
   contact: string | null;
+  /**
+   * A reference made on the device when the report is written, so a report sent twice (a retry
+   * after a lost reply) is filed once.
+   */
+  clientRef?: string;
 }
 
 export type TicketAction =
@@ -530,7 +566,7 @@ export type ContactTarget = { kind: 'enro' } | { kind: 'barangay'; barangayId: s
 
 export type StaffRole = 'admin' | 'dispatcher' | 'viewer' | 'barangay';
 
-/** A dashboard account (sample accounts until real sign-in exists). */
+/** A dashboard account (sample accounts on the sample data; City ENRO logins on the server). */
 export interface StaffUser {
   id: string;
   name: string;
@@ -694,6 +730,8 @@ export interface OpsService {
   getTrace(shiftId: string): Promise<GpsFix[]>;
   /** Missed streets for a Manila day (by the end of that day, or up to now for today). */
   getMissedStreets(day: number): Promise<MissedStreet[]>;
+  /** Records what staff decided on a backup-truck suggestion. */
+  decideSuggestion(suggestion: BackupSuggestion, decision: SuggestionDecision): Promise<void>;
 }
 
 export interface ReportsService {
@@ -730,8 +768,13 @@ export interface KolekProvider {
 export interface DriverService {
   /** Truck code + 4-digit PIN (sample accounts in the prototype). Rejects with SignInError. */
   signIn(truckId: string, pin: string): Promise<DriverSession>;
-  /** Rejects with OfflineError when the server cannot be reached; the phone keeps the batch. */
-  upload(batch: UploadBatch): Promise<void>;
+  /** Ends the phone's sign-in to its truck. Never blocks leaving: failures are ignored. */
+  signOut(): Promise<void>;
+  /**
+   * Rejects with OfflineError when the server cannot be reached (the phone keeps the batch), or
+   * with SignInError('expired') when the truck sign-in has ended (the crew enters the PIN again).
+   */
+  upload(batch: UploadBatch): Promise<UploadResult>;
   /**
    * The truck as the driver's phone sees it: what the server knows plus the phone's own
    * reports that are not uploaded yet, so the driver app keeps working without signal.
@@ -741,6 +784,54 @@ export interface DriverService {
     getLocalEvents: () => TruckEvent[],
     listener: (state: TruckState) => void,
   ): () => void;
+}
+
+/** What a resident's device keeps on the server: only its text-alert sign-up. */
+export interface ResidentService {
+  /** Signs this device's number up for its barangay's texts (or moves it to a new barangay). */
+  subscribeSms(mobile: string, barangayId: string): Promise<void>;
+  unsubscribeSms(): Promise<void>;
+  /** "Burahin ang data ko": the server forgets this device. Its reports stay, unlinked. */
+  forgetMe(): Promise<void>;
+}
+
+/** The City ENRO staff member using the dashboard. */
+export interface StaffSession {
+  id: string;
+  name: string;
+  role: StaffRole;
+  barangayId: string | null;
+}
+
+export type StaffAuthState =
+  { status: 'loading' } | { status: 'signed_out' } | { status: 'signed_in'; staff: StaffSession };
+
+export interface AuthService {
+  /** False on the sample data, where the dashboard opens without a login. */
+  required: boolean;
+  /** Pushes the current state at once and on every change. Returns an unsubscribe function. */
+  subscribe(listener: (state: StaffAuthState) => void): () => void;
+  /** Rejects with ServerError ('invalid_credentials', 'not_staff') or OfflineError. */
+  signIn(email: string, password: string): Promise<StaffSession>;
+  signOut(): Promise<void>;
+}
+
+/** The demo controls (prototype only): the demo clock, a sample breakdown, and the reset. */
+export interface DemoService {
+  /** True when the clock is one shared clock on the server, which only an admin may set. */
+  shared: boolean;
+  jumpTo(simMs: number): Promise<void>;
+  setSpeed(speed: number): Promise<void>;
+  goLive(): Promise<void>;
+  /** A sample two-hour breakdown of a truck, starting now. */
+  breakdown(truckId: string): Promise<void>;
+  /** Back to the sample data: truck reports, tickets, announcements and City settings. */
+  reset(): Promise<void>;
+}
+
+export interface PhotoService {
+  /** A link (valid for a short while) to a photo stored on the server. */
+  getUrl(path: string): Promise<string>;
 }
 
 export interface Services {
@@ -754,4 +845,8 @@ export interface Services {
   admin: AdminService;
   stats: StatsService;
   kolek: KolekProvider;
+  resident: ResidentService;
+  auth: AuthService;
+  demo: DemoService;
+  photos: PhotoService;
 }

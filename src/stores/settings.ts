@@ -6,7 +6,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 export type Language = 'fil' | 'en';
 export type Role = 'resident' | 'driver' | 'enro';
 
-/** SMS alert opt-in. Kept on this device only in the prototype (no backend yet). */
+/** SMS alert opt-in, as this device knows it (the server keeps the sign-up when there is one). */
 export interface SmsSubscription {
   /** E.164, e.g. "+639171234567" */
   mobile: string;
@@ -21,6 +21,8 @@ interface SettingsState {
   barangayId: string | null;
   onboarded: boolean;
   sms: SmsSubscription | null;
+  /** The number and barangay the server last confirmed (see smsKey), so a change is sent on. */
+  smsSyncedKey: string | null;
   /** Alerts sent after this time show as unread in "Mga abiso". */
   alertsSeenAt: number;
   setLanguage: (language: Language) => void;
@@ -29,6 +31,7 @@ interface SettingsState {
   setBarangayId: (barangayId: string | null) => void;
   completeOnboarding: () => void;
   setSms: (sms: SmsSubscription | null) => void;
+  markSmsSynced: (key: string | null) => void;
   markAlertsSeen: (at: number) => void;
   /** "Burahin ang data ko": forget everything stored about this resident on this device. */
   deleteMyData: () => void;
@@ -41,8 +44,13 @@ const DEFAULTS = {
   barangayId: null,
   onboarded: false,
   sms: null,
+  smsSyncedKey: null,
   alertsSeenAt: 0,
 };
+
+/** What a text sign-up is, for telling whether the server already has this exact one. */
+export const smsKey = (sms: SmsSubscription | null) =>
+  sms ? `${sms.mobile}|${sms.barangayId}` : null;
 
 /**
  * Per-device preferences. Data minimisation (RA 10173): only a barangay and, if the resident
@@ -62,6 +70,7 @@ export const useSettings = create<SettingsState>()(
       },
       completeOnboarding: () => set({ onboarded: true }),
       setSms: (sms) => set({ sms }),
+      markSmsSynced: (smsSyncedKey) => set({ smsSyncedKey }),
       markAlertsSeen: (at) => set({ alertsSeenAt: Math.max(get().alertsSeenAt, at) }),
       deleteMyData: () => set({ ...DEFAULTS, language: get().language }),
     }),
@@ -69,13 +78,23 @@ export const useSettings = create<SettingsState>()(
       name: 'kolektaph.settings',
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: ({ language, largeText, role, barangayId, onboarded, sms, alertsSeenAt }) => ({
+      partialize: ({
         language,
         largeText,
         role,
         barangayId,
         onboarded,
         sms,
+        smsSyncedKey,
+        alertsSeenAt,
+      }) => ({
+        language,
+        largeText,
+        role,
+        barangayId,
+        onboarded,
+        sms,
+        smsSyncedKey,
         alertsSeenAt,
       }),
       // v0 (Sprint S1) had no onboarding/SMS fields; keep the saved preferences.

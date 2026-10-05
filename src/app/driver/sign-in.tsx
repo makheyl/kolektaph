@@ -12,8 +12,10 @@ import { SampleDataBadge } from '@/components/ui/SampleDataBadge';
 import { Screen } from '@/components/ui/Screen';
 import { DRIVER_DEMO_PIN } from '@/data/carmona';
 import { PinPad } from '@/features/driver/components/PinPad';
+import { syncNow } from '@/features/driver/sync';
 import { useTrucks } from '@/features/tracking/hooks';
-import { services, SignInError } from '@/services';
+import { formatClock } from '@/lib/time';
+import { OfflineError, services, SignInError } from '@/services';
 import { useDemo } from '@/stores/demo';
 import { useDriver } from '@/stores/driver';
 import { useSettings } from '@/stores/settings';
@@ -25,9 +27,14 @@ export default function DriverSignIn() {
   const { data: trucks = [] } = useTrucks();
   const session = useDriver((s) => s.session);
   const signIn = useDriver((s) => s.signIn);
+  const setSync = useDriver((s) => s.setSync);
+  // A shift on the phone belongs to one truck: only that truck can sign in again.
+  const shiftTruck = useDriver((s) => s.shift?.truckId ?? null);
+  const expired = useDriver((s) => s.sync.lastError === 'signin');
   const demoMode = useDemo((s) => s.demoMode);
   const { language, setLanguage } = useSettings();
-  const [truckId, setTruckId] = useState<string | null>(null);
+  const [picked, setTruckId] = useState<string | null>(null);
+  const truckId = shiftTruck ?? picked;
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -41,13 +48,24 @@ export default function DriverSignIn() {
     setError(null);
     try {
       signIn(await services.driver.signIn(truckId, full));
+      setSync({ lastError: null, failures: 0, nextTryAt: 0 });
+      // Anything that waited for the PIN goes out now.
+      void syncNow(true);
       router.replace('/driver');
     } catch (e) {
       setPin('');
       setError(
         e instanceof SignInError
-          ? t(e.reason === 'wrong_pin' ? 'driver.signIn.wrongPin' : 'driver.signIn.unknownTruck')
-          : t('driver.signIn.offline'),
+          ? e.reason === 'locked'
+            ? t('driver.signIn.locked', {
+                time: e.info.lockedUntil ? formatClock(e.info.lockedUntil) : '',
+              })
+            : e.reason === 'unknown_truck'
+              ? t('driver.signIn.unknownTruck')
+              : e.info.attemptsLeft != null
+                ? t('driver.signIn.wrongPinLeft', { count: e.info.attemptsLeft })
+                : t('driver.signIn.wrongPin')
+          : t(e instanceof OfflineError ? 'driver.signIn.offline' : 'driver.signIn.failed'),
       );
     } finally {
       setBusy(false);
@@ -77,6 +95,12 @@ export default function DriverSignIn() {
           <Chip label="English" selected={language === 'en'} onPress={() => setLanguage('en')} />
         </View>
       </View>
+
+      {expired && shiftTruck ? (
+        <Card style={styles.notice} accessibilityLiveRegion="polite">
+          <AppText variant="bodyStrong">{t('driver.signIn.again')}</AppText>
+        </Card>
+      ) : null}
 
       {!truck ? (
         <View style={styles.section}>
@@ -130,16 +154,18 @@ export default function DriverSignIn() {
               {t('driver.signIn.demoPin', { pin: DRIVER_DEMO_PIN })}
             </AppText>
           ) : null}
-          <Button
-            variant="secondary"
-            icon="swap-horizontal"
-            label={t('driver.signIn.changeTruck')}
-            onPress={() => {
-              setTruckId(null);
-              setPin('');
-              setError(null);
-            }}
-          />
+          {shiftTruck ? null : (
+            <Button
+              variant="secondary"
+              icon="swap-horizontal"
+              label={t('driver.signIn.changeTruck')}
+              onPress={() => {
+                setTruckId(null);
+                setPin('');
+                setError(null);
+              }}
+            />
+          )}
         </View>
       )}
 
@@ -175,5 +201,6 @@ const styles = StyleSheet.create({
   },
   center: { textAlign: 'center' },
   error: { backgroundColor: colors.redSoft, borderColor: colors.red },
+  notice: { backgroundColor: colors.yellowSoft, borderColor: colors.yellow },
   footer: { gap: spacing.md },
 });
