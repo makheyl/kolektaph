@@ -5,8 +5,9 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { useNarrow } from '@/components/ui/narrow';
 import { type RenderContext, renderLine } from '@/features/kolek/render';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors, radius, shadows, spacing } from '@/theme/tokens';
 
 import type { HomeStatus } from '../homeStatus';
 import { statusText } from '../statusText';
@@ -23,18 +24,33 @@ const LOOKS: Record<Exclude<HomeStatus['kind'], 'no_barangay'>, Look> = {
     icon: 'calendar-blank',
     bg: colors.surface,
     border: colors.border,
-    fg: colors.navy,
+    fg: colors.ink,
   },
-  before_start: { icon: 'clock-outline', bg: colors.surface, border: colors.navy, fg: colors.navy },
-  approaching: { icon: 'truck-fast', bg: colors.surface, border: colors.green, fg: colors.green },
-  bring_out: { icon: 'bell-ring', bg: colors.yellow, border: colors.yellow, fg: colors.navy },
+  before_start: {
+    icon: 'clock-outline',
+    bg: colors.surface,
+    border: colors.border,
+    fg: colors.ink,
+  },
+  approaching: {
+    icon: 'truck-fast',
+    bg: colors.surface,
+    border: colors.primary,
+    fg: colors.primary,
+  },
+  bring_out: { icon: 'bell-ring', bg: colors.yellow, border: colors.yellow, fg: colors.ink },
   in_barangay: {
     icon: 'truck-check',
     bg: colors.greenSoft,
-    border: colors.green,
-    fg: colors.green,
+    border: colors.primary,
+    fg: colors.primary,
   },
-  passed: { icon: 'check-circle', bg: colors.greenSoft, border: colors.green, fg: colors.green },
+  passed: {
+    icon: 'check-circle',
+    bg: colors.greenSoft,
+    border: colors.primary,
+    fg: colors.primary,
+  },
   full: { icon: 'truck-alert', bg: colors.redSoft, border: colors.red, fg: colors.red },
   breakdown: { icon: 'car-wrench', bg: colors.redSoft, border: colors.red, fg: colors.red },
   paused: { icon: 'pause-circle', bg: colors.amberSoft, border: colors.amber, fg: colors.amber },
@@ -57,6 +73,8 @@ interface StatusCardProps {
  */
 export function StatusCard({ status, now, barangayId, barangayName, nameOf }: StatusCardProps) {
   const { t, i18n } = useTranslation();
+  // On a very narrow screen the headline is a size smaller, so a long word still fits the card.
+  const narrow = useNarrow();
 
   if (status.kind === 'no_barangay') {
     return (
@@ -85,11 +103,15 @@ export function StatusCard({ status, now, barangayId, barangayName, nameOf }: St
   const chip = text.chip ? renderLine(text.chip, ctx) : null;
   const showMap = text.showMap;
 
-  const textColor = status.kind === 'bring_out' ? colors.navy : colors.text;
+  const textColor = status.kind === 'bring_out' ? colors.ink : colors.text;
 
   return (
     <View
-      style={[styles.card, { backgroundColor: look.bg, borderColor: look.border }]}
+      style={[
+        styles.card,
+        narrow && styles.cardNarrow,
+        { backgroundColor: look.bg, borderColor: look.border },
+      ]}
       accessible
       accessibilityLiveRegion="polite"
       accessibilityLabel={[title, ...lines, chip].filter(Boolean).join('. ')}
@@ -98,11 +120,11 @@ export function StatusCard({ status, now, barangayId, barangayName, nameOf }: St
         <View style={[styles.iconWrap, { backgroundColor: look.fg }]}>
           <Icon
             name={look.icon}
-            size={30}
+            size={28}
             color={status.kind === 'bring_out' ? colors.yellow : colors.textOnDark}
           />
         </View>
-        <AppText variant="title" color={textColor} style={styles.title}>
+        <AppText variant={narrow ? 'heading' : 'title'} color={textColor} style={styles.title}>
           {title}
         </AppText>
       </View>
@@ -119,14 +141,28 @@ export function StatusCard({ status, now, barangayId, barangayName, nameOf }: St
           </AppText>
         </View>
       ) : null}
-      {showMap ? (
-        <Button
-          variant={status.kind === 'bring_out' ? 'primary' : 'secondary'}
-          icon="map-marker-radius"
-          label={t('resident.home.seeOnMap')}
-          onPress={() => router.push('/resident/map')}
-        />
-      ) : null}
+      {/* Side by side as in the design; one under the other when the words are large. */}
+      <View style={styles.actions}>
+        {showMap ? (
+          <View style={styles.action}>
+            <Button
+              variant={status.kind === 'bring_out' ? 'dark' : 'primary'}
+              icon="map-marker-radius"
+              label={t('resident.home.actions.map')}
+              accessibilityHint={t('resident.home.seeOnMap')}
+              onPress={() => router.push('/resident/map')}
+            />
+          </View>
+        ) : null}
+        <View style={styles.action}>
+          <Button
+            variant="secondary"
+            icon="calendar-month"
+            label={t('resident.home.actions.schedule')}
+            onPress={() => router.push('/resident/schedule')}
+          />
+        </View>
+      </View>
     </View>
   );
 }
@@ -137,17 +173,21 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
     gap: spacing.md,
+    ...shadows.raised,
   },
   // Wraps at 200% text size: the title then goes under the icon instead of running off-screen.
   titleRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md },
   iconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.md,
+    width: 48,
+    height: 48,
+    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { flexGrow: 1, flexShrink: 1, flexBasis: 180 },
+  cardNarrow: { padding: spacing.md },
+  title: { flexGrow: 1, flexShrink: 1, flexBasis: 180, minWidth: 0 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  action: { flexGrow: 1, flexShrink: 1, flexBasis: 112, minWidth: 0 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

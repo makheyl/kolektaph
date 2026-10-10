@@ -88,24 +88,26 @@ export default function DriverGps() {
   ];
 
   return (
-    <Screen>
-      <AppHeader
-        title={t('driver.gps.title')}
-        leading={
-          <IconButton
-            icon="arrow-left"
-            label={t('common.back')}
-            onPress={() => goBack('/driver')}
-          />
-        }
-      />
-
-      <Card style={isRecording ? styles.ok : styles.off}>
+    <Screen
+      header={
+        <AppHeader
+          title={t('driver.gps.title')}
+          leading={
+            <IconButton
+              icon="arrow-left"
+              label={t('common.back')}
+              onPress={() => goBack('/driver')}
+            />
+          }
+        />
+      }
+    >
+      <Card variant="flat" style={isRecording ? styles.ok : styles.off}>
         <View style={styles.inline}>
           <Icon
             name={isRecording ? 'crosshairs-gps' : 'crosshairs-off'}
             size={28}
-            color={isRecording ? colors.green : colors.navy}
+            color={isRecording ? colors.primary : colors.ink}
           />
           <View style={styles.flex}>
             <AppText variant="heading">
@@ -119,10 +121,12 @@ export default function DriverGps() {
       </Card>
 
       <Card>
-        {rows.map(([label, value]) => (
-          <View key={label} style={styles.row}>
+        {rows.map(([label, value], i) => (
+          <View key={label} style={[styles.row, i > 0 && styles.rowLine]}>
             <AppText style={styles.flex}>{label}</AppText>
-            <AppText variant="bodyStrong">{value}</AppText>
+            <AppText variant="bodyStrong" style={styles.value}>
+              {value}
+            </AppText>
           </View>
         ))}
         <AppText variant="label" color={colors.textMuted}>
@@ -139,7 +143,7 @@ export default function DriverGps() {
             </AppText>
           ))
         ) : (
-          <AppText color={colors.green}>✓ {t('driver.gps.noGaps')}</AppText>
+          <AppText color={colors.primary}>✓ {t('driver.gps.noGaps')}</AppText>
         )}
         {gpsBlocked ? (
           <AppText color={colors.red} accessibilityLiveRegion="polite">
@@ -153,7 +157,7 @@ export default function DriverGps() {
           <Icon
             name={online ? 'cloud-check-outline' : 'cloud-off-outline'}
             size={24}
-            color={online ? colors.green : colors.red}
+            color={online ? colors.primary : colors.red}
           />
           <AppText variant="bodyStrong" style={styles.flex}>
             {t('driver.gps.network')}: {online ? t('driver.gps.online') : t('driver.gps.offline')}
@@ -190,7 +194,9 @@ export default function DriverGps() {
       </Card>
 
       <View style={styles.block}>
-        <AppText variant="heading">{t('driver.gps.mapTitle')}</AppText>
+        <AppText variant="heading" accessibilityRole="header">
+          {t('driver.gps.mapTitle')}
+        </AppText>
         {trace.length && barangays && meta ? (
           <KMap
             barangays={barangays}
@@ -211,14 +217,23 @@ export default function DriverGps() {
 
 const styles = StyleSheet.create({
   inline: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 32 },
+  // A name and its number share a line; the number moves under the name when they do not fit.
+  row: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    columnGap: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  rowLine: { borderTopWidth: 1, borderTopColor: colors.border },
+  value: { flexShrink: 1, marginLeft: 'auto', textAlign: 'right' },
   flex: { flex: 1 },
-  ok: { backgroundColor: colors.greenSoft, borderColor: colors.green },
+  ok: { backgroundColor: colors.greenSoft, borderColor: colors.primary },
   off: { backgroundColor: colors.yellowSoft, borderColor: colors.yellow },
   block: { gap: spacing.sm },
   map: {
     height: 280,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,

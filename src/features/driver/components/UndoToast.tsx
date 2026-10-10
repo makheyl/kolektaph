@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { Icon } from '@/components/ui/Icon';
 import { useDriver } from '@/stores/driver';
-import { colors, radius, spacing, touch } from '@/theme/tokens';
+import { colors, radius, shadows, spacing, touch } from '@/theme/tokens';
 
 import { useDeviceNow } from '../hooks';
 import { UNDO_MS } from '../outbox';
@@ -41,8 +41,8 @@ export function UndoToast({ last, onUndone }: UndoToastProps) {
         }}
         style={({ pressed }) => [styles.undo, pressed && { opacity: 0.8 }]}
       >
-        <Icon name="undo-variant" size={22} color={colors.navy} />
-        <AppText variant="bodyStrong" color={colors.navy}>
+        <Icon name="undo-variant" size={22} color={colors.ink} />
+        <AppText variant="bodyStrong" color={colors.ink}>
           {t('driver.shift.undo')} ({seconds})
         </AppText>
       </Pressable>
@@ -55,9 +55,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.navyDark,
+    backgroundColor: colors.ink,
     borderRadius: radius.lg,
     padding: spacing.md,
+    ...shadows.raised,
   },
   text: { flex: 1 },
   undo: {

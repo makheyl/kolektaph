@@ -6,6 +6,7 @@ import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { KMap } from '@/components/map/KMap';
 import type { MapTruck } from '@/components/map/types';
+import { AppHeader } from '@/components/ui/AppHeader';
 import { AppText } from '@/components/ui/AppText';
 import { BigTile } from '@/components/ui/BigTile';
 import { Button } from '@/components/ui/Button';
@@ -115,16 +116,7 @@ export default function DemoScreen() {
 
   const controls = (
     <View style={styles.column}>
-      <View style={styles.header}>
-        <AppText variant="display" accessibilityRole="header">
-          Kolekta
-          <AppText variant="display" color={colors.green}>
-            PH
-          </AppText>
-        </AppText>
-        <AppText color={colors.textMuted}>{t('app.tagline')}</AppText>
-        <SampleDataBadge />
-      </View>
+      <SampleDataBadge />
 
       <View style={styles.chips}>
         <Chip label="Filipino" selected={language === 'fil'} onPress={() => setLanguage('fil')} />
@@ -148,7 +140,7 @@ export default function DemoScreen() {
           icon="steering"
           label={t('roles.driver')}
           hint={t('roles.driverHint')}
-          accent={colors.navy}
+          accent={colors.ink}
           onPress={() => openRole('driver')}
         />
         <BigTile
@@ -329,7 +321,7 @@ export default function DemoScreen() {
   );
 
   return (
-    <Screen width="page">
+    <Screen width="page" header={<AppHeader title={t('demo.title')} />}>
       <View style={wide ? styles.wide : styles.narrow}>
         {controls}
         {live}
@@ -342,7 +334,6 @@ const styles = StyleSheet.create({
   wide: { flexDirection: 'row', gap: spacing.xl, alignItems: 'flex-start' },
   narrow: { gap: spacing.xl },
   column: { flex: 1, gap: spacing.xl, minWidth: 0 },
-  header: { gap: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   presets: { gap: spacing.sm },
   notice: { backgroundColor: colors.yellowSoft, borderColor: colors.yellow },

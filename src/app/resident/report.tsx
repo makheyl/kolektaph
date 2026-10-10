@@ -13,8 +13,12 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { Chip } from '@/components/ui/Chip';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
+import type { PressState } from '@/components/ui/interaction';
+import { useNarrow } from '@/components/ui/narrow';
+import { Notice } from '@/components/ui/Notice';
 import { Screen } from '@/components/ui/Screen';
 import { Section } from '@/components/ui/Section';
+import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import { StepIndicator } from '@/components/ui/StepIndicator';
 import { TextField } from '@/components/ui/TextField';
 import {
@@ -43,6 +47,7 @@ import type {
 import { useMyReports } from '@/stores/myReports';
 import { useSettings } from '@/stores/settings';
 import { colors, radius, spacing, touch } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 type Step = 1 | 2 | 3 | 4 | 'done';
 const SIZES: ReportSize[] = ['bags', 'pile', 'truckload'];
@@ -59,6 +64,7 @@ export default function ReportScreen() {
  */
 function ReportWizard({ preset }: { preset: ReportCategory | null }) {
   const { t } = useTranslation();
+  const narrow = useNarrow();
   const now = useSimNow(30_000);
   const { data: barangays } = useBarangays();
   const { data: meta } = useCityMeta();
@@ -110,7 +116,54 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
     setClientRef(randomUuid());
   };
 
-  if (!barangays || !meta) return <Screen>{null}</Screen>;
+  const header = (
+    <AppHeader
+      title={t('reports.wizard.title')}
+      leading={
+        typeof step === 'number' && step > 1 ? (
+          <IconButton
+            icon="arrow-left"
+            label={t('reports.wizard.back')}
+            onPress={() => setStep((step - 1) as Step)}
+          />
+        ) : (
+          <IconButton
+            icon="arrow-left"
+            label={t('common.back')}
+            onPress={() => goBack('/resident')}
+          />
+        )
+      }
+      actions={
+        <>
+          <IconButton
+            icon="map-marker-remove"
+            label={t('resident.home.actions.missed')}
+            onPress={() => router.push('/resident/missed')}
+          />
+          <IconButton
+            icon="clipboard-list-outline"
+            label={t('reports.mine.title')}
+            onPress={() => router.push('/resident/reports')}
+          />
+        </>
+      }
+    />
+  );
+
+  if (!barangays || !meta) {
+    return (
+      <Screen header={header}>
+        <SkeletonGroup>
+          <Skeleton height={8} round={radius.pill} />
+          <Skeleton height={72} round={radius.lg} />
+          <Skeleton height={72} round={radius.lg} />
+          <Skeleton height={72} round={radius.lg} />
+          <Skeleton height={72} round={radius.lg} />
+        </SkeletonGroup>
+      </Screen>
+    );
+  }
 
   const fallback: LngLat =
     barangays.features.find((f) => f.properties.id === barangayId)?.properties.labelPoint ??
@@ -167,28 +220,6 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
     }
   };
 
-  const header = (
-    <AppHeader
-      title={t('reports.wizard.title')}
-      leading={
-        typeof step === 'number' && step > 1 ? (
-          <IconButton
-            icon="arrow-left"
-            label={t('reports.wizard.back')}
-            onPress={() => setStep((step - 1) as Step)}
-          />
-        ) : undefined
-      }
-      actions={
-        <IconButton
-          icon="clipboard-list-outline"
-          label={t('reports.mine.title')}
-          onPress={() => router.push('/resident/reports')}
-        />
-      }
-    />
-  );
-
   if (step === 'done') {
     const due = sent ? responseDue(sent.category, sent.createdAt) : null;
     const target = sent ? CATEGORY_META[sent.category].target : null;
@@ -206,67 +237,100 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
               ? t('reports.done.targetSameDay')
               : t('reports.done.targetBooked');
     return (
-      <Screen>
-        {header}
-        <Card style={sent ? styles.success : styles.saved} accessibilityLiveRegion="polite">
-          <Icon
-            name={sent ? 'check-circle' : 'cloud-upload-outline'}
-            size={44}
-            color={sent ? colors.green : colors.navy}
-          />
-          <AppText variant="title">
+      <Screen
+        header={header}
+        footer={
+          <>
+            {sent ? (
+              <Button
+                icon="file-document-outline"
+                label={t('reports.done.track')}
+                onPress={() =>
+                  router.push({ pathname: '/resident/reports/[id]', params: { id: sent.id } })
+                }
+              />
+            ) : null}
+            <Button
+              variant={sent ? 'ghost' : 'primary'}
+              icon="camera-plus-outline"
+              label={t('reports.done.another')}
+              onPress={reset}
+            />
+          </>
+        }
+      >
+        <Card
+          variant={sent ? 'mint' : 'elevated'}
+          style={sent ? styles.done : [styles.done, styles.saved]}
+          accessibilityLiveRegion="polite"
+        >
+          <View style={styles.doneIcon}>
+            <Icon
+              name={sent ? 'check-circle' : 'cloud-upload-outline'}
+              size={56}
+              color={sent ? colors.primary : colors.ink}
+            />
+          </View>
+          <AppText variant="title" color={sent ? colors.primary : colors.ink} style={styles.center}>
             {sent ? t('reports.done.title') : t('reports.mine.pending')}
           </AppText>
           {sent ? (
             <>
-              <AppText variant="label" color={colors.textMuted}>
-                {t('reports.done.ticket')}
-              </AppText>
-              <AppText variant="display" selectable>
-                {sent.id}
-              </AppText>
-              <AppText variant="label" color={colors.textMuted}>
-                {t('reports.done.target')}
-              </AppText>
-              <AppText variant="bodyStrong">{targetText}</AppText>
+              <View style={styles.ticket}>
+                <AppText variant="label" color={colors.textMuted}>
+                  {t('reports.done.ticket')}
+                </AppText>
+                <AppText variant="title" selectable style={styles.center}>
+                  {sent.id}
+                </AppText>
+              </View>
+              <View style={styles.ticket}>
+                <AppText variant="label" color={colors.textMuted}>
+                  {t('reports.done.target')}
+                </AppText>
+                <AppText variant="bodyStrong" style={styles.center}>
+                  {targetText}
+                </AppText>
+              </View>
             </>
           ) : (
-            <AppText>{t('reports.wizard.offlineSaved')}</AppText>
+            <AppText style={styles.center}>{t('reports.wizard.offlineSaved')}</AppText>
           )}
         </Card>
-        {sent ? (
-          <Button
-            icon="file-document-outline"
-            label={t('reports.done.track')}
-            onPress={() =>
-              router.push({ pathname: '/resident/reports/[id]', params: { id: sent.id } })
-            }
-          />
-        ) : null}
-        <Button
-          variant="secondary"
-          icon="camera-plus-outline"
-          label={t('reports.done.another')}
-          onPress={reset}
-        />
       </Screen>
     );
   }
 
+  const footer =
+    step === 2 ? (
+      <Button
+        icon="arrow-right"
+        label={t('reports.wizard.next')}
+        disabled={!wide}
+        onPress={toWhere}
+      />
+    ) : step === 3 ? (
+      <Button
+        icon="arrow-right"
+        label={t('reports.wizard.next')}
+        disabled={!point || !here}
+        onPress={() => setStep(4)}
+      />
+    ) : step === 4 ? (
+      <Button
+        icon="send"
+        label={sending ? t('reports.wizard.sending') : t('reports.wizard.send')}
+        loading={sending}
+        onPress={() => void submit()}
+      />
+    ) : undefined;
+
   return (
-    <Screen>
-      {header}
+    <Screen header={header} footer={footer}>
       <StepIndicator current={step} total={4} />
 
       {category === 'BURNING' && step > 1 ? (
-        <Card style={styles.warn}>
-          <View style={styles.row}>
-            <Icon name="fire" size={24} color={colors.red} />
-            <AppText variant="bodyStrong" style={styles.flex}>
-              {t('reports.wizard.burningWarning')}
-            </AppText>
-          </View>
-        </Card>
+        <Notice tone="danger" icon="fire" text={t('reports.wizard.burningWarning')} />
       ) : null}
 
       {step === 1 ? (
@@ -279,7 +343,8 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
                 <CategoryTile key={c} category={c} emergency onPress={() => pickCategory(c)} />
               ))}
               <Button
-                variant="secondary"
+                variant="ghost"
+                icon="arrow-left"
                 label={t('reports.wizard.back')}
                 onPress={() => setEmergency(false)}
               />
@@ -290,17 +355,21 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
                 accessibilityRole="button"
                 accessibilityLabel={`${t('reports.wizard.emergency')}. ${t('reports.wizard.emergencyHint')}`}
                 onPress={() => setEmergency(true)}
-                style={({ pressed }) => [styles.emergency, pressed && { opacity: 0.85 }]}
+                style={({ pressed, hovered }: PressState) => [
+                  styles.emergency,
+                  { opacity: pressed ? 0.8 : hovered ? 0.92 : 1 },
+                ]}
               >
-                <Icon name="alert-octagon" size={32} color={colors.textOnDark} />
+                {narrow ? null : <Icon name="alert-octagon" size={32} color={colors.textOnDark} />}
                 <View style={styles.flex}>
-                  <AppText variant="heading" color={colors.textOnDark}>
+                  <AppText variant={narrow ? 'bodyStrong' : 'heading'} color={colors.textOnDark}>
                     {t('reports.wizard.emergency')}
                   </AppText>
                   <AppText variant="label" color={colors.textOnDark}>
                     {t('reports.wizard.emergencyHint')}
                   </AppText>
                 </View>
+                {narrow ? null : <Icon name="chevron-right" size={26} color={colors.textOnDark} />}
               </Pressable>
               {RESIDENT_CATEGORIES.map((c) => (
                 <CategoryTile key={c} category={c} onPress={() => pickCategory(c)} />
@@ -312,11 +381,25 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
 
       {step === 2 && category ? (
         <Section title={t('reports.wizard.photoTitle')}>
-          {wide ? (
-            <PhotoView photo={wide} accessibilityLabel={t('reports.wizard.photoWide')} />
-          ) : null}
+          {/* The viewfinder of the design: the photo once taken, or what to aim at. */}
+          <View style={styles.finder}>
+            {wide ? (
+              <PhotoView photo={wide} accessibilityLabel={t('reports.wizard.photoWide')} />
+            ) : (
+              <View style={styles.finderEmpty}>
+                <Icon name="camera" size={44} color={colors.ink} />
+                <AppText variant="bodyStrong" color={colors.ink} style={styles.center}>
+                  {t('reports.photo.guide.wide.title')}
+                </AppText>
+                <AppText variant="label" color={colors.textMuted} style={styles.center}>
+                  {t('reports.photo.guide.wide.hint')}
+                </AppText>
+              </View>
+            )}
+          </View>
           <PhotoCapture
             guide="wide"
+            showGuide={false}
             label={wide ? t('reports.wizard.retake') : t('reports.wizard.photoWide')}
             variant={wide ? 'secondary' : 'primary'}
             sample={CATEGORY_META[category].sample}
@@ -328,7 +411,9 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
           {wide ? (
             <>
               {close ? (
-                <PhotoView photo={close} accessibilityLabel={t('reports.wizard.photoClose')} />
+                <View style={styles.finder}>
+                  <PhotoView photo={close} accessibilityLabel={t('reports.wizard.photoClose')} />
+                </View>
               ) : null}
               <PhotoCapture
                 guide="close"
@@ -339,25 +424,15 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
               />
             </>
           ) : (
-            <Pressable
-              accessibilityRole="button"
+            <Button
+              variant="ghost"
+              label={t('reports.wizard.noCamera')}
               onPress={() => {
                 setNoPhoto(true);
                 toWhere();
               }}
-              style={styles.link}
-            >
-              <AppText variant="label" color={colors.navy} style={styles.underline}>
-                {t('reports.wizard.noCamera')}
-              </AppText>
-            </Pressable>
+            />
           )}
-          <Button
-            icon="arrow-right"
-            label={t('reports.wizard.next')}
-            disabled={!wide}
-            onPress={toWhere}
-          />
         </Section>
       ) : null}
 
@@ -394,12 +469,6 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
             onChange={setNearSensitive}
             label={t('reports.wizard.nearSensitive')}
           />
-          <Button
-            icon="arrow-right"
-            label={t('reports.wizard.next')}
-            disabled={!point || !here}
-            onPress={() => setStep(4)}
-          />
         </Section>
       ) : null}
 
@@ -407,7 +476,9 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
         <Section title={t('reports.wizard.reviewTitle')}>
           <Card>
             <View style={styles.row}>
-              <Icon name={CATEGORY_META[category].icon} size={26} color={colors.navy} />
+              <View style={styles.reviewIcon}>
+                <Icon name={CATEGORY_META[category].icon} size={26} color={colors.ink} />
+              </View>
               <AppText variant="heading" style={styles.flex}>
                 {t(`reports.category.${category}`)}
               </AppText>
@@ -424,10 +495,13 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
             {noPhoto && !wide ? (
               <AppText color={colors.amber}>{t('reports.wizard.noPhotoNote')}</AppText>
             ) : null}
-            <AppText>
-              {here ? t('reports.wizard.inBarangay', { barangay: here.properties.name }) : ''}
-              {landmark ? ` · ${landmark}` : ''}
-            </AppText>
+            <View style={styles.row}>
+              <Icon name="map-marker" size={22} color={colors.ink} />
+              <AppText style={styles.flex}>
+                {here ? t('reports.wizard.inBarangay', { barangay: here.properties.name }) : ''}
+                {landmark ? ` · ${landmark}` : ''}
+              </AppText>
+            </View>
           </Card>
           <AppText variant="bodyStrong">{t('reports.wizard.howBig')}</AppText>
           <View style={styles.chips}>
@@ -458,19 +532,12 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
             {t('reports.wizard.privacy')}
           </AppText>
           {refused ? (
-            <Card style={styles.warn} accessibilityLiveRegion="assertive">
-              <AppText variant="bodyStrong" color={colors.red}>
-                {t(`reports.refused.${refused}`, { defaultValue: t('reports.refused.other') })}
-              </AppText>
-            </Card>
+            <Notice
+              tone="danger"
+              live="assertive"
+              text={t(`reports.refused.${refused}`, { defaultValue: t('reports.refused.other') })}
+            />
           ) : null}
-          <Button
-            icon="send"
-            variant="success"
-            label={sending ? t('reports.wizard.sending') : t('reports.wizard.send')}
-            disabled={sending}
-            onPress={() => void submit()}
-          />
         </Section>
       ) : null}
     </Screen>
@@ -479,6 +546,7 @@ function ReportWizard({ preset }: { preset: ReportCategory | null }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  center: { textAlign: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   emergency: {
@@ -490,19 +558,39 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.red,
   },
-  warn: { backgroundColor: colors.redSoft, borderColor: colors.red },
-  success: {
-    backgroundColor: colors.greenSoft,
-    borderColor: colors.green,
-    alignItems: 'flex-start',
+  finder: {
+    borderRadius: radius.md + 3,
+    borderWidth: 3,
+    borderColor: colors.primary,
+    overflow: 'hidden',
   },
-  saved: {
-    backgroundColor: colors.yellowSoft,
-    borderColor: colors.yellow,
-    alignItems: 'flex-start',
+  finderEmpty: {
+    aspectRatio: 4 / 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    padding: spacing.lg,
+    backgroundColor: colors.mintSoft,
   },
+  reviewIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    backgroundColor: colors.mint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  done: { alignItems: 'center', paddingVertical: spacing.xl },
+  saved: { backgroundColor: colors.yellowSoft, borderColor: colors.yellow },
+  doneIcon: {
+    width: 88,
+    height: 88,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ticket: { alignItems: 'center', gap: 2 },
   thumbs: { flexDirection: 'row', gap: spacing.sm },
   thumb: { width: 120 },
-  link: { minHeight: touch.min, justifyContent: 'center' },
-  underline: { textDecorationLine: 'underline' },
 });

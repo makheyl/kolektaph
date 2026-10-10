@@ -35,15 +35,15 @@ export const previewDoneLayer: SourcelessLayer<LineLayerSpecification> = {
   id: 'kph-preview-done',
   type: 'line',
   layout: { 'line-cap': 'round', 'line-join': 'round' },
-  paint: { 'line-color': colors.green, 'line-width': 6 },
+  paint: { 'line-color': colors.primary, 'line-width': 6 },
 };
 
-/** Dashed navy = streets still to come. Dashes (not only colour) carry the meaning. */
+/** Dashed dark teal = streets still to come. Dashes (not only colour) carry the meaning. */
 export const previewNextLayer: SourcelessLayer<LineLayerSpecification> = {
   id: 'kph-preview-next',
   type: 'line',
   layout: { 'line-join': 'round' },
-  paint: { 'line-color': colors.navy, 'line-width': 4, 'line-dasharray': [2, 1.5] },
+  paint: { 'line-color': colors.ink, 'line-width': 4, 'line-dasharray': [2, 1.5] },
 };
 
 export const previewTimeDotLayer: SourcelessLayer<CircleLayerSpecification> = {
@@ -52,7 +52,7 @@ export const previewTimeDotLayer: SourcelessLayer<CircleLayerSpecification> = {
   paint: {
     'circle-radius': 5,
     'circle-color': colors.surface,
-    'circle-stroke-color': colors.navy,
+    'circle-stroke-color': colors.ink,
     'circle-stroke-width': 2,
   },
 };
@@ -69,7 +69,7 @@ export const previewTimeLabelLayer: SourcelessLayer<SymbolLayerSpecification> = 
     'text-allow-overlap': false,
   },
   paint: {
-    'text-color': colors.navy,
+    'text-color': colors.ink,
     'text-halo-color': '#FFFFFF',
     'text-halo-width': 2,
   },
@@ -107,7 +107,7 @@ export function zoneFillLayer(
     id: 'kph-zone-fill',
     type: 'fill',
     paint: {
-      'fill-color': ['case', ['==', ['get', 'id'], id], colors.green, colors.navy],
+      'fill-color': ['case', ['==', ['get', 'id'], id], colors.primary, colors.ink],
       'fill-opacity': ['case', ['==', ['get', 'id'], id], 0.22, 0.05],
     },
   };
@@ -116,7 +116,7 @@ export function zoneFillLayer(
 export const zoneLineLayer: SourcelessLayer<LineLayerSpecification> = {
   id: 'kph-zone-line',
   type: 'line',
-  paint: { 'line-color': colors.navy, 'line-width': 1.5, 'line-opacity': 0.7 },
+  paint: { 'line-color': colors.ink, 'line-width': 1.5, 'line-opacity': 0.7 },
 };
 
 export const zoneLabelLayer: SourcelessLayer<SymbolLayerSpecification> = {
@@ -129,7 +129,7 @@ export const zoneLabelLayer: SourcelessLayer<SymbolLayerSpecification> = {
     'text-allow-overlap': false,
   },
   paint: {
-    'text-color': colors.navy,
+    'text-color': colors.ink,
     'text-halo-color': '#FFFFFF',
     'text-halo-width': 1.5,
   },
@@ -140,7 +140,7 @@ export const routeLineLayer: SourcelessLayer<LineLayerSpecification> = {
   type: 'line',
   layout: { 'line-cap': 'round', 'line-join': 'round' },
   paint: {
-    'line-color': colors.navy,
+    'line-color': colors.ink,
     'line-width': 2.5,
     'line-opacity': 0.55,
     'line-dasharray': [1.5, 1.5],

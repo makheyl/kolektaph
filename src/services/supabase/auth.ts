@@ -39,6 +39,12 @@ export const AUTH_KEYS: Record<IdentityKind, string> = {
   staff: 'kolektaph.auth.staff',
 };
 
+/**
+ * The guest identity set aside while a resident account is signed in on this device. The
+ * account's session takes the guest's place, so every call keeps using "guest".
+ */
+export const ASIDE_KEY = 'kolektaph.auth.guest-aside';
+
 /** Renew this long before the token ends, so a request never leaves with a dying token. */
 const RENEW_MARGIN_MS = 60_000;
 
@@ -109,8 +115,27 @@ export function createAuth(
     notify();
   };
 
+  let aside: AuthSession | null = null;
+  const readAside = async () => {
+    try {
+      return parseStored(await store.getItem(ASIDE_KEY));
+    } catch {
+      return null;
+    }
+  };
+  const writeAside = async (session: AuthSession | null) => {
+    aside = session;
+    try {
+      if (session) await store.setItem(ASIDE_KEY, JSON.stringify(session));
+      else await store.removeItem(ASIDE_KEY);
+    } catch {
+      // Storage unavailable: the guest set aside lasts until the app closes.
+    }
+  };
+
   const hydrated = (async () => {
     for (const kind of KINDS) sessions[kind] = await read(kind);
+    aside = await readAside();
     loaded = true;
     notify();
   })();
@@ -273,6 +298,49 @@ export function createAuth(
 
     /** Forgets an identity on this device only (the server already removed it). */
     forget: (kind: IdentityKind) => keep(kind, null),
+
+    /** Makes a signed-in account this device's identity; the guest's own session is set aside. */
+    async takeOver(session: AuthSession): Promise<void> {
+      await hydrated;
+      const current = sessions.guest;
+      // Signing in to an account while another is signed in keeps the first guest set aside.
+      if (!aside && current?.anonymous) await writeAside(current);
+      await keep('guest', session);
+    },
+
+    /** The guest identity set aside, given back (or none: a new guest is made on next use). */
+    async giveBack(): Promise<void> {
+      await hydrated;
+      const back = aside;
+      await writeAside(null);
+      await keep('guest', back);
+    },
+
+    /** This device's identity is now a registered account (the server linked the phone). */
+    async markRegistered(): Promise<void> {
+      await hydrated;
+      const s = sessions.guest;
+      if (s) await keep('guest', { ...s, anonymous: false });
+    },
+
+    /** Signs in to an account by its mobile number and password. The session is not kept here. */
+    async signInResident(phone: string, password: string): Promise<AuthSession> {
+      await hydrated;
+      return toSession(
+        await http.request<SessionAnswer>('POST', '/auth/v1/token', {
+          query: { grant_type: 'password' },
+          body: { phone, password },
+        }),
+      );
+    },
+
+    /** Changes this identity's own phone or password on the server. */
+    async updateGuest(body: Record<string, unknown>): Promise<void> {
+      await hydrated;
+      const token = await tokens.token('guest');
+      if (!token) throw new ServerError('sign_in_required', 401);
+      await http.request('PUT', '/auth/v1/user', { body, bearer: token });
+    },
   };
 }
 

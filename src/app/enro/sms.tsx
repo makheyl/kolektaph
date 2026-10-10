@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.md,
     borderWidth: 2,
-    borderColor: colors.navy,
+    borderColor: colors.primary,
     backgroundColor: colors.greySoft,
   },
   columns: { flexDirection: 'row', gap: spacing.lg, alignItems: 'flex-start' },

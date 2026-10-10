@@ -181,7 +181,7 @@ export default function EnroStats() {
             key={r.category}
             label={t(`reports.category.${r.category}`)}
             fraction={r.total / maxReports}
-            color={colors.navy}
+            color={colors.primary}
             value={t('enro.stats.reportsValue', { total: r.total, open: r.open })}
           />
         ))}

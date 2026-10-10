@@ -1,9 +1,11 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors, radius, shadows, spacing } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 import { Icon, type IconName } from './Icon';
+import type { PressState } from './interaction';
+import { useNarrow } from './narrow';
 
 interface BigTileProps {
   icon: IconName;
@@ -13,19 +15,25 @@ interface BigTileProps {
   accent?: string;
 }
 
-/** Large icon + label tile for main choices (roles, home quick actions). */
-export function BigTile({ icon, label, hint, onPress, accent = colors.navy }: BigTileProps) {
+/** Large icon + label tile for main choices (who is using the app, where to sign in). */
+export function BigTile({ icon, label, hint, onPress, accent = colors.primary }: BigTileProps) {
+  // On a very narrow screen the icon goes above the words, which then get the whole width.
+  const narrow = useNarrow();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={hint ? `${label}. ${hint}` : label}
       onPress={onPress}
-      style={({ pressed }) => [styles.tile, pressed && { opacity: 0.85 }]}
+      style={({ pressed, hovered }: PressState) => [
+        styles.tile,
+        narrow && styles.stacked,
+        (pressed || hovered) && { backgroundColor: pressed ? colors.greySoft : colors.mintSoft },
+      ]}
     >
       <View style={[styles.iconWrap, { backgroundColor: accent }]}>
         <Icon name={icon} size={32} color={colors.textOnDark} />
       </View>
-      <View style={styles.text}>
+      <View style={narrow ? styles.stackedText : styles.text}>
         <AppText variant="heading">{label}</AppText>
         {hint ? (
           <AppText variant="label" color={colors.textMuted}>
@@ -33,6 +41,7 @@ export function BigTile({ icon, label, hint, onPress, accent = colors.navy }: Bi
           </AppText>
         ) : null}
       </View>
+      {narrow ? null : <Icon name="chevron-right" size={26} color={colors.textMuted} />}
     </Pressable>
   );
 }
@@ -48,13 +57,21 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadows.card,
   },
   iconWrap: {
     width: 56,
     height: 56,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
   text: { flex: 1, gap: 2 },
+  stacked: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  stackedText: { alignSelf: 'stretch', gap: 2 },
 });

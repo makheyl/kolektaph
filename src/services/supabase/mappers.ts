@@ -23,6 +23,7 @@ import type {
   LngLat,
   PhotoRef,
   ReportCategory,
+  ResidentProfile,
   ReportSize,
   Route,
   RouteSchedule,
@@ -700,4 +701,19 @@ export function toUploadEvent(
         after: photos?.after ?? null,
       };
   }
+}
+
+/** The profile the server answers for a registered resident; null for a guest or no answer. */
+export function profileFromRpc(raw: unknown): ResidentProfile | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const text = (v: unknown) => (typeof v === 'string' ? v : '');
+  const nullable = (v: unknown) => (typeof v === 'string' && v ? v : null);
+  return {
+    fullName: text(r.fullName),
+    mobile: text(r.mobile),
+    email: nullable(r.email),
+    barangayId: nullable(r.barangayId),
+    area: text(r.area),
+  };
 }

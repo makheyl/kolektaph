@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Icon } from '@/components/ui/Icon';
 import { ListRow } from '@/components/ui/ListRow';
+import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import { TextField } from '@/components/ui/TextField';
 import { useBarangays } from '@/features/tracking/hooks';
 import { colors, spacing } from '@/theme/tokens';
@@ -53,16 +55,18 @@ export function BarangayPicker({ selectedId, onSelect, allowLocate = true }: Bar
   return (
     <View style={styles.wrap}>
       {allowLocate ? (
-        <Card>
+        <Card variant="mint">
           {state.kind === 'found' ? (
             <>
-              <AppText variant="bodyStrong" accessibilityLiveRegion="polite">
-                {t('onboarding.barangay.found', {
-                  barangay: barangayLabel(state.barangay.properties),
-                })}
-              </AppText>
+              <View style={styles.row}>
+                <Icon name="map-marker-check" size={28} color={colors.ink} />
+                <AppText variant="bodyStrong" accessibilityLiveRegion="polite" style={styles.flex}>
+                  {t('onboarding.barangay.found', {
+                    barangay: barangayLabel(state.barangay.properties),
+                  })}
+                </AppText>
+              </View>
               <Button
-                variant="success"
                 icon="check"
                 label={t('onboarding.barangay.confirm')}
                 onPress={() => onSelect(state.barangay.properties.id)}
@@ -71,22 +75,22 @@ export function BarangayPicker({ selectedId, onSelect, allowLocate = true }: Bar
           ) : (
             <>
               <Button
-                variant="secondary"
                 icon="crosshairs-gps"
-                label={t('onboarding.barangay.useLocation')}
+                label={
+                  state.kind === 'locating'
+                    ? t('onboarding.barangay.locating')
+                    : t('onboarding.barangay.useLocation')
+                }
+                loading={state.kind === 'locating'}
                 onPress={locate}
-                disabled={state.kind === 'locating'}
               />
-              {state.kind === 'locating' ? (
-                <View style={styles.locating}>
-                  <ActivityIndicator color={colors.navy} />
-                  <AppText color={colors.textMuted}>{t('onboarding.barangay.locating')}</AppText>
-                </View>
-              ) : (
-                <AppText variant="label" color={colors.textMuted}>
-                  {locateMessage ?? t('onboarding.barangay.locationWhy')}
-                </AppText>
-              )}
+              <AppText
+                variant="label"
+                color={colors.textMuted}
+                accessibilityLiveRegion={locateMessage ? 'polite' : 'none'}
+              >
+                {locateMessage ?? t('onboarding.barangay.locationWhy')}
+              </AppText>
             </>
           )}
         </Card>
@@ -102,30 +106,42 @@ export function BarangayPicker({ selectedId, onSelect, allowLocate = true }: Bar
         returnKeyType="search"
       />
 
-      <View role="list">
-        {options.map((o) => (
-          <View key={o.id} role="listitem">
-            <ListRow
-              title={o.label}
-              icon="map-marker-outline"
-              selected={o.id === selectedId}
-              trailing="check"
-              onPress={() => onSelect(o.id)}
-            />
+      {barangays ? (
+        <Card style={styles.list}>
+          <View role="list">
+            {options.map((o) => (
+              <View key={o.id} role="listitem">
+                <ListRow
+                  title={o.label}
+                  icon="map-marker-outline"
+                  selected={o.id === selectedId}
+                  trailing="check"
+                  onPress={() => onSelect(o.id)}
+                />
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
-      {barangays && options.length === 0 ? (
-        <AppText color={colors.textMuted} style={styles.empty}>
-          {t('onboarding.barangay.noResults', { query })}
-        </AppText>
-      ) : null}
+          {options.length === 0 ? (
+            <AppText color={colors.textMuted} style={styles.empty}>
+              {t('onboarding.barangay.noResults', { query })}
+            </AppText>
+          ) : null}
+        </Card>
+      ) : (
+        <SkeletonGroup>
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} height={44} />
+          ))}
+        </SkeletonGroup>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { gap: spacing.lg },
-  locating: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  flex: { flex: 1 },
+  list: { padding: spacing.sm, gap: 0 },
   empty: { padding: spacing.md },
 });

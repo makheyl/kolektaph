@@ -26,5 +26,5 @@ const styles = StyleSheet.create({
   wrap: { gap: spacing.xs },
   dots: { flexDirection: 'row', gap: spacing.xs },
   dot: { flex: 1, height: 6, borderRadius: radius.pill, backgroundColor: colors.border },
-  dotDone: { backgroundColor: colors.green },
+  dotDone: { backgroundColor: colors.primary },
 });

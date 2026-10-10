@@ -1,17 +1,15 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { type Href, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { AppHeader } from '@/components/ui/AppHeader';
+import { PhFlag } from '@/components/brand/Brand';
+import { AuthShell } from '@/components/layout/AuthShell';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
-import { IconButton } from '@/components/ui/IconButton';
-import { Screen } from '@/components/ui/Screen';
+import { Notice } from '@/components/ui/Notice';
 import { SmsBubble } from '@/components/ui/SmsBubble';
-import { StepIndicator } from '@/components/ui/StepIndicator';
 import { TextField } from '@/components/ui/TextField';
 import { barangayLabel } from '@/features/resident/format';
 import { useBarangays } from '@/features/tracking/hooks';
@@ -80,44 +78,61 @@ export default function SmsStep() {
     }
   };
 
-  const header = (
-    <>
-      {fromSettings ? null : <StepIndicator current={3} total={3} />}
-      <AppHeader
-        title={phase.kind === 'otp' ? t('onboarding.sms.otpTitle') : t('onboarding.sms.title')}
-        leading={
-          <IconButton icon="arrow-left" label={t('common.back')} onPress={() => router.back()} />
-        }
-      />
-    </>
-  );
+  const back: Href = fromSettings ? '/resident/settings' : '/onboarding/barangay';
+  const shell = { back, step: fromSettings ? undefined : { current: 3, total: 3 } };
 
   if (!barangay) {
     return (
-      <Screen>
-        {header}
-        <Card>
-          <AppText>{t('resident.home.pickBody')}</AppText>
-          <Button
-            variant="secondary"
-            icon="map-marker-outline"
-            label={t('resident.home.pick')}
-            onPress={() => router.back()}
-          />
-        </Card>
-        <Button variant="primary" label={t('onboarding.sms.later')} onPress={finish} />
-      </Screen>
+      <AuthShell
+        {...shell}
+        title={t('onboarding.sms.title')}
+        footer={
+          <>
+            <Button
+              icon="map-marker-outline"
+              label={t('resident.home.pick')}
+              onPress={() => router.back()}
+            />
+            <Button variant="ghost" label={t('onboarding.sms.later')} onPress={finish} />
+          </>
+        }
+      >
+        <Notice icon="map-marker-outline" text={t('resident.home.pickBody')} />
+      </AuthShell>
     );
   }
 
   if (phase.kind === 'otp') {
     return (
-      <Screen>
-        {header}
-        <AppText>{t('onboarding.sms.otpSubtitle', { mobile: maskPhMobile(phase.mobile) })}</AppText>
-        <Card style={styles.demoNote}>
-          <AppText variant="label">{t('onboarding.sms.otpDemo', { code: phase.code })}</AppText>
-        </Card>
+      <AuthShell
+        {...shell}
+        title={t('onboarding.sms.otpTitle')}
+        subtitle={t('onboarding.sms.otpSubtitle', { mobile: maskPhMobile(phase.mobile) })}
+        footer={
+          <>
+            <Button
+              icon="check"
+              label={t('onboarding.sms.verify')}
+              loading={busy}
+              onPress={() => void verify()}
+            />
+            <Button
+              variant="ghost"
+              label={t('onboarding.sms.changeNumber')}
+              onPress={() => {
+                setError(null);
+                setOtpInput('');
+                setPhase({ kind: 'form' });
+              }}
+            />
+          </>
+        }
+      >
+        <Notice tone="warning" icon="flask-outline">
+          <AppText variant="bodyStrong">
+            {t('onboarding.sms.otpDemo', { code: phase.code })}
+          </AppText>
+        </Notice>
         <TextField
           label={t('onboarding.sms.otpLabel')}
           value={otpInput}
@@ -126,31 +141,24 @@ export default function SmsStep() {
           autoComplete="one-time-code"
           maxLength={6}
           error={error}
+          onSubmitEditing={() => void verify()}
         />
-        <Button
-          variant="success"
-          icon="check"
-          label={t('onboarding.sms.verify')}
-          disabled={busy}
-          onPress={() => void verify()}
-        />
-        <Button
-          variant="secondary"
-          label={t('onboarding.sms.changeNumber')}
-          onPress={() => {
-            setError(null);
-            setOtpInput('');
-            setPhase({ kind: 'form' });
-          }}
-        />
-      </Screen>
+      </AuthShell>
     );
   }
 
   return (
-    <Screen>
-      {header}
-      <AppText color={colors.textMuted}>{t('onboarding.sms.subtitle')}</AppText>
+    <AuthShell
+      {...shell}
+      title={t('onboarding.sms.title')}
+      subtitle={t('onboarding.sms.subtitle')}
+      footer={
+        <>
+          <Button icon="message-text" label={t('onboarding.sms.send')} onPress={sendCode} />
+          <Button variant="ghost" label={t('onboarding.sms.later')} onPress={finish} />
+        </>
+      }
+    >
       <View style={styles.preview}>
         <AppText variant="label">{t('onboarding.sms.previewLabel')}</AppText>
         <SmsBubble text={t('onboarding.sms.preview', { barangay: barangay.properties.name })} />
@@ -158,7 +166,7 @@ export default function SmsStep() {
       <TextField
         label={t('onboarding.sms.mobileLabel')}
         hint={t('onboarding.sms.mobileHint')}
-        icon="cellphone"
+        prefix={<PhFlag />}
         value={mobileInput}
         onChangeText={setMobileInput}
         keyboardType="phone-pad"
@@ -167,21 +175,13 @@ export default function SmsStep() {
         error={error}
       />
       <Checkbox checked={consent} onChange={setConsent} label={t('onboarding.sms.consent')} />
-      <Button
-        variant="success"
-        icon="message-text"
-        label={t('onboarding.sms.send')}
-        onPress={sendCode}
-      />
-      <Button variant="secondary" label={t('onboarding.sms.later')} onPress={finish} />
       <AppText variant="caption" color={colors.textMuted}>
         {barangayLabel(barangay.properties)}
       </AppText>
-    </Screen>
+    </AuthShell>
   );
 }
 
 const styles = StyleSheet.create({
   preview: { gap: spacing.sm },
-  demoNote: { backgroundColor: colors.yellowSoft, borderColor: colors.yellow },
 });

@@ -96,7 +96,7 @@ export async function startPhoneGps(): Promise<StartGpsResult> {
         foregroundService: {
           notificationTitle: i18n.t('driver.gps.notificationTitle'),
           notificationBody: i18n.t('driver.gps.notificationBody'),
-          notificationColor: colors.navy,
+          notificationColor: colors.ink,
           killServiceOnDestroy: false,
         },
         activityType: Location.ActivityType.AutomotiveNavigation,

@@ -10,8 +10,8 @@ export function SmsBubble({ text, sender = 'KolektaPH' }: { text: string; sender
   return (
     <View style={styles.bubble} accessible accessibilityLabel={`SMS: ${text}`}>
       <View style={styles.sender}>
-        <Icon name="message-text" size={18} color={colors.green} />
-        <AppText variant="label" color={colors.green}>
+        <Icon name="message-text" size={18} color={colors.primary} />
+        <AppText variant="label" color={colors.primary}>
           {sender}
         </AppText>
       </View>

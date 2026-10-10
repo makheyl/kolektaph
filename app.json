@@ -13,7 +13,7 @@
     "android": {
       "package": "com.kolektaph.app",
       "adaptiveIcon": {
-        "backgroundColor": "#15314B",
+        "backgroundColor": "#CBFFDA",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -28,13 +28,21 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      ["expo-router", { "asyncRoutes": { "web": true, "default": false } }],
+      [
+        "expo-router",
+        {
+          "asyncRoutes": {
+            "web": true,
+            "default": false
+          }
+        }
+      ],
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#15314B",
+          "backgroundColor": "#CBFFDA",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 280
         }
       ],
       "expo-localization",
@@ -52,7 +60,8 @@
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": false
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

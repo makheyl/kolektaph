@@ -14,7 +14,12 @@
     "cancel": "Cancel",
     "close": "Close",
     "settings": "Settings",
-    "minutes": "{{count}} min"
+    "minutes": "{{count}} min",
+    "loading": "Loading…",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "offline": "No signal. What you see may be out of date.",
+    "toStart": "Back to start"
   },
   "date": {
     "today": "Today",
@@ -163,7 +168,9 @@
       "home": "Home",
       "map": "Map",
       "kolek": "Kolek",
-      "report": "Report"
+      "report": "Report",
+      "profile": "Profile",
+      "alerts": "Alerts"
     },
     "home": {
       "yourBarangay": "Your barangay",
@@ -179,8 +186,10 @@
       "actions": {
         "map": "Map",
         "schedule": "Schedule",
-        "report": "Report a problem",
-        "kolek": "Ask Kolek"
+        "report": "Report Waste",
+        "kolek": "Ask Kolek",
+        "missed": "Truck missed us?",
+        "redeem": "Redemption Center"
       },
       "status": {
         "noneTodayTitle": "No collection today",
@@ -216,7 +225,11 @@
         "unfinishedBody": "The truck did not reach your barangay today. The City ENRO knows. Please don't put your garbage out yet."
       },
       "alertsLabel": "Alerts",
-      "alertsUnread": "Alerts, {{count}} new"
+      "alertsUnread": "Alerts, {{count}} new",
+      "menu": "Profile menu",
+      "greeting": "Hello!",
+      "askKolek": "Ask Kolek anything…",
+      "greetingName": "Hello, {{name}}!"
     },
     "map": {
       "showMine": "My barangay",
@@ -233,7 +246,9 @@
       "upcomingStreets": "Next streets",
       "noEta": "No time estimate while the truck is stopped.",
       "tapTruck": "Tap a truck to see its route.",
-      "timesAreEstimates": "Times are estimates and may change."
+      "timesAreEstimates": "Times are estimates and may change.",
+      "textOn": "Text alerts: on",
+      "textOff": "Text alerts: off"
     },
     "schedule": {
       "title": "Schedule",
@@ -245,8 +260,15 @@
       "cancelled": "No collection ({{reason}})",
       "none": "No collection in the next 2 weeks.",
       "otherBarangay": "See another barangay's schedule",
-      "pickOther": "Choose a barangay",
-      "changeFrom": "New schedule from {{day}}: {{days}}, {{window}}"
+      "changeFrom": "New schedule from {{day}}: {{days}}, {{window}}",
+      "tabSchedule": "Schedule",
+      "tabRoutes": "Routes",
+      "routesHint": "The city's garbage truck routes and the collection days of each.",
+      "routeN": "Route {{n}}",
+      "routeDays": "Collection days: {{days}}",
+      "yourRoute": "Your barangay's route",
+      "viewMap": "View map",
+      "backToMine": "Back to my barangay"
     },
     "settings": {
       "barangay": "Barangay",
@@ -267,25 +289,98 @@
     },
     "alerts": {
       "title": "Alerts",
-      "subtitle": "Reminders and texts for {{barangay}} from the last 7 days.",
+      "subtitle": "Alerts for {{barangay}} from the last 7 days, and news about your reports.",
       "empty": "No alerts yet.",
       "pickBarangay": "Choose a barangay first to see its alerts.",
-      "viaSms": "You also received this by SMS.",
+      "viaSms": "You also get the truck alerts by SMS.",
       "smsOff": "Turn on text alerts to get these even without internet.",
-      "new": "New"
+      "new": "New",
+      "filterAllCount": "All ({{count}})",
+      "filterTruck": "Truck",
+      "filterReports": "Reports",
+      "today": "Today",
+      "earlier": "Earlier",
+      "noneInFilter": "Nothing here.",
+      "filterHauling": "Hauling"
+    },
+    "profile": {
+      "title": "Profile",
+      "guest": "Resident · no account needed",
+      "staff": "Truck crew or City ENRO staff",
+      "staffHint": "Sign in to another part of the app"
+    },
+    "account": {
+      "title": "Account settings",
+      "hint": "Barangay, language, data and privacy",
+      "notifications": "Notifications and text alerts",
+      "smsOffShort": "Text alerts are off",
+      "help": "Help",
+      "address": "My barangay",
+      "language": "Language and text size",
+      "privacy": "Data and privacy",
+      "smsHint": "A text before the truck reaches your barangay, even without internet.",
+      "alertsHint": "Everything that was sent",
+      "largeTextHint": "Makes the letters bigger across the app.",
+      "languageHint": "Kolek replies in the language you choose.",
+      "preferences": "Text alerts",
+      "addressHint": "Your barangay sets your pickup schedule and truck alerts."
+    },
+    "help": {
+      "offices": "Offices",
+      "enro": "Carmona City ENRO",
+      "barangayHall": "{{barangay}} Barangay Hall",
+      "noNumber": "No official number in the app yet.",
+      "kolekHint": "Ask about schedules, the truck and reporting",
+      "missedHint": "If the truck did not pass your street",
+      "search": "Search for help",
+      "common": "Common questions",
+      "noResults": "No question matches. Try other words, or ask Kolek.",
+      "contact": "Contact us",
+      "askKolek": "Ask Kolek",
+      "callUs": "Call us",
+      "callFailed": "This phone cannot make the call.",
+      "goTo": "Go there",
+      "faq": {
+        "pickup": {
+          "q": "When is my pickup day?",
+          "a": "The Schedule page shows your barangay's collection days and times, including holiday changes."
+        },
+        "missed": {
+          "q": "How do I report a missed collection?",
+          "a": "Open Missed collection and pick the street. If no truck passed it, a report opens for the City."
+        },
+        "points": {
+          "q": "How do I earn Eco Points?",
+          "a": "Report real waste, and see each way to earn and what it is worth in Rewards."
+        },
+        "hauling": {
+          "q": "How do I book a private hauling?",
+          "a": "Fill in the Private hauling form: place, date, time and size of the load. The team confirms the slot and fee."
+        }
+      }
+    },
+    "privacyPage": {
+      "devices": "Phone settings",
+      "location": "Location",
+      "locationHint": "Used for reports and nearby trucks.",
+      "camera": "Camera",
+      "cameraHint": "Used for reports and the scanner.",
+      "openSettings": "Open the phone settings to change these."
     }
   },
   "privacy": {
     "title": "Privacy notice",
     "draft": "Prototype draft. To be reviewed by the city's Data Protection Officer.",
     "collectTitle": "What we collect",
-    "collectBody": "Only your barangay. If you want text alerts, also your mobile number. If you send a report: its photos, the place you pinned and your note. We don't need your name, address or ID.",
+    "collectBody": "Your barangay. If you want text alerts, your mobile number. If you make an account: your full name, mobile number, barangay and area, and an email only if you give one. If you send a report: its photos, the place you pinned and your note. If you book private hauling: the name and mobile number you give, the place, the photos and what you ask for. We don't ask for your ID.",
     "whyTitle": "Why",
-    "whyBody": "To show your barangay's schedule and text you before the truck arrives.",
+    "whyBody": "To show your barangay's schedule, text you before the truck arrives, keep your account, points and requests together, and answer your report or booking.",
     "whoTitle": "Who can see it",
-    "whoBody": "Only the City ENRO, to send reminders and act on reports. The truck crew sent to a report sees its photos and place. It is never sold or shared.",
+    "whoBody": "Only the City ENRO staff who act on your reports, texts and bookings, and only what each task needs. The truck crew sent to a report sees its photos and place. It is never sold or shared.",
     "rightsTitle": "Your rights",
-    "rightsBody": "You can stop texts anytime (reply STOP) and delete your data in Settings. Reports you sent stay with the City as records, no longer linked to your phone. This follows the Data Privacy Act of 2012 (RA 10173)."
+    "rightsBody": "You can stop texts anytime (reply STOP), change your account details in Settings, log out, and delete your data in Settings. Reports you sent stay with the City as records, no longer linked to you. This follows the Data Privacy Act of 2012 (RA 10173).",
+    "accountTitle": "Your account",
+    "accountBody": "An account is optional. It keeps your reports and points together, and lets you use them on another phone. Your password is never kept as typed. Reports and points stay on the device until you move them into an account."
   },
   "alert": {
     "kind": {
@@ -309,7 +404,10 @@
       "soon": "In {{sprint}}",
       "backToDemo": "Back to demo",
       "missed": "Missed streets",
-      "settings": "Settings"
+      "settings": "Settings",
+      "hauling": "Private hauling",
+      "rewards": "Eco Points",
+      "exit": "Leave the dashboard"
     },
     "live": {
       "title": "Live Operations",
@@ -634,6 +732,23 @@
         "last_admin": "There must always be one active admin.",
         "not_allowed": "Your role cannot change this.",
         "bad_barangay": "A barangay focal person needs a barangay."
+      },
+      "fees": {
+        "title": "Private hauling fees",
+        "body": "These fees apply to each booking. The figures are samples until the City sets them.",
+        "base": "Base fee: {{volume}}",
+        "distance": "Distance fee, per trip",
+        "disposal": "Disposal fee, per trip",
+        "unset": "No fees yet. The City will set them.",
+        "change": "Change the fees"
+      },
+      "points": {
+        "title": "Eco Points",
+        "body": "Points for each action and the hauling discount. Samples until the City sets them.",
+        "discount": "Hauling discount",
+        "discountValue": "₱{{pesos}} per 100 points",
+        "from": "From {{points}} pts",
+        "change": "Change the points"
       }
     },
     "signIn": {
@@ -654,7 +769,58 @@
     },
     "notSaved": "Not saved. Please try again.",
     "viewOnly": "Your role can view this but not change it.",
-    "adminOnly": "Only an admin can change this."
+    "adminOnly": "Only an admin can change this.",
+    "sampleAction": "Sample only. Nothing is sent or saved.",
+    "hauling": {
+      "off": "Private hauling is not open in this build yet.",
+      "title": "Private hauling",
+      "subtitle": "Resident and business requests: quotation and schedule.",
+      "kpiNew": "New requests",
+      "kpiQuoted": "Quoted",
+      "kpiScheduled": "Scheduled",
+      "listTitle": "Requests",
+      "empty": "No requests right now.",
+      "detailTitle": "Details",
+      "requester": "Requested by",
+      "contact": "Contact",
+      "place": "Place",
+      "when": "Date and time",
+      "volume": "Volume",
+      "loads": "Kind of waste",
+      "quoteTitle": "Quotation",
+      "suggested": "Suggested fee from the sample rates. Not sent yet.",
+      "unsureVolume": "The volume is not known yet. City staff will assess it.",
+      "noQuote": "No quotation for this request yet.",
+      "noRates": "The City has not set its fees yet.",
+      "actions": {
+        "quote": "Send the quotation",
+        "decline": "Decline the request",
+        "schedule": "Set the schedule"
+      }
+    },
+    "rewards": {
+      "off": "Eco Points are not open in this build yet.",
+      "title": "Eco Points",
+      "subtitle": "Perks, vouchers at the counter, and clean-up drives.",
+      "kpiPerks": "Perks",
+      "kpiDrives": "Clean-ups coming up",
+      "perksTitle": "Perks",
+      "addPerk": "Add a perk",
+      "voucherTitle": "Find a voucher",
+      "voucherHint": "Type the code the resident shows at the counter.",
+      "voucherCode": "Voucher code",
+      "find": "Find",
+      "notFound": "No voucher has that code.",
+      "markUsed": "Mark as used",
+      "drivesTitle": "Clean-up drives",
+      "drivesHint": "Residents who join a drive earn points.",
+      "noDrives": "No clean-up drive is planned.",
+      "upcoming": "Coming up",
+      "done": "Finished",
+      "attendees": "{{count}} attended",
+      "perAttendee": "{{points}} per attendee",
+      "newDrive": "Plan a drive"
+    }
   },
   "incident": {
     "breakdown": "Truck broke down",
@@ -670,9 +836,7 @@
     "other": "Other"
   },
   "driver": {
-    "brand": "Driver",
     "signIn": {
-      "title": "Sign in as a driver",
       "pickTruck": "Choose your truck",
       "pinFor": "PIN for {{truck}}",
       "digit": "Number {{digit}}",
@@ -687,10 +851,21 @@
       "locked": "Too many wrong PINs. This truck is locked until {{time}}.",
       "wrongPinLeft": "Wrong PIN. Tries left before the truck is locked: {{count}}.",
       "failed": "Could not sign in. Please try again.",
-      "again": "The truck's sign-in has ended. Enter the PIN again. Your shift and unsent reports are safe on this phone."
+      "again": "The truck's sign-in has ended. Enter the PIN again. Your shift and unsent reports are safe on this phone.",
+      "tagline": "Sign in to start your shift",
+      "truck": "Truck",
+      "logIn": "Log in",
+      "useFingerprint": "Use fingerprint",
+      "fingerprintFor": "For {{truck}}",
+      "rememberFingerprint": "Next time, use the fingerprint on this phone",
+      "rememberHint": "The PIN is kept in the phone's secure storage and opened by a fingerprint.",
+      "fingerprintPrompt": "Sign in to KolektaPH Driver",
+      "fingerprintSave": "Save the truck's sign-in",
+      "fingerprintGone": "The phone's fingerprints changed. Sign in with the PIN and set it up again.",
+      "fingerprintOldPin": "The truck's PIN was changed. Sign in with the new PIN.",
+      "fingerprintNotSaved": "The fingerprint sign-in was not saved. You are still signed in."
     },
     "start": {
-      "title": "Start the shift",
       "truck": "Truck",
       "route": "Today's route",
       "noRoute": "No route is scheduled today. You can still start a shift (e.g. to test the GPS).",
@@ -713,7 +888,33 @@
         "failed": "The GPS could not be started. Please try again."
       },
       "openSettings": "Open Settings",
-      "useDemo": "Use Demo for now"
+      "useDemo": "Use Demo for now",
+      "greeting": {
+        "morning": "Good morning",
+        "afternoon": "Good afternoon",
+        "evening": "Good evening"
+      },
+      "offDuty": "Off duty",
+      "hours": "Collection hours",
+      "streets": "{{count}} streets",
+      "startLoad": "Starting load",
+      "loadEmpty": "Empty",
+      "checklist": "Pre-trip checklist",
+      "checklistNeeded": "Tick everything on the checklist first ({{done}} of {{total}}).",
+      "checkAll": "Tick all (demo)",
+      "check": {
+        "vehicle": "Vehicle inspected",
+        "fuel": "Fuel level checked",
+        "tires": "Tires checked",
+        "brakes": "Brakes checked",
+        "lights": "Lights and signals checked",
+        "location": "Phone location is on",
+        "route": "Today's route reviewed",
+        "equipment": "Required equipment on board"
+      },
+      "today": "Today",
+      "online": "Online",
+      "offline": "Offline"
     },
     "shift": {
       "onShift": "On shift · {{duration}}",
@@ -766,7 +967,17 @@
       "gpsStopped": "The GPS is not recording.",
       "restartGps": "Restart the GPS",
       "map": "Map of your route",
-      "noRoute": "No route today. The GPS is still recording."
+      "noRoute": "No route today. The GPS is still recording.",
+      "more": "More",
+      "streetsShort": "Streets",
+      "openMap": "Map",
+      "openLoad": "Load",
+      "tileMap": "GPS map",
+      "tileLoad": "Truck load",
+      "tileStreets": "Route streets",
+      "tileIncident": "Breakdown",
+      "tileGps": "GPS log",
+      "tileEnd": "End shift"
     },
     "streets": {
       "title": "Streets",
@@ -855,9 +1066,9 @@
       "blocked": "The server is not accepting this shift's GPS ({{reason}}). The recording stays on this phone."
     },
     "tasks": {
-      "title": "Special pickups",
+      "title": "Uncollected waste reports",
       "count": "Special pickups ({{count}})",
-      "none": "No special pickups.",
+      "none": "No report is assigned to this truck.",
       "open": "Open",
       "due": "Target: {{time}}",
       "start": "On the way",
@@ -870,6 +1081,52 @@
       "landmark": "Landmark: {{landmark}}",
       "residentPhotos": "Reporter’s photos",
       "doneState": "This one is done."
+    },
+    "tabs": {
+      "home": "Home",
+      "route": "Route",
+      "gps": "GPS",
+      "truck": "Truck",
+      "more": "More"
+    },
+    "load": {
+      "title": "Truck load",
+      "pick": "Update current load",
+      "update": "Update load",
+      "empty": "Empty",
+      "full": "Full",
+      "estimate": "estimate",
+      "reported": "reported by the crew",
+      "warn": "Over 85%: the dispatcher will be alerted to plan a disposal trip."
+    },
+    "map": {
+      "title": "GPS map",
+      "load": "Load: {{value}}",
+      "updateLoad": "Update truck load",
+      "collected": "Mark collected",
+      "skip": "Skip",
+      "marked": "Marked as collected"
+    },
+    "home": {
+      "greeting": "Hello, {{name}}!",
+      "noShift": "No shift yet",
+      "noRouteToday": "No route today for this truck",
+      "start": "Start shift",
+      "cancel": "Cancel",
+      "tileStart": "Start shift",
+      "tileEnd": "End shift",
+      "tileMap": "Active shift GPS map",
+      "tileLoad": "Truck load capacity",
+      "tileTasks": "Uncollected waste report",
+      "tileStreets": "Missed streets and route",
+      "tileMore": "More",
+      "startFirst": "Start the shift to use the others."
+    },
+    "more": {
+      "title": "More",
+      "signOut": "Sign out",
+      "fingerprintOff": "Remove fingerprint sign-in from this phone",
+      "fingerprintOffDone": "Removed. The PIN is used again."
     }
   },
   "reports": {
@@ -1027,7 +1284,15 @@
       "linkFromHome": "My reports",
       "count": "{{count}} reports",
       "refused": "Not accepted",
-      "remove": "Remove"
+      "remove": "Remove",
+      "search": "Search",
+      "searchHint": "Ticket number or place",
+      "filterAll": "All ({{count}})",
+      "filterReview": "Under review",
+      "filterScheduled": "Scheduled",
+      "filterDone": "Done",
+      "showMore": "Show {{count}} more",
+      "noMatch": "Nothing matches your search."
     },
     "detail": {
       "title": "Report {{ticket}}",
@@ -1048,7 +1313,9 @@
       "mergedInto": "Same place and problem as {{ticket}}; followed up there.",
       "notFound": "Report not found.",
       "sample": "Sample report",
-      "notSent": "That did not go through. Please try again."
+      "notSent": "That did not go through. Please try again.",
+      "sent": "Sent",
+      "note": "Your note"
     },
     "refused": {
       "rate_limited": "Too many reports from this phone for now. Please try again later.",
@@ -1266,6 +1533,434 @@
       "8": "I found KolektaPH very awkward to use.",
       "9": "I felt very confident using KolektaPH.",
       "10": "I needed to learn a lot of things before I could use KolektaPH."
+    }
+  },
+  "welcome": {
+    "body": "Follow the garbage truck, get a text before it arrives, and report waste problems in Carmona.",
+    "start": "Get started",
+    "startHint": "For residents. No account needed.",
+    "staff": "Driver or City ENRO? Sign in",
+    "demoTools": "Demo tools",
+    "logIn": "Have an account? Log in"
+  },
+  "signIn": {
+    "title": "Sign in",
+    "body": "For truck crews and City ENRO staff.",
+    "driverHint": "Choose your truck and enter its PIN",
+    "enroHint": "Email and password from the City's administrator",
+    "residentNote": "A resident? You don't need to sign in. Go back and tap Get started."
+  },
+  "rewards": {
+    "title": "Rewards",
+    "redeemTitle": "Redemption Center",
+    "yourPoints": "Your Eco Points",
+    "pts": "pts",
+    "pointsCount": "{{points}} points",
+    "toNextTier": "{{points}} points to {{tier}} tier",
+    "topTier": "You are at {{tier}}, the top tier",
+    "tier": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold"
+    },
+    "redeem": "Redeem",
+    "howItWorks": "How it works",
+    "week": "This week",
+    "day": {
+      "confirmed": "confirmed",
+      "missed": "not confirmed",
+      "upcoming": "still to come"
+    },
+    "weekHint": "Confirm the pickup on each of your barangay's collection days. A complete week earns {{points}} bonus points.",
+    "weekNoDays": "Choose a barangay to see this week's collection days.",
+    "waysToEarn": "Ways to earn",
+    "earn": {
+      "valid_report": "Valid report",
+      "pickup_confirmed": "Confirm pickup",
+      "segregation_check": "Proper segregation",
+      "cleanup_drive": "Clean-up drive",
+      "week_complete": "Complete week"
+    },
+    "plusPoints": "+ {{points}} points",
+    "recent": "Recent activity",
+    "seeAll": "See all",
+    "seeLess": "Show less",
+    "noActivity": "No activity yet.",
+    "entry": {
+      "valid_report": "Verified report",
+      "pickup_confirmed": "Pickup confirmed",
+      "segregation_check": "Segregation check",
+      "cleanup_drive": "Clean-up drive",
+      "week_complete": "Complete week",
+      "redeemed": "Redeemed for a perk",
+      "hauling_discount": "Hauling discount"
+    },
+    "myVouchers": "My vouchers",
+    "voucher": {
+      "title": "Voucher",
+      "notFound": "This voucher cannot be found.",
+      "show": "Show this code at the counter.",
+      "validUntil": "valid until {{day}}",
+      "status": {
+        "issued": "Not used yet",
+        "used": "Used",
+        "expired": "Expired"
+      },
+      "sample": "This is a sample voucher. Neither the City nor any store will accept it."
+    },
+    "perks": "Perks and discounts",
+    "group": {
+      "all": "All",
+      "bills": "Bills",
+      "stores": "Stores",
+      "city": "City services"
+    },
+    "noPerks": "No perks here for now.",
+    "samplePerk": "sample",
+    "cost": "{{points}} pts",
+    "needMore": "{{points}} more",
+    "confirmTitle": "Exchange {{points}} points?",
+    "confirmBody": "This cannot be undone once exchanged.",
+    "confirmYes": "Yes, exchange",
+    "failed": {
+      "offline": "No signal. Try again when you have signal.",
+      "points": "You do not have enough points for this.",
+      "other": "That did not go through. Try again."
+    },
+    "how": {
+      "intro": "You earn Eco Points by helping keep Carmona clean. Points can be exchanged for perks.",
+      "valid_report": "When City ENRO verifies your report.",
+      "pickup_confirmed": "Once on each collection day, after the truck has passed.",
+      "segregation_check": "Once a day when you scan your waste.",
+      "cleanup_drive": "When you join a clean-up drive of the City or your barangay.",
+      "week_complete": "When you confirm every collection day of a week.",
+      "spendTitle": "What points are for",
+      "spendPerks": "Exchange them for perks and discounts in the Redemption Center.",
+      "spendHauling": "Take ₱{{pesos}} off a private hauling fee for every 100 points.",
+      "tiersTitle": "Tiers",
+      "tiers": "Your tier rises with all the points you have ever earned, even those you have exchanged.",
+      "tierFrom": "from {{points}} points"
+    },
+    "feed": {
+      "earned": "You earned {{points}} points"
+    },
+    "savePoints": {
+      "title": "Save your points",
+      "body": "Your points and reports are kept on this device only. Make an account so they are not lost.",
+      "button": "Make an account"
+    }
+  },
+  "scanner": {
+    "title": "Segregation Scanner",
+    "short": "Scanner",
+    "intro": "Point your camera at your waste to see how it should be segregated.",
+    "photo": "Photo of the scanned waste",
+    "scan": "Scan",
+    "again": "Scan again",
+    "failed": "The photo could not be read. Try again.",
+    "unknown": "It is not clear what the photo shows. Try moving closer, or ask Kolek.",
+    "result": "Scan result",
+    "item": {
+      "plastic_bottle": "Plastic bottle",
+      "old_furniture": "Old furniture"
+    },
+    "class": {
+      "biodegradable": "Biodegradable",
+      "recyclable": "Recyclable",
+      "residual": "Residual",
+      "special": "Special waste"
+    },
+    "instruction": {
+      "biodegradable": "Place it in the biodegradable bin. It can also be composted.",
+      "recyclable": "Rinse and dry it. Place it in the recyclable bin.",
+      "residual": "Place it in the residual waste bin.",
+      "special": "Do not mix it with other waste. Keep it apart and ask your barangay how it will be collected."
+    },
+    "sample": "This is a sample result: the app does not read your photo yet.",
+    "tipsTitle": "Tips",
+    "tips": "Clean, dry and separate recyclables so they can be used again.",
+    "helpful": "Was this result helpful?",
+    "yes": "Yes",
+    "no": "No",
+    "thanks": "Thank you for your answer.",
+    "haul": "Have it hauled (for a fee)"
+  },
+  "impact": {
+    "title": "City Impact",
+    "short": "City Impact",
+    "period": "Period covered",
+    "week": "7 days",
+    "month": "30 days",
+    "collected": "Garbage collected citywide",
+    "tonnes": "{{tonnes}} tonnes",
+    "estimate": "Estimated from {{trips}} truck trips",
+    "served": "Streets served",
+    "servedHint": "checked by truck GPS",
+    "missed": "Missed streets",
+    "missedHint": "today",
+    "perDay": "Collected per day",
+    "perDayHint": "All trucks, estimated tonnes",
+    "todayLegend": "Today's weekday",
+    "ranking": "Barangays served on time",
+    "rankingHint": "Share of collections finished within their window",
+    "onTime": "{{rate}} on time",
+    "noData": "No data for this period yet."
+  },
+  "hauling": {
+    "title": "Private hauling",
+    "short": "Private hauling",
+    "bookings": "Private hauling bookings",
+    "bookingsHint": "Listed with My reports",
+    "sample": "sample",
+    "sampleNotice": "This is still a sample: the request does not reach City ENRO.",
+    "sampleRequest": "This is a sample request, for trying the quotation and the checkout.",
+    "pesos": "₱{{amount}}",
+    "status": {
+      "requested": "Under review",
+      "quoted": "Quotation ready",
+      "accepted": "Accepted",
+      "scheduled": "Scheduled",
+      "in_progress": "Crew on the way",
+      "completed": "Completed",
+      "declined": "Declined",
+      "cancelled": "Cancelled",
+      "expired": "Quotation expired"
+    },
+    "slot": {
+      "morning": "Morning",
+      "afternoon": "Afternoon"
+    },
+    "volume": {
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "unsure": "Not sure"
+    },
+    "volumeHint": {
+      "small": "1 to 5 sacks",
+      "medium": "Half a truck",
+      "large": "A full truck",
+      "unsure": "We will assess"
+    },
+    "load": {
+      "garden": "Garden waste",
+      "construction": "Construction debris",
+      "furniture": "Furniture",
+      "appliances": "Appliances",
+      "general": "General waste"
+    },
+    "requester": {
+      "resident": "Resident",
+      "business": "Business"
+    },
+    "summary": {
+      "title": "Booking summary",
+      "when": "When",
+      "volume": "Volume",
+      "load": "Load",
+      "where": "Where",
+      "business": "Business"
+    },
+    "fee": {
+      "title": "Price breakdown",
+      "base": "Base fee ({{volume}})",
+      "distance": "Distance fee",
+      "disposal": "Disposal fee",
+      "points": "Eco Points discount ({{points}} pts)",
+      "total": "Total"
+    },
+    "payment": {
+      "gcash": "GCash",
+      "maya": "Maya",
+      "card": "Credit or debit card",
+      "cash": "Cash on pickup"
+    },
+    "form": {
+      "intro": "For waste the regular collection does not take: bulky items, construction debris, large garden loads. There is a fee.",
+      "who": "Who is asking?",
+      "businessName": "Business name",
+      "contactName": "Your name",
+      "contactPerson": "Contact person",
+      "mobile": "Mobile number",
+      "mobileHint": "Example: 0917 123 4567",
+      "contactUse": "The name and number are used only to contact you about this pickup.",
+      "where": "Where is the pickup?",
+      "landmark": "Landmark or address",
+      "landmarkHint": "E.g. Zone 3, across the store",
+      "day": "When?",
+      "slot": "Time slot",
+      "volume": "Estimated volume",
+      "load": "What is the load?",
+      "description": "Description",
+      "descriptionHint": "E.g. branches and leaves, already in sacks",
+      "photos": "Photo of the load",
+      "addPhoto": "Add a photo",
+      "removePhoto": "Remove",
+      "photoN": "Photo {{n}}",
+      "after": "The team will confirm your slot and fee within 24 hours.",
+      "submit": "Checkout",
+      "errors": {
+        "business": "Enter the business name.",
+        "name": "Enter a name.",
+        "mobile": "Enter a valid mobile number.",
+        "day": "Choose a day.",
+        "load": "Choose at least one kind of load.",
+        "fix": "Please complete what is missing above."
+      },
+      "failed": {
+        "offline": "No signal. Try again when you have signal.",
+        "other": "That did not go through. Try again."
+      }
+    },
+    "sent": {
+      "title": "Request sent",
+      "body": "The team will confirm your slot and fee within 24 hours. You will find it in My reports.",
+      "open": "View the request",
+      "home": "Back to Home"
+    },
+    "detail": {
+      "notFound": "This request cannot be found.",
+      "pay": "Review and pay",
+      "next": {
+        "requested": "City ENRO is reviewing your request. They will answer with a slot and a fee.",
+        "quoted": "Your quotation is ready. Review the fee and pay to get scheduled.",
+        "accepted": "You accepted the quotation. Waiting for a truck to be scheduled.",
+        "scheduled": "The pickup is scheduled.",
+        "in_progress": "The crew is on the way.",
+        "completed": "The pickup is done. Thank you!",
+        "declined": "City ENRO could not accept this request.",
+        "cancelled": "You cancelled this request.",
+        "expired": "The quotation has expired. Send a new request if you still need the pickup."
+      },
+      "validUntil": "The quotation is valid until {{day}}, {{time}}.",
+      "payment": "Payment",
+      "paymentState": {
+        "paid": "paid",
+        "due": "to be paid to the crew"
+      },
+      "progress": "Progress",
+      "cancel": "Cancel the request",
+      "cancelTitle": "Cancel this request?",
+      "cancelBody": "City ENRO will no longer go ahead with it.",
+      "cancelYes": "Yes, cancel it"
+    },
+    "checkout": {
+      "title": "Checkout",
+      "method": "Payment method",
+      "sampleShort": "Sample payment",
+      "sample": "This is a sample payment: no real money moves and you are not charged.",
+      "terms": "The quotation is valid for 24 hours. The final fee may change if the load is larger than described.",
+      "pay": "Pay ₱{{amount}}",
+      "confirmCash": "Confirm: cash on pickup",
+      "pointsTitle": "Use Eco Points",
+      "pointsHint": "You have {{balance}} points. Every 100 points takes ₱{{pesos}} off.",
+      "pointsLess": "Use fewer points",
+      "pointsMore": "Use more points",
+      "pointsUsed": "{{points}} points, ₱{{pesos}} off",
+      "nothingToPay": "There is nothing to pay on this request right now.",
+      "donePaid": "Paid (sample)",
+      "donePaidBody": "City ENRO will now schedule it.",
+      "doneCash": "Confirmed",
+      "doneCashBody": "Have the cash ready and hand it to the crew on pickup day."
+    },
+    "feed": {
+      "requested": "Hauling request received",
+      "quoted": "Your hauling quotation is ready",
+      "accepted": "Quotation accepted",
+      "scheduled": "Hauling pickup scheduled",
+      "in_progress": "The crew is on the way for your pickup",
+      "completed": "Hauling pickup completed",
+      "declined": "Hauling request declined",
+      "cancelled": "Hauling request cancelled"
+    }
+  },
+  "account": {
+    "logOut": "Log out",
+    "logInOrRegister": "Log in or create an account",
+    "offline": "No signal. Try again when you have signal.",
+    "sampleNotice": "Accounts are still a sample: they live on this device only and are gone when the app closes.",
+    "mobile": "Mobile number",
+    "mobileHint": "Example: 0917 123 4567",
+    "password": "Password",
+    "passwordHint": "At least {{count}} characters",
+    "passwordAgain": "Repeat the password",
+    "fullName": "Full name",
+    "email": "Email (optional)",
+    "emailHint": "Not needed to sign in.",
+    "area": "Zone, block, phase or purok",
+    "areaHint": "E.g. Zone 3, Block 12",
+    "login": {
+      "title": "Log in",
+      "body": "For residents with an account. You do not need one to use the app.",
+      "missing": "Enter your mobile number and password.",
+      "wrong": "Wrong number or password.",
+      "submit": "Log in",
+      "forgot": "Forgot password?",
+      "toRegister": "No account yet? Create one"
+    },
+    "register": {
+      "title": "Create account",
+      "body": "This is optional. This device's reports, points and bookings stay with the account.",
+      "barangay": "Your barangay (from the app's set-up)",
+      "consent": "I have read the privacy notice. My name, mobile number, barangay and area are kept for my account.",
+      "submit": "Create account",
+      "toLogin": "Have an account? Log in"
+    },
+    "errors": {
+      "name": "Enter your full name.",
+      "mobile": "Enter a valid mobile number.",
+      "password": "The password needs at least {{count}} characters.",
+      "again": "The two passwords do not match.",
+      "consent": "Your agreement is needed to create an account.",
+      "taken": "This number already has an account. Log in instead.",
+      "email": "That email does not look right.",
+      "other": "That did not go through. Try again."
+    },
+    "recover": {
+      "title": "Account recovery",
+      "body": "Enter your account's mobile number. A code will be sent to it.",
+      "send": "Send the code",
+      "unknown": "This number has no account.",
+      "codeTitle": "Enter the code",
+      "codeBody": "We sent a 6-digit code to {{mobile}}.",
+      "sampleCode": "Sample: no text was sent. This is the code:",
+      "code": "6-digit code",
+      "codeMissing": "Enter the 6-digit code.",
+      "newPassword": "New password",
+      "save": "Save the new password",
+      "resend": "Send the code again",
+      "wait": "The code can take a few minutes to arrive.",
+      "wrongCode": "Wrong code.",
+      "doneTitle": "Password changed",
+      "doneBody": "You can now log in with the new password."
+    },
+    "personal": {
+      "title": "Personal information",
+      "save": "Save changes",
+      "saved": "Saved.",
+      "mobileFixed": "The number is your account, so it cannot be changed here."
+    },
+    "security": {
+      "title": "Sign-in and security",
+      "change": "Change password",
+      "current": "Current password",
+      "currentMissing": "Enter your current password.",
+      "wrongCurrent": "The current password is wrong.",
+      "changed": "Password changed.",
+      "submit": "Change password"
+    },
+    "invite": {
+      "title": "Create an account (optional)",
+      "body": "So your points and reports are not lost when you change phones.",
+      "register": "Create",
+      "logIn": "Log in"
+    },
+    "transfer": {
+      "title": "Move the reports and points?",
+      "body": "As a guest, this device holds {{reports}} reports and {{points}} points. Move them to your account, or leave them here; they come back when you log out.",
+      "move": "Move them to my account",
+      "leave": "Leave them here",
+      "failed": "The move did not go through. Try again."
     }
   }
 }

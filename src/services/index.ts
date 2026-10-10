@@ -5,6 +5,8 @@ import { useBackend } from '@/stores/backend';
 import { useCityAdmin } from '@/stores/cityAdmin';
 import { getDemoEvents, getSimTime, useDemo } from '@/stores/demo';
 import { useEnro } from '@/stores/enro';
+import { useMyReports } from '@/stores/myReports';
+import { useSettings } from '@/stores/settings';
 
 import { createMockServices } from './mock';
 import { createSupabaseServices } from './supabase';
@@ -18,12 +20,17 @@ import type { Services } from './types';
 const createSampleServices = () =>
   createMockServices({
     getSimTime,
+    device: {
+      getReports: () => useMyReports.getState().ticketIds,
+      setReports: (ticketIds) => useMyReports.setState({ ticketIds }),
+    },
     getEvents: () => [...getDemoEvents(), ...useBackend.getState().events],
     getAnnouncements: () => useAnnouncements.getState().items,
     addAnnouncement: (a) => useAnnouncements.getState().add(a),
     receiveUpload: (batch) => useBackend.getState().receive(batch),
     getTraces: () => useBackend.getState().traces,
     isOnline,
+    getBarangayId: () => useSettings.getState().barangayId,
     getTickets: () => useBackend.getState().tickets,
     saveTicket: (t) => useBackend.getState().saveTicket(t),
     nextTicketSeq: () => useBackend.getState().nextTicketSeq(),

@@ -9,13 +9,21 @@ import { AppHeader } from '@/components/ui/AppHeader';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Icon } from '@/components/ui/Icon';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
+import type { PressState } from '@/components/ui/interaction';
+import { Notice } from '@/components/ui/Notice';
 import { Screen } from '@/components/ui/Screen';
 import { Section } from '@/components/ui/Section';
+import { SkeletonCard, SkeletonGroup } from '@/components/ui/Skeleton';
 import { TextField } from '@/components/ui/TextField';
 import { CATEGORY_META } from '@/features/reports/categories';
-import { TicketStatusPill, TicketTimeline } from '@/features/reports/components/TicketBits';
+import {
+  TicketProgress,
+  TicketStatusPill,
+  TicketTimeline,
+} from '@/features/reports/components/TicketBits';
 import { useTickets } from '@/features/reports/hooks';
 import { canApply, collectedAt, REOPEN_WINDOW_MS } from '@/features/reports/lifecycle';
 import { formatRelativeDay } from '@/features/resident/format';
@@ -47,16 +55,22 @@ export default function TicketDetail() {
 
   const back = (
     <IconButton
-      icon="arrow-left"
-      label={t('common.back')}
+      icon="close"
+      label={t('common.close')}
       onPress={() => goBack('/resident/reports')}
     />
   );
   if (!ticket || !barangays || !meta) {
     return (
-      <Screen>
-        <AppHeader title={t('reports.mine.title')} leading={back} />
-        {tickets.length ? <AppText>{t('reports.detail.notFound')}</AppText> : null}
+      <Screen header={<AppHeader title={t('reports.mine.title')} leading={back} />}>
+        {tickets.length ? (
+          <EmptyState icon="file-document-outline" title={t('reports.detail.notFound')} />
+        ) : (
+          <SkeletonGroup>
+            <SkeletonCard lines={5} />
+            <SkeletonCard lines={6} />
+          </SkeletonGroup>
+        )}
       </Screen>
     );
   }
@@ -78,24 +92,75 @@ export default function TicketDetail() {
     }
   };
 
+  const photo = ticket.photos[0] ?? {
+    kind: 'sample' as const,
+    id: CATEGORY_META[ticket.category].sample,
+  };
+  const fact = (icon: IconName, label: string, value: React.ReactNode) => (
+    <View style={styles.fact}>
+      <Icon name={icon} size={20} color={colors.ink} />
+      <View style={styles.flex}>
+        <AppText variant="caption" color={colors.textMuted}>
+          {label}
+        </AppText>
+        {typeof value === 'string' ? <AppText variant="bodyStrong">{value}</AppText> : value}
+      </View>
+    </View>
+  );
+
   return (
-    <Screen>
-      <AppHeader
-        eyebrow={ticket.id}
-        title={t(`reports.category.${ticket.category}`)}
-        leading={back}
-      />
-      <View style={styles.row}>
-        <TicketStatusPill status={ticket.status} />
+    <Screen
+      header={
+        <AppHeader
+          eyebrow={ticket.id}
+          title={t(`reports.category.${ticket.category}`)}
+          leading={back}
+        />
+      }
+    >
+      {/* What was reported, as a ticket: the photo beside the facts. */}
+      <Card>
+        <View style={styles.summary}>
+          <View style={styles.thumb}>
+            <PhotoView photo={photo} accessibilityLabel="" />
+          </View>
+          <View style={styles.facts}>
+            {fact('ticket', t('reports.done.ticket'), ticket.id)}
+            {fact(
+              'timeline',
+              t('reports.detail.timeline'),
+              <TicketStatusPill status={ticket.status} />,
+            )}
+            {fact(
+              'map-marker',
+              t('reports.detail.where'),
+              `${barangay}${ticket.landmark ? ` · ${ticket.landmark}` : ''}`,
+            )}
+            {fact(
+              'calendar',
+              t('reports.detail.sent'),
+              `${formatRelativeDay(t, ticket.createdAt, now)}, ${formatClock(ticket.createdAt)}`,
+            )}
+          </View>
+        </View>
         {ticket.sample ? (
           <AppText variant="caption" color={colors.textMuted}>
             {t('reports.detail.sample')}
           </AppText>
         ) : null}
-      </View>
+      </Card>
+
+      {ticket.note ? (
+        <Section title={t('reports.detail.note')}>
+          <View style={styles.note}>
+            <AppText>{ticket.note}</AppText>
+          </View>
+        </Section>
+      ) : null}
 
       <Section title={t('reports.detail.timeline')}>
         <Card>
+          <TicketProgress ticket={ticket} />
           <TicketTimeline ticket={ticket} />
           {ticket.dispatch?.due &&
           ['verified', 'scheduled', 'in_progress'].includes(ticket.status) ? (
@@ -112,7 +177,7 @@ export default function TicketDetail() {
         <Section title={t('reports.detail.proof')}>
           <View style={styles.pair}>
             {ticket.proof.before ? (
-              <View style={styles.flex}>
+              <View style={styles.photo}>
                 <PhotoView
                   photo={ticket.proof.before}
                   accessibilityLabel={t('reports.detail.before')}
@@ -120,7 +185,7 @@ export default function TicketDetail() {
                 <AppText variant="caption">{t('reports.detail.before')}</AppText>
               </View>
             ) : null}
-            <View style={styles.flex}>
+            <View style={styles.photo}>
               <PhotoView
                 photo={ticket.proof.after}
                 accessibilityLabel={t('reports.detail.after')}
@@ -131,14 +196,10 @@ export default function TicketDetail() {
         </Section>
       ) : null}
 
-      {failed ? (
-        <AppText variant="bodyStrong" color={colors.red} accessibilityLiveRegion="polite">
-          {t('reports.detail.notSent')}
-        </AppText>
-      ) : null}
+      {failed ? <Notice tone="danger" live="polite" text={t('reports.detail.notSent')} /> : null}
 
       {canReopen && collected ? (
-        <Card style={styles.reopen}>
+        <Notice tone="warning" icon="restore">
           <AppText>
             {t('reports.detail.reopenUntil', {
               time: `${formatRelativeDay(t, collected + REOPEN_WINDOW_MS, now)}, ${formatClock(collected + REOPEN_WINDOW_MS)}`,
@@ -154,14 +215,14 @@ export default function TicketDetail() {
             variant="warning"
             icon="restore"
             label={t('reports.detail.reopen')}
-            disabled={busy}
+            loading={busy}
             onPress={() =>
               void run(() =>
                 services.reports.act(ticket.id, { type: 'reopen', note: note.trim() }, 'resident'),
               )
             }
           />
-        </Card>
+        </Notice>
       ) : null}
 
       {canRate ? (
@@ -178,9 +239,9 @@ export default function TicketDetail() {
                     services.reports.act(ticket.id, { type: 'rate', stars }, 'resident'),
                   )
                 }
-                style={({ pressed }) => [
+                style={({ pressed, hovered }: PressState) => [
                   styles.star,
-                  pressed && { backgroundColor: colors.yellowSoft },
+                  (pressed || hovered) && { backgroundColor: colors.yellowSoft },
                 ]}
               >
                 <Icon name="star-outline" size={34} color={colors.amber} />
@@ -201,7 +262,7 @@ export default function TicketDetail() {
         <Section title={t('reports.detail.photos')}>
           <View style={styles.pair}>
             {ticket.photos.map((p, i) => (
-              <View key={i} style={styles.flex}>
+              <View key={i} style={styles.photo}>
                 <PhotoView photo={p} accessibilityLabel={t('reports.detail.photos')} />
               </View>
             ))}
@@ -240,20 +301,33 @@ export default function TicketDetail() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  flex: { flex: 1, gap: spacing.xs },
+  flex: { flex: 1, minWidth: 0 },
+  // The facts drop under the photo at 200% text instead of being squeezed beside it.
+  summary: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg },
+  thumb: {
+    width: 116,
+    alignSelf: 'flex-start',
+    borderRadius: radius.md + 3,
+    borderWidth: 3,
+    borderColor: colors.primary,
+    overflow: 'hidden',
+  },
+  facts: { flexGrow: 1, flexShrink: 1, flexBasis: 150, gap: spacing.md },
+  fact: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  note: { padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.greySoft },
+  photo: { flex: 1, gap: spacing.xs },
   pair: { flexDirection: 'row', gap: spacing.sm },
-  reopen: { backgroundColor: colors.yellowSoft, borderColor: colors.yellow },
   stars: { flexDirection: 'row', gap: spacing.xs },
   star: {
     width: touch.large,
     height: touch.large,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   map: {
     height: 200,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,

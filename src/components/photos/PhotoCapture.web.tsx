@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
+import { Notice } from '@/components/ui/Notice';
 import { compressPhoto } from '@/features/reports/photos';
 import { useDemo } from '@/stores/demo';
 import { colors, spacing } from '@/theme/tokens';
@@ -20,6 +21,7 @@ export function PhotoCapture({
   sample,
   onCaptured,
   variant = 'primary',
+  showGuide = true,
 }: PhotoCaptureProps) {
   const { t } = useTranslation();
   const demoMode = useDemo((s) => s.demoMode);
@@ -53,14 +55,16 @@ export function PhotoCapture({
 
   return (
     <View style={styles.wrap}>
-      <AppText variant="label" color={colors.textMuted}>
-        {t(`reports.photo.guide.${guide}.title`)} · {t(`reports.photo.guide.${guide}.hint`)}
-      </AppText>
+      {showGuide ? (
+        <AppText variant="label" color={colors.textMuted}>
+          {t(`reports.photo.guide.${guide}.title`)} · {t(`reports.photo.guide.${guide}.hint`)}
+        </AppText>
+      ) : null}
       <Button
         icon="camera"
         label={busy ? t('reports.photo.processing') : label}
         variant={variant}
-        disabled={busy}
+        loading={busy}
         onPress={pick}
       />
       {demoMode ? (
@@ -71,7 +75,7 @@ export function PhotoCapture({
           onPress={() => onCaptured({ kind: 'sample', id: sample })}
         />
       ) : null}
-      {failed ? <AppText color={colors.red}>{t('reports.photo.failed')}</AppText> : null}
+      {failed ? <Notice tone="danger" live="polite" text={t('reports.photo.failed')} /> : null}
     </View>
   );
 }

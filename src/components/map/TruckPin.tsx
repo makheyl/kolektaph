@@ -52,7 +52,7 @@ export function TruckPin({ truck, selected, onPress }: TruckPinProps) {
       <View
         style={[
           styles.tag,
-          { borderColor: meta.color, backgroundColor: selected ? colors.navy : colors.surface },
+          { borderColor: meta.color, backgroundColor: selected ? colors.ink : colors.surface },
         ]}
       >
         <AppText

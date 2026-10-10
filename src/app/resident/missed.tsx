@@ -8,9 +8,11 @@ import { AppHeader } from '@/components/ui/AppHeader';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
 import { ListRow } from '@/components/ui/ListRow';
+import { Notice } from '@/components/ui/Notice';
 import { Screen } from '@/components/ui/Screen';
 import { Section } from '@/components/ui/Section';
 import { driverStreets } from '@/features/driver/streets';
@@ -23,15 +25,15 @@ import { OfflineError, ServerError, services } from '@/services';
 import type { ClaimResult } from '@/services/types';
 import { useMyReports } from '@/stores/myReports';
 import { useSettings } from '@/stores/settings';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, radius, shadows, spacing } from '@/theme/tokens';
 
 const LOOK: Record<ClaimResult['kind'], { icon: IconName; color: string; soft: string }> = {
-  no_collection_today: { icon: 'calendar-blank', color: colors.navy, soft: colors.greySoft },
-  not_yet: { icon: 'truck-fast', color: colors.green, soft: colors.greenSoft },
+  no_collection_today: { icon: 'calendar-blank', color: colors.ink, soft: colors.greySoft },
+  not_yet: { icon: 'truck-fast', color: colors.primary, soft: colors.greenSoft },
   verified_miss: { icon: 'map-marker-alert', color: colors.red, soft: colors.redSoft },
   not_segregated: { icon: 'recycle', color: colors.amber, soft: colors.amberSoft },
   crew_not_at_fault: { icon: 'map-marker-alert', color: colors.red, soft: colors.redSoft },
-  please_photo: { icon: 'camera-outline', color: colors.navy, soft: colors.greySoft },
+  please_photo: { icon: 'camera-outline', color: colors.ink, soft: colors.greySoft },
   no_gps: { icon: 'signal-off', color: colors.grey, soft: colors.greySoft },
 };
 
@@ -73,10 +75,17 @@ export default function MissedClaim() {
 
   if (!barangayId) {
     return (
-      <Screen>
-        <AppHeader title={t('claims.title')} leading={back} />
-        <AppText>{t('resident.home.pickBody')}</AppText>
-        <Button label={t('resident.home.pick')} onPress={() => router.push('/resident/barangay')} />
+      <Screen
+        header={<AppHeader title={t('claims.title')} leading={back} />}
+        footer={
+          <Button
+            icon="map-marker-outline"
+            label={t('resident.home.pick')}
+            onPress={() => router.push('/resident/barangay')}
+          />
+        }
+      >
+        <EmptyState icon="map-marker-outline" title={t('resident.home.pickBody')} />
       </Screen>
     );
   }
@@ -155,14 +164,25 @@ export default function MissedClaim() {
   };
 
   return (
-    <Screen>
-      <AppHeader eyebrow={barangayName} title={t('claims.title')} leading={back} />
+    <Screen
+      header={<AppHeader eyebrow={barangayName} title={t('claims.title')} leading={back} />}
+      footer={
+        place ? (
+          <Button
+            icon="magnify"
+            label={checking ? t('claims.checking') : t('claims.check')}
+            loading={checking}
+            onPress={() => void check()}
+          />
+        ) : undefined
+      }
+    >
       <AppText color={colors.textMuted}>{t('claims.intro')}</AppText>
 
       {place ? (
         <Card>
           <View style={styles.row}>
-            <Icon name="home-map-marker" size={24} color={colors.navy} />
+            <Icon name="home-map-marker" size={24} color={colors.ink} />
             <AppText variant="bodyStrong" style={styles.flex}>
               {placeStreet
                 ? t('claims.streetLabel', { street: placeStreet.name ?? t('truck.unnamedRoad') })
@@ -171,6 +191,7 @@ export default function MissedClaim() {
           </View>
           <Button
             variant="secondary"
+            size="compact"
             label={t('claims.changePlace')}
             onPress={() => {
               setClaimPlace(null);
@@ -184,46 +205,40 @@ export default function MissedClaim() {
             {t('claims.whereHint')}
           </AppText>
           <Button
-            variant="secondary"
             icon="crosshairs-gps"
             label={locating ? t('reports.wizard.locating') : t('claims.useLocation')}
-            disabled={locating}
+            loading={locating}
             onPress={() => void locateMe()}
           />
           <AppText variant="bodyStrong">{t('claims.pickStreet')}</AppText>
-          {streets.length === 0 ? <AppText>{t('claims.noStreets')}</AppText> : null}
-          {streets.map((s) => (
-            <ListRow
-              key={s.key}
-              icon="road-variant"
-              title={s.name ?? t('truck.unnamedRoad')}
-              subtitle={formatDistance(t, s.lengthM)}
-              trailing="chevron"
-              onPress={() => {
-                setClaimPlace({ barangayId, streetKey: s.key, point: null });
-                setResult(null);
-              }}
-            />
-          ))}
+          {streets.length === 0 ? (
+            <EmptyState icon="road-variant" title={t('claims.noStreets')} />
+          ) : (
+            <Card style={styles.streets}>
+              {streets.map((s) => (
+                <ListRow
+                  key={s.key}
+                  icon="road-variant"
+                  title={s.name ?? t('truck.unnamedRoad')}
+                  subtitle={formatDistance(t, s.lengthM)}
+                  trailing="chevron"
+                  onPress={() => {
+                    setClaimPlace({ barangayId, streetKey: s.key, point: null });
+                    setResult(null);
+                  }}
+                />
+              ))}
+            </Card>
+          )}
         </Section>
       )}
 
-      {place ? (
-        <Button
-          size="driver"
-          icon="magnify"
-          label={checking ? t('claims.checking') : t('claims.check')}
-          disabled={checking}
-          onPress={() => void check()}
-        />
-      ) : null}
-
       {problem ? (
-        <Card style={styles.problem} accessibilityLiveRegion="assertive">
-          <AppText variant="bodyStrong" color={colors.red}>
-            {t(`claims.refused.${problem}`, { defaultValue: t('claims.refused.other') })}
-          </AppText>
-        </Card>
+        <Notice
+          tone="danger"
+          live="assertive"
+          text={t(`claims.refused.${problem}`, { defaultValue: t('claims.refused.other') })}
+        />
       ) : null}
 
       {result ? (
@@ -237,7 +252,9 @@ export default function MissedClaim() {
           accessibilityLabel={`${outcome(result).title}. ${outcome(result).body}`}
         >
           <View style={styles.row}>
-            <Icon name={LOOK[result.kind].icon} size={32} color={LOOK[result.kind].color} />
+            <View style={[styles.resultIcon, { backgroundColor: LOOK[result.kind].color }]}>
+              <Icon name={LOOK[result.kind].icon} size={26} color={colors.textOnDark} />
+            </View>
             <AppText variant="heading" style={styles.flex}>
               {outcome(result).title}
             </AppText>
@@ -287,7 +304,20 @@ export default function MissedClaim() {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   flex: { flex: 1 },
-  result: { borderWidth: 2, borderRadius: 16, padding: spacing.lg, gap: spacing.md },
-  problem: { backgroundColor: colors.redSoft, borderColor: colors.red },
+  result: {
+    borderWidth: 2,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    gap: spacing.md,
+    ...shadows.card,
+  },
+  resultIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  streets: { padding: spacing.sm, gap: 0 },
   guide: { gap: spacing.xs },
 });

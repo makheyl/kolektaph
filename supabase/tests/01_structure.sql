@@ -4,8 +4,8 @@
 -- ---------- Tables ----------
 select pg_temp.eq((select count(*)::int from pg_tables where schemaname = 'public'), 22,
                   '22 tables in public');
-select pg_temp.eq((select count(*)::int from pg_tables where schemaname = 'private'), 5,
-                  '5 tables in private');
+select pg_temp.eq((select count(*)::int from pg_tables where schemaname = 'private'), 7,
+                  '7 tables in private');
 select pg_temp.eq(
   (select count(*)::int
    from pg_class c join pg_namespace n on n.oid = c.relnamespace
@@ -111,7 +111,7 @@ select pg_temp.eq(
 -- ---------- Functions ----------
 select pg_temp.eq(
   (select count(*)::int from pg_proc p where p.pronamespace = 'public'::regnamespace),
-  33, '33 functions in public: 31 entry points and the two reads the app repeats');
+  37, '37 functions in public: 35 entry points and the two reads the app repeats');
 select pg_temp.eq(
   (select count(*)::int from pg_proc p
    where p.pronamespace = 'public'::regnamespace and p.prosecdef),
@@ -142,14 +142,15 @@ select pg_temp.eq(
   (select count(*)::int from pg_proc p
    where p.pronamespace = 'public'::regnamespace
      and has_function_privilege('authenticated', p.oid, 'EXECUTE')),
-  33, 'a signed-in caller can call all 33 (each entry point checks who is calling)');
+  37, 'a signed-in caller can call all 37 (each entry point checks who is calling)');
 select pg_temp.eq(
   (select string_agg(p.proname, ' ' order by p.proname) from pg_proc p
    where p.pronamespace = 'private'::regnamespace
      and has_function_privilege('authenticated', p.oid, 'EXECUTE')),
   'announcement_send claim_missed contact_set demo_clock_clear demo_clock_set demo_incident '
-  || 'demo_reset driver_sign_in driver_sign_out driver_upload forget_me my_truck photo_attached '
-  || 'recollection_create report_submit schedule_change sms_lead_set sms_status sms_subscribe '
+  || 'demo_reset driver_sign_in driver_sign_out driver_upload forget_me guest_transfer '
+  || 'guest_transfer_code my_truck photo_attached recollection_create report_submit '
+  || 'resident_profile_get resident_profile_save schedule_change sms_lead_set sms_status sms_subscribe '
   || 'sms_subscriber_counts sms_unsubscribe staff_barangay staff_role staff_save suggestion_decide '
   || 'ticket_act truck_pin_set upload_quota_ok',
   'the private functions a signed-in caller can reach are the implementations and rule helpers');

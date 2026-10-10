@@ -7,8 +7,8 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "theme_color": "#15314B",
-  "background_color": "#F4F1EA",
+  "theme_color": "#CBFFDA",
+  "background_color": "#CBFFDA",
   "categories": ["utilities", "government"],
   "icons": [
     { "src": "/logo192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },

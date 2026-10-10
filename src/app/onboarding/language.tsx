@@ -1,14 +1,15 @@
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { AuthShell } from '@/components/layout/AuthShell';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
-import { Chip } from '@/components/ui/Chip';
-import { Screen } from '@/components/ui/Screen';
-import { StepIndicator } from '@/components/ui/StepIndicator';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Icon } from '@/components/ui/Icon';
+import type { PressState } from '@/components/ui/interaction';
 import { type Language, useSettings } from '@/stores/settings';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, radius, shadows, spacing, touch } from '@/theme/tokens';
 
 const LANGUAGES: { id: Language; label: string }[] = [
   { id: 'fil', label: 'Filipino' },
@@ -21,54 +22,82 @@ export default function LanguageStep() {
   const { language, setLanguage, largeText, setLargeText } = useSettings();
 
   return (
-    <Screen>
-      <StepIndicator current={1} total={3} />
-      <View style={styles.header}>
-        <AppText variant="display" accessibilityRole="header">
-          Kolekta
-          <AppText variant="display" color={colors.green}>
-            PH
-          </AppText>
-        </AppText>
-        <AppText variant="title">{t('onboarding.language.title')}</AppText>
-        <AppText color={colors.textMuted}>{t('onboarding.language.subtitle')}</AppText>
-      </View>
-
-      <View style={styles.choices} accessibilityRole="radiogroup">
-        {LANGUAGES.map((l) => (
-          <Button
-            key={l.id}
-            label={language === l.id ? `✓ ${l.label}` : l.label}
-            variant={language === l.id ? 'primary' : 'secondary'}
-            onPress={() => setLanguage(l.id)}
-          />
-        ))}
+    <AuthShell
+      back="/welcome"
+      brand="kolek"
+      topRight={<View />}
+      step={{ current: 1, total: 3 }}
+      title={t('onboarding.language.title')}
+      subtitle={t('onboarding.language.subtitle')}
+      footer={
+        <Button
+          icon="arrow-right"
+          label={t('common.continue')}
+          onPress={() => router.push('/onboarding/barangay')}
+        />
+      }
+    >
+      <View
+        style={styles.choices}
+        accessibilityRole="radiogroup"
+        accessibilityLabel={t('common.language')}
+      >
+        {LANGUAGES.map((l) => {
+          const selected = language === l.id;
+          return (
+            <Pressable
+              key={l.id}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              aria-checked={selected}
+              accessibilityLabel={l.label}
+              onPress={() => setLanguage(l.id)}
+              style={({ pressed, hovered }: PressState) => [
+                styles.choice,
+                selected && styles.chosen,
+                { opacity: pressed ? 0.8 : hovered ? 0.92 : 1 },
+              ]}
+            >
+              <AppText variant="heading" style={styles.choiceLabel}>
+                {l.label}
+              </AppText>
+              <Icon
+                name={selected ? 'check-circle' : 'circle-outline'}
+                size={28}
+                color={selected ? colors.primary : colors.fieldBorder}
+              />
+            </Pressable>
+          );
+        })}
       </View>
 
       <View style={styles.largeText}>
-        <Chip
-          label={t('common.largeText')}
-          selected={largeText}
-          onPress={() => setLargeText(!largeText)}
-        />
-        <AppText variant="label" color={colors.textMuted} style={styles.hint}>
+        <Checkbox checked={largeText} onChange={setLargeText} label={t('common.largeText')} />
+        <AppText variant="label" color={colors.textMuted}>
           {t('onboarding.language.largeTextHint')}
         </AppText>
       </View>
-
-      <Button
-        variant="success"
-        icon="arrow-right"
-        label={t('common.continue')}
-        onPress={() => router.push('/onboarding/barangay')}
-      />
-    </Screen>
+    </AuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { gap: spacing.sm },
   choices: { gap: spacing.md },
-  largeText: { gap: spacing.sm },
-  hint: { flexShrink: 1 },
+  choice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: touch.driver,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    ...shadows.card,
+  },
+  // Chosen = green outline AND a filled check, so it never depends on colour alone.
+  chosen: { borderColor: colors.primary },
+  choiceLabel: { flex: 1 },
+  largeText: { gap: spacing.xs },
 });

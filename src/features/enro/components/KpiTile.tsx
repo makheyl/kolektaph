@@ -20,7 +20,7 @@ export function KpiTile({ icon, label, value, alert }: KpiTileProps) {
       accessible
       accessibilityLabel={`${label}: ${value}`}
     >
-      <Icon name={icon} size={24} color={alert ? colors.red : colors.navy} />
+      <Icon name={icon} size={24} color={alert ? colors.red : colors.primary} />
       <AppText variant="display" color={alert ? colors.red : colors.text}>
         {value}
       </AppText>

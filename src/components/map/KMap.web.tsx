@@ -20,7 +20,7 @@ export function KMap(props: KMapProps) {
           accessible
           accessibilityLabel={props.accessibilityLabel}
         >
-          <ActivityIndicator color={colors.navy} />
+          <ActivityIndicator color={colors.primary} />
         </View>
       }
     >

@@ -43,14 +43,35 @@ export default function DriverIncident() {
   const back = () => goBack('/driver/shift');
 
   return (
-    <Screen>
-      <AppHeader
-        title={t('driver.incident.title')}
-        leading={<IconButton icon="arrow-left" label={t('common.back')} onPress={back} />}
-      />
-
+    <Screen
+      header={
+        <AppHeader
+          title={t('driver.incident.title')}
+          leading={<IconButton icon="arrow-left" label={t('common.back')} onPress={back} />}
+        />
+      }
+      footer={
+        <>
+          <AppText variant="label" color={colors.textMuted}>
+            {t('driver.incident.willText')}
+          </AppText>
+          <Button
+            size="driver"
+            variant="danger"
+            icon="alert"
+            label={t('driver.incident.send')}
+            disabled={!kind}
+            onPress={() => {
+              if (!kind) return;
+              report({ kind: 'incident', incident: kind, minutes });
+              back();
+            }}
+          />
+        </>
+      }
+    >
       {truck?.status === 'breakdown' && truck.incident ? (
-        <Card style={styles.active} accessibilityLiveRegion="polite">
+        <Card variant="flat" style={styles.active} accessibilityLiveRegion="polite">
           <AppText variant="heading" color={colors.red}>
             {t('driver.incident.active', { incident: t(`incident.${truck.incident.kind}`) })}
           </AppText>
@@ -109,26 +130,13 @@ export default function DriverIncident() {
           ))}
         </View>
       </Section>
-
-      <AppText color={colors.textMuted}>{t('driver.incident.willText')}</AppText>
-      <Button
-        size="driver"
-        variant="danger"
-        icon="alert"
-        label={t('driver.incident.send')}
-        disabled={!kind}
-        onPress={() => {
-          if (!kind) return;
-          report({ kind: 'incident', incident: kind, minutes });
-          back();
-        }}
-      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   active: { backgroundColor: colors.redSoft, borderColor: colors.red },
-  tiles: { flexDirection: 'row', gap: spacing.sm },
+  // Side by side on a phone; one under the other when the screen is narrow or the letters large.
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 });

@@ -197,7 +197,7 @@ export default function EnroTrucks() {
               <AppText variant="label" style={styles.time}>
                 {formatClock(ev.at)}
               </AppText>
-              <Icon name={eventIcon(ev)} size={20} color={colors.navy} />
+              <Icon name={eventIcon(ev)} size={20} color={colors.ink} />
               <AppText style={styles.flex}>{describeEvent(t, ev, route, nameOf)}</AppText>
               {ev.source === 'demo' ? (
                 <View style={styles.demo}>
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  selected: { borderColor: colors.navy, backgroundColor: colors.greySoft },
+  selected: { borderColor: colors.primary, backgroundColor: colors.mintSoft },
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
   inline: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   flex: { flex: 1 },

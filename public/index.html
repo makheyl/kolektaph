@@ -10,7 +10,7 @@
       name="description"
       content="KolektaPH: kailan darating ang garbage truck sa inyong barangay sa Carmona. Live na mapa, text alerts, at report ng basura."
     />
-    <meta name="theme-color" content="#15314B" />
+    <meta name="theme-color" content="#CBFFDA" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -21,8 +21,8 @@
       html,
       body {
         height: 100%;
-        /* Same cream as the app, so there is no white flash while it loads. */
-        background-color: #f4f1ea;
+        /* Same white as the app's pages, so nothing flashes when the launch screen fades. */
+        background-color: #ffffff;
       }
       /* These styles disable body scrolling if you are using <ScrollView> */
       body {
@@ -35,12 +35,104 @@
         flex: 1;
       }
     </style>
+    <style id="kph-shell">
+      /* One keyboard focus ring for every control; mouse and touch focus stay clean. */
+      :focus-visible {
+        outline: 3px solid #114344;
+        outline-offset: 2px;
+      }
+
+      /*
+       * The launch screen: the logo on the brand mint, shown while the app downloads (several
+       * seconds on 3G). The first screen to draw fades it out (src/lib/splash.web.ts).
+       */
+      #kph-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        background-color: #cbffda;
+        transition: opacity 0.25s ease-out;
+      }
+      #kph-splash img {
+        width: min(243px, 60vw);
+        height: auto;
+      }
+      #kph-splash .kph-dots {
+        display: flex;
+        gap: 10px;
+      }
+      #kph-splash .kph-dots span {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #177a42;
+        animation: kph-pulse 1.2s ease-in-out infinite;
+      }
+      #kph-splash .kph-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      #kph-splash .kph-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      @keyframes kph-pulse {
+        0%,
+        80%,
+        100% {
+          opacity: 0.25;
+        }
+        40% {
+          opacity: 1;
+        }
+      }
+      .kph-sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #kph-splash {
+          transition: none;
+        }
+        #kph-splash .kph-dots span {
+          animation: none;
+          opacity: 0.6;
+        }
+      }
+    </style>
+    <noscript>
+      <style>
+        #kph-splash {
+          display: none;
+        }
+      </style>
+    </noscript>
   </head>
 
   <body>
     <noscript>
       Kailangan ng JavaScript para gumana ang KolektaPH. / KolektaPH needs JavaScript to run.
     </noscript>
+    <div id="kph-splash" role="status">
+      <img src="/brand/logo-lockup.webp" width="243" height="224" alt="KolektaPH" />
+      <div class="kph-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+      <span class="kph-sr-only">Naglo-load… / Loading…</span>
+    </div>
+    <script>
+      // If the app cannot start (an old browser, a broken download), don't hide its error
+      // behind the launch screen forever.
+      setTimeout(function () {
+        var splash = document.getElementById('kph-splash');
+        if (splash) splash.remove();
+      }, 15000);
+    </script>
     <div id="root"></div>
   </body>
 </html>

@@ -6,99 +6,119 @@ import { StyleSheet, View } from 'react-native';
 import { AppHeader } from '@/components/ui/AppHeader';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Icon } from '@/components/ui/Icon';
-import { IconButton } from '@/components/ui/IconButton';
+import { Chip } from '@/components/ui/Chip';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { SampleDataBadge } from '@/components/ui/SampleDataBadge';
 import { Screen } from '@/components/ui/Screen';
-import { SmsBubble } from '@/components/ui/SmsBubble';
-import { ALERT_META } from '@/features/alerts/alertMeta';
-import { formatRelativeDay } from '@/features/resident/format';
-import { useMyAlerts } from '@/features/resident/useMyAlerts';
+import { FeedCard } from '@/features/alerts/components/FeedCard';
+import { type FeedGroup, type FeedItem, splitByDay } from '@/features/alerts/feed';
+import { useMyFeed } from '@/features/resident/useMyFeed';
 import { useBarangays, useSimNow } from '@/features/tracking/hooks';
-import { formatClock } from '@/lib/time';
-import { goBack } from '@/lib/navigation';
+import { services } from '@/services';
 import { useSettings } from '@/stores/settings';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors, spacing } from '@/theme/tokens';
 
-/** "Mga abiso": an in-app copy of every alert sent to the resident's barangay. */
+type Filter = 'all' | Exclude<FeedGroup, 'city' | 'rewards'>;
+
+/**
+ * "Mga abiso": every alert sent to the resident's barangay and each step the City took on their
+ * own reports, newest first.
+ */
 export default function AlertsScreen() {
   const { t } = useTranslation();
   const now = useSimNow(5000);
-  const { barangayId, alerts, seenAt } = useMyAlerts();
+  const { barangayId, items, seenAt } = useMyFeed();
   const sms = useSettings((s) => s.sms);
   const markAlertsSeen = useSettings((s) => s.markAlertsSeen);
   const { data: barangays } = useBarangays();
   const name = barangays?.features.find((f) => f.properties.id === barangayId)?.properties.name;
+  const [filter, setFilter] = useState<Filter>('all');
 
-  // Remember what was unread when the screen opened, so "Bago" stays visible while reading.
+  // Remember what was unread when the screen opened, so it stays marked while being read.
   const [unreadSince] = useState(seenAt);
-  const newest = alerts[0]?.sentAt ?? 0;
+  const newest = items[0]?.at ?? 0;
   useEffect(() => {
     if (newest) markAlertsSeen(newest);
   }, [newest, markAlertsSeen]);
 
-  return (
-    <Screen>
-      <AppHeader
-        title={t('resident.alerts.title')}
-        leading={
-          <IconButton
-            icon="arrow-left"
-            label={t('common.back')}
-            onPress={() => goBack('/resident')}
-          />
-        }
-      />
-      <SampleDataBadge />
-      {name ? (
-        <AppText color={colors.textMuted}>
-          {t('resident.alerts.subtitle', { barangay: name })}
-        </AppText>
-      ) : (
-        <AppText color={colors.textMuted}>{t('resident.alerts.pickBarangay')}</AppText>
-      )}
+  const shown = filter === 'all' ? items : items.filter((i) => i.group === filter);
+  const { today, earlier } = splitByDay(shown, now);
+  const filters: { id: Filter; label: string }[] = [
+    { id: 'all', label: t('resident.alerts.filterAllCount', { count: items.length }) },
+    { id: 'truck', label: t('resident.alerts.filterTruck') },
+    { id: 'reports', label: t('resident.alerts.filterReports') },
+    ...(services.features.hauling
+      ? [{ id: 'hauling' as const, label: t('resident.alerts.filterHauling') }]
+      : []),
+  ];
+  const open = (item: FeedItem) =>
+    item.source === 'ticket'
+      ? () => router.push({ pathname: '/resident/reports/[id]', params: { id: item.ticket.id } })
+      : item.source === 'hauling'
+        ? () => router.push({ pathname: '/resident/hauling/[id]', params: { id: item.requestId } })
+        : item.source === 'points'
+          ? () => router.push('/resident/rewards')
+          : undefined;
 
-      {barangayId && alerts.length === 0 ? (
-        <Card>
-          <AppText color={colors.textMuted}>{t('resident.alerts.empty')}</AppText>
-        </Card>
+  const list = (heading: string, group: FeedItem[]) =>
+    group.length ? (
+      <View style={styles.group}>
+        <AppText variant="label" color={colors.textMuted} accessibilityRole="header">
+          {heading}
+        </AppText>
+        {group.map((item) => (
+          <FeedCard
+            key={item.id}
+            item={item}
+            now={now}
+            unread={item.at > unreadSince}
+            onPress={open(item)}
+          />
+        ))}
+      </View>
+    ) : null;
+
+  return (
+    <Screen header={<AppHeader title={t('resident.alerts.title')} />}>
+      <View style={styles.intro}>
+        <SampleDataBadge />
+        <AppText color={colors.textMuted}>
+          {name
+            ? t('resident.alerts.subtitle', { barangay: name })
+            : t('resident.alerts.pickBarangay')}
+        </AppText>
+      </View>
+
+      {items.length ? (
+        <View style={styles.filters} accessibilityLabel={t('resident.alerts.title')}>
+          {filters.map((f) => (
+            <Chip
+              key={f.id}
+              label={f.label}
+              selected={filter === f.id}
+              onPress={() => setFilter(f.id)}
+            />
+          ))}
+        </View>
       ) : null}
 
-      {alerts.map((a) => {
-        const meta = ALERT_META[a.kind];
-        const isNew = a.sentAt > unreadSince;
-        return (
-          <Card key={a.id} style={isNew ? styles.newCard : undefined}>
-            <View style={styles.header}>
-              <View style={[styles.icon, { backgroundColor: meta.soft }]}>
-                <Icon name={meta.icon} size={22} color={meta.color} />
-              </View>
-              <View style={styles.headerText}>
-                <AppText variant="bodyStrong">{t(`alert.kind.${a.kind}`)}</AppText>
-                <AppText variant="label" color={colors.textMuted}>
-                  {formatRelativeDay(t, a.sentAt, now)} · {formatClock(a.sentAt)}
-                </AppText>
-              </View>
-              {isNew ? (
-                <View style={styles.newPill}>
-                  <AppText variant="caption" color={colors.textOnDark}>
-                    {t('resident.alerts.new')}
-                  </AppText>
-                </View>
-              ) : null}
-            </View>
-            <SmsBubble text={a.text} />
-            <AppText variant="caption" color={colors.textMuted}>
-              {sms ? t('resident.alerts.viaSms') : t('resident.alerts.smsOff')}
-            </AppText>
-          </Card>
-        );
-      })}
+      {barangayId && shown.length === 0 ? (
+        <EmptyState
+          icon="bell-outline"
+          title={t(items.length ? 'resident.alerts.noneInFilter' : 'resident.alerts.empty')}
+        />
+      ) : null}
 
+      {list(t('resident.alerts.today'), today)}
+      {list(t('resident.alerts.earlier'), earlier)}
+
+      {items.some((i) => i.source === 'alert') ? (
+        <AppText variant="caption" color={colors.textMuted}>
+          {sms ? t('resident.alerts.viaSms') : t('resident.alerts.smsOff')}
+        </AppText>
+      ) : null}
       {!sms && barangayId ? (
         <Button
-          variant="success"
           icon="message-text"
           label={t('resident.settings.smsTurnOn')}
           onPress={() => router.push({ pathname: '/onboarding/sms', params: { from: 'settings' } })}
@@ -109,20 +129,7 @@ export default function AlertsScreen() {
 }
 
 const styles = StyleSheet.create({
-  newCard: { borderColor: colors.navy, borderWidth: 2 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  icon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerText: { flex: 1 },
-  newPill: {
-    backgroundColor: colors.navy,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-  },
+  intro: { gap: spacing.sm },
+  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  group: { gap: spacing.sm },
 });

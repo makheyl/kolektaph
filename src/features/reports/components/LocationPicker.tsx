@@ -108,6 +108,24 @@ export function LocationPicker({
 
   return (
     <View style={styles.wrap}>
+      {value ? (
+        <View style={[styles.place, !here && styles.placeOutside]} accessibilityLiveRegion="polite">
+          <Icon
+            name={here ? 'map-marker-check' : 'map-marker-alert'}
+            size={22}
+            color={here ? colors.ink : colors.red}
+          />
+          <AppText
+            variant="bodyStrong"
+            color={here ? colors.text : colors.red}
+            style={styles.placeText}
+          >
+            {here
+              ? t('reports.wizard.inBarangay', { barangay: here.properties.name })
+              : t('reports.wizard.outside')}
+          </AppText>
+        </View>
+      ) : null}
       <View style={styles.mapBox}>
         <KMap
           barangays={barangays}
@@ -135,25 +153,11 @@ export function LocationPicker({
         label={
           gps === 'locating' ? t('reports.wizard.locating') : t('reports.wizard.useMyLocation')
         }
-        disabled={gps === 'locating'}
+        loading={gps === 'locating'}
         onPress={() => void locate()}
       />
       {gps === 'denied' ? (
         <AppText color={colors.amber}>{t('reports.wizard.locationDenied')}</AppText>
-      ) : null}
-      {value ? (
-        here ? (
-          <View style={styles.row} accessibilityLiveRegion="polite">
-            <Icon name="map-marker-check" size={22} color={colors.green} />
-            <AppText variant="bodyStrong">
-              {t('reports.wizard.inBarangay', { barangay: here.properties.name })}
-            </AppText>
-          </View>
-        ) : (
-          <AppText color={colors.red} accessibilityLiveRegion="polite">
-            {t('reports.wizard.outside')}
-          </AppText>
-        )
       ) : null}
     </View>
   );
@@ -161,13 +165,25 @@ export function LocationPicker({
 
 const styles = StyleSheet.create({
   wrap: { gap: spacing.sm },
+  // The green frame of the design's camera view, around the map the pin is set on.
   mapBox: {
     height: 300,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 3,
+    borderColor: colors.primary,
   },
+  place: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
+    backgroundColor: colors.greySoft,
+  },
+  placeOutside: { backgroundColor: colors.redSoft },
+  placeText: { flex: 1 },
   pin: {
     position: 'absolute',
     left: '50%',
@@ -175,5 +191,4 @@ const styles = StyleSheet.create({
     marginLeft: -24,
     marginTop: -46,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });

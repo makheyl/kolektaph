@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -6,12 +7,17 @@ import { KMap } from '@/components/map/KMap';
 import type { MapTruck } from '@/components/map/types';
 import { AppHeader } from '@/components/ui/AppHeader';
 import { AppText } from '@/components/ui/AppText';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadBar } from '@/components/ui/LoadBar';
 import { Screen } from '@/components/ui/Screen';
+import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
+import { Skeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { MapLegend } from '@/features/resident/components/MapLegend';
+import { barangayLabel } from '@/features/resident/format';
 import { truckRelationText } from '@/features/resident/truckRelation';
 import { useResidentToday } from '@/features/resident/useResidentToday';
 import { upcomingStreets } from '@/features/tracking/eta';
@@ -20,6 +26,7 @@ import { buildRoutePreview } from '@/features/tracking/routePreview';
 import { boundsOf } from '@/lib/geo';
 import { formatClock } from '@/lib/time';
 import type { TruckState } from '@/services/types';
+import { useSettings } from '@/stores/settings';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 type View_ = 'map' | 'list';
@@ -31,6 +38,7 @@ export default function ResidentMap() {
   const { data: meta } = useCityMeta();
   const { data: trucks } = useTrucks();
   const { barangayId, now, states, routes, today } = useResidentToday();
+  const smsOn = useSettings((s) => s.sms != null);
 
   const [chosenTruckId, setChosenTruckId] = useState<string | null>(null);
   const [view, setView] = useState<View_>('map');
@@ -87,32 +95,81 @@ export default function ResidentMap() {
   const truckSummary = (s: TruckState) => (
     <>
       <View style={styles.titleRow}>
-        <AppText variant="heading">{truckName(s.truckId)}</AppText>
+        <AppText variant="heading" color={colors.ink}>
+          {truckName(s.truckId)}
+        </AppText>
         <StatusPill status={s.status} />
       </View>
-      {locationText(s) ? <AppText color={colors.textMuted}>{locationText(s)}</AppText> : null}
       {mine ? (
         <AppText variant="bodyStrong">
           {truckRelationText(t, routeOf(s), s, barangayId, mine.properties.name, now)}
         </AppText>
       ) : null}
+      {locationText(s) ? <AppText color={colors.textMuted}>{locationText(s)}</AppText> : null}
       <LoadBar value={s.load} />
     </>
   );
 
-  return (
-    <Screen scroll={false}>
-      <AppHeader title={t('resident.tabs.map')} />
-      <View style={styles.controls}>
-        <Chip
-          label={t('resident.map.mapView')}
-          selected={view === 'map'}
-          onPress={() => setView('map')}
+  /** What the map is about: whose barangay, and whether a text will come. Both lead to where each is changed. */
+  const shortcuts = (
+    <View style={styles.shortcuts}>
+      <Button
+        variant="secondary"
+        size="compact"
+        icon="map-marker"
+        label={mine ? barangayLabel(mine.properties) : t('resident.home.pick')}
+        accessibilityHint={t('resident.settings.changeBarangay')}
+        onPress={() => router.push('/resident/barangay')}
+      />
+      {mine ? (
+        <Button
+          variant="secondary"
+          size="compact"
+          icon={smsOn ? 'message-text' : 'message-off-outline'}
+          label={t(smsOn ? 'resident.map.textOn' : 'resident.map.textOff')}
+          accessibilityHint={t(smsOn ? 'common.settings' : 'resident.settings.smsTurnOn')}
+          onPress={() =>
+            smsOn
+              ? router.push('/resident/settings')
+              : router.push({ pathname: '/onboarding/sms', params: { from: 'settings' } })
+          }
         />
-        <Chip
-          label={t('resident.map.listView')}
-          selected={view === 'list'}
-          onPress={() => setView('list')}
+      ) : null}
+    </View>
+  );
+
+  const header = <AppHeader title={t('resident.tabs.map')} />;
+
+  if (!barangays || !meta) {
+    return (
+      <Screen scroll={false} header={header}>
+        <SkeletonGroup style={styles.fill}>
+          <Skeleton height={44} width={200} round={radius.pill} />
+          <Skeleton height={320} round={radius.lg} />
+          <Skeleton height={120} round={radius.lg} />
+        </SkeletonGroup>
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen scroll={false} flush header={header}>
+      {/* One row that scrolls sideways when it does not fit, so the map keeps its height. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.controlsBar}
+        contentContainerStyle={styles.controls}
+      >
+        <SegmentedTabs
+          variant="pill"
+          label={t('resident.tabs.map')}
+          tabs={[
+            { id: 'map', label: t('resident.map.mapView') },
+            { id: 'list', label: t('resident.map.listView') },
+          ]}
+          value={view}
+          onChange={setView}
         />
         {view === 'map' && mine ? (
           <Chip
@@ -126,46 +183,44 @@ export default function ResidentMap() {
             onPress={() => setFit({ target: 'city', n: (fit?.n ?? 0) + 1 })}
           />
         ) : null}
-      </View>
+      </ScrollView>
 
       {view === 'map' ? (
         <>
           <View style={styles.mapWrap}>
-            {barangays && meta ? (
-              <KMap
-                barangays={barangays}
-                meta={meta}
-                trucks={mapTrucks}
-                routePreview={preview}
-                highlightBarangayId={barangayId}
-                selectedTruckId={selectedId}
-                fitBounds={fitBounds}
-                onTruckPress={setChosenTruckId}
-                style={StyleSheet.absoluteFill}
-                accessibilityLabel={t('map.a11yLabel', { count: mapTrucks.length })}
-              />
-            ) : null}
+            <KMap
+              barangays={barangays}
+              meta={meta}
+              trucks={mapTrucks}
+              routePreview={preview}
+              highlightBarangayId={barangayId}
+              selectedTruckId={selectedId}
+              fitBounds={fitBounds}
+              onTruckPress={setChosenTruckId}
+              style={StyleSheet.absoluteFill}
+              accessibilityLabel={t('map.a11yLabel', { count: mapTrucks.length })}
+            />
             <MapLegend />
           </View>
-          <Card>
+          {/* The mint panel under the map, as in the design: the chosen truck in words. */}
+          <View style={styles.sheet}>
             {selected ? (
               truckSummary(selected)
             ) : (
-              <AppText color={colors.textMuted}>{t('resident.map.noTrucks')}</AppText>
+              <AppText variant="bodyStrong">{t('resident.map.noTrucks')}</AppText>
             )}
             {onDuty.length > 1 ? (
               <AppText variant="caption" color={colors.textMuted}>
                 {t('resident.map.tapTruck')}
               </AppText>
             ) : null}
-          </Card>
+            {shortcuts}
+          </View>
         </>
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
           {onDuty.length === 0 ? (
-            <Card>
-              <AppText color={colors.textMuted}>{t('resident.map.noTrucks')}</AppText>
-            </Card>
+            <EmptyState icon="truck-outline" title={t('resident.map.noTrucks')} />
           ) : null}
           {onDuty.map((s) => (
             <Pressable
@@ -190,7 +245,9 @@ export default function ResidentMap() {
                       {nameOf(st.barangayId)}
                     </AppText>
                   </View>
-                  <AppText variant="bodyStrong">{formatClock(st.arriveAt)}</AppText>
+                  <AppText variant="bodyStrong" color={colors.primary}>
+                    {formatClock(st.arriveAt)}
+                  </AppText>
                 </View>
               ))}
               <AppText variant="caption" color={colors.textMuted}>
@@ -198,6 +255,7 @@ export default function ResidentMap() {
               </AppText>
             </Card>
           ) : null}
+          {shortcuts}
         </ScrollView>
       )}
     </Screen>
@@ -205,15 +263,12 @@ export default function ResidentMap() {
 }
 
 const styles = StyleSheet.create({
-  controls: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  mapWrap: {
-    flex: 1,
-    minHeight: 260,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
+  fill: { flex: 1 },
+  // Keeps its own height when the list below it wants the whole screen.
+  controlsBar: { flexGrow: 0, flexShrink: 0 },
+  controls: { alignItems: 'center', gap: spacing.sm, padding: spacing.md },
+  mapWrap: { flex: 1, minHeight: 220 },
+  sheet: { padding: spacing.lg, gap: spacing.sm, backgroundColor: colors.mint },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -221,15 +276,16 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  list: { gap: spacing.md, paddingBottom: spacing.xl },
-  selectedCard: { borderColor: colors.navy, borderWidth: 2 },
+  shortcuts: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, paddingTop: spacing.xs },
+  list: { gap: spacing.md, padding: spacing.lg, paddingTop: spacing.xs },
+  selectedCard: { borderColor: colors.primary, borderWidth: 2 },
   streetRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     paddingVertical: spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: colors.greySoft,
+    borderBottomColor: colors.border,
   },
   streetText: { flex: 1 },
 });

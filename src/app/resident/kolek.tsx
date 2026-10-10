@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  ActivityIndicator,
   Keyboard,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
+  type TextStyle,
   View,
 } from 'react-native';
 
@@ -26,7 +28,7 @@ import { getSimTime } from '@/stores/demo';
 import { useKolekChat } from '@/stores/kolekChat';
 import { useMyReports } from '@/stores/myReports';
 import { useSettings } from '@/stores/settings';
-import { colors, fonts, LARGE_TEXT_SCALE, radius, spacing, touch } from '@/theme/tokens';
+import { colors, fonts, LARGE_TEXT_SCALE, radius, shadows, spacing, touch } from '@/theme/tokens';
 
 const MAX_LENGTH = 300;
 /** Unique within the conversation (it only grows until cleared). */
@@ -54,6 +56,7 @@ export default function KolekTab() {
   const scroll = useRef<ScrollView>(null);
   const box = useRef<View>(null);
   const [keyboardPad, setKeyboardPad] = useState(0);
+  const [focused, setFocused] = useState(false);
 
   // Keep the question box above the phone keyboard: pad by exactly how much the keyboard
   // covers this screen (edge-to-edge Android no longer resizes the window for it).
@@ -107,15 +110,19 @@ export default function KolekTab() {
   const chips = lastKolek?.suggestions ?? DEFAULT_CHIPS;
 
   return (
-    <Screen scroll={false}>
-      <AppHeader
-        title={t('kolek.title')}
-        actions={
-          messages.length ? (
-            <IconButton icon="delete-outline" label={t('kolek.clear')} onPress={clear} />
-          ) : null
-        }
-      />
+    <Screen
+      scroll={false}
+      header={
+        <AppHeader
+          title={t('kolek.title')}
+          actions={
+            messages.length ? (
+              <IconButton icon="delete-outline" label={t('kolek.clear')} onPress={clear} />
+            ) : null
+          }
+        />
+      }
+    >
       <View ref={box} style={[styles.fill, { paddingBottom: keyboardPad }]}>
         <ScrollView
           ref={scroll}
@@ -143,7 +150,7 @@ export default function KolekTab() {
           )}
           {thinking ? (
             <View style={styles.thinking} accessibilityLiveRegion="polite">
-              <Icon name="dots-horizontal" size={22} color={colors.textMuted} />
+              <ActivityIndicator color={colors.primary} />
               <AppText color={colors.textMuted}>{t('kolek.thinking')}</AppText>
             </View>
           ) : null}
@@ -160,6 +167,7 @@ export default function KolekTab() {
               {chips.map((id) => (
                 <Chip
                   key={id}
+                  tone="neutral"
                   label={t(`kolek.chips.${id}`)}
                   onPress={() => void ask(t(`kolek.chips.${id}`))}
                 />
@@ -169,10 +177,12 @@ export default function KolekTab() {
         </ScrollView>
 
         <View style={styles.inputBar}>
-          <View style={styles.inputBox}>
+          <View style={[styles.inputBox, focused && styles.inputFocused]}>
             <TextInput
               value={text}
               onChangeText={setText}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
               onSubmitEditing={() => void ask(text)}
               placeholder={t('kolek.placeholder')}
               placeholderTextColor={colors.textMuted}
@@ -180,7 +190,11 @@ export default function KolekTab() {
               accessibilityHint={t('kolek.privacy')}
               returnKeyType="send"
               maxLength={MAX_LENGTH}
-              style={[styles.input, { fontSize: 18 * (largeText ? LARGE_TEXT_SCALE : 1) }]}
+              style={[
+                styles.input,
+                { fontSize: 18 * (largeText ? LARGE_TEXT_SCALE : 1) },
+                Platform.OS === 'web' && WEB_NO_OUTLINE,
+              ]}
             />
           </View>
           <Pressable
@@ -198,7 +212,7 @@ export default function KolekTab() {
             <Icon name="send" size={24} color={colors.textOnDark} />
           </Pressable>
         </View>
-        <AppText variant="caption" color={colors.textMuted}>
+        <AppText variant="caption" color={colors.textMuted} style={styles.privacy}>
           {t('kolek.privacy')}
         </AppText>
       </View>
@@ -209,19 +223,26 @@ export default function KolekTab() {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   list: { gap: spacing.md, paddingBottom: spacing.md },
-  thinking: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingLeft: 44 },
+  thinking: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingLeft: 52 },
   chipsBox: { gap: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   inputBar: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center', paddingTop: spacing.sm },
   inputBox: {
     flex: 1,
-    minHeight: touch.min,
+    minHeight: touch.large,
     justifyContent: 'center',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.fieldBorder,
+    ...shadows.card,
+  },
+  // The box shows focus, as in TextField.
+  inputFocused: {
+    borderColor: colors.primary,
+    borderWidth: 2.5,
+    paddingHorizontal: spacing.lg - 1,
   },
   input: {
     minWidth: 0,
@@ -230,12 +251,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   send: {
-    width: touch.min,
-    height: touch.min,
-    borderRadius: radius.md,
-    backgroundColor: colors.green,
+    width: touch.large,
+    height: touch.large,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendDisabled: { backgroundColor: colors.grey },
+  privacy: { paddingTop: spacing.xs },
 });
+
+/** The box's green border shows focus instead of the browser's ring inside it (see TextField). */
+const WEB_NO_OUTLINE = { outlineStyle: 'none' } as unknown as TextStyle;

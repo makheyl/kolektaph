@@ -8,13 +8,14 @@ import {
   TRUCK_CAPACITY_TONNES,
   TRUCKS,
 } from '@/data/carmona';
+import { SAMPLE_POINTS_RULES } from '@/data/samples/rewards';
 import { alertLog, type EngineContext } from '@/features/alerts/engine';
 import { smsInfo } from '@/features/alerts/sms';
 import { WEEKDAYS_FIL } from '@/features/alerts/templates';
 import { missedStreets } from '@/features/coverage/coverage';
 import { skipsBySegment } from '@/features/driver/streets';
 import { suggestBackups } from '@/features/load/backup';
-import { routeRunsOnDay } from '@/features/schedule/collections';
+import { collectionsForBarangay, isRunning, routeRunsOnDay } from '@/features/schedule/collections';
 import { applyScheduleChange, validateScheduleChange } from '@/features/schedule/editing';
 import { weeklyStats } from '@/features/stats/weekly';
 import { VICINITY_MINUTES } from '@/features/tracking/eta';
@@ -22,8 +23,11 @@ import { atManilaTime, DAY, manilaDateKey, manilaStartOfDay, MINUTE } from '@/li
 import { simulatedTrace, simulateFleet, simulateTruck } from '@/simulator/truckSimulator';
 
 import { OfflineError, SignInError } from '../errors';
+import { type AccountDeps, createMockAccount } from './account';
+import { createMockHauling } from './hauling';
 import { createMockKolek } from './kolek';
 import { createMockReports } from './reports';
+import { createMockRewards } from './rewards';
 import { createMockStats } from './stats';
 import type {
   Announcement,
@@ -73,6 +77,8 @@ export interface MockDeps {
   getTraces: () => Record<string, { truckId: string; source: GpsSource; fixes: GpsFix[] }>;
   /** Whether this device can reach the server right now. */
   isOnline: () => boolean;
+  /** The barangay this resident chose (their Eco Points follow its collection days). */
+  getBarangayId?: () => string | null;
   /** Stand-in for the backend's tickets table. */
   getTickets: () => Ticket[];
   saveTicket: (t: Ticket) => void;
@@ -86,6 +92,8 @@ export interface MockDeps {
   setContact: (target: ContactTarget, info: ContactInfo) => void;
   getStaff: () => StaffUser[];
   saveStaff: (user: StaffUser) => void;
+  /** The ticket numbers this device has sent or claimed (the resident's own reports). */
+  device?: { getReports: () => string[]; setReports: (ticketIds: string[]) => void };
   /** Registered SMS numbers per barangay (default: the sample counts). */
   getRegistrations?: () => Record<string, number>;
   /** What the server holds of a shift's GPS, without the fixes (default: from getTraces). */
@@ -304,6 +312,45 @@ export function createMockServices(deps: MockDeps): Services {
     missedFor,
     alertsForDay,
   });
+
+  // The newer features (sample, in memory): Eco Points first, since hauling can spend them.
+  const rewards = createMockRewards({
+    getSimTime: deps.getSimTime,
+    collectionDays(fromMs, days) {
+      const barangayId = deps.getBarangayId?.();
+      if (!barangayId) return [];
+      return collectionsForBarangay(
+        barangayId,
+        schedules(),
+        ROUTES,
+        SCHEDULE_EXCEPTIONS,
+        fromMs,
+        days,
+      )
+        .filter(isRunning)
+        .map((o) => o.day);
+    },
+  });
+  const hauling = createMockHauling({
+    getSimTime: deps.getSimTime,
+    isOnline: deps.isOnline,
+    pointsBalance: rewards.balance,
+    spendPoints: (points, ref) => rewards.spend('hauling_discount', points, ref),
+    pointsRules: () => SAMPLE_POINTS_RULES,
+  });
+  // A device's holdings: its reports (from the device) and its points and vouchers (the rewards).
+  const deviceHoldings: AccountDeps = {
+    read: () => ({
+      reports: deps.device?.getReports() ?? [],
+      points: rewards.ledger().entries,
+      vouchers: rewards.ledger().vouchers,
+    }),
+    write: (holdings) => {
+      deps.device?.setReports(holdings.reports);
+      rewards.setLedger({ entries: holdings.points, vouchers: holdings.vouchers });
+    },
+  };
+  const account = createMockAccount(deviceHoldings);
 
   return {
     geo: {
@@ -542,12 +589,31 @@ export function createMockServices(deps: MockDeps): Services {
           minutes: 120,
         });
       },
-      reset: async () => deps.demo?.reset(),
+      async reset() {
+        deps.demo?.reset();
+        rewards.reset();
+        hauling.reset();
+        account.reset();
+      },
     },
     photos: {
       // Sample photos are bundled and camera photos stay on the device: nothing to fetch.
       getUrl: async () => {
         throw new Error('The sample data has no stored photos');
+      },
+    },
+    features: { accounts: true, hauling: true, rewards: true, scanner: true },
+    account,
+    hauling,
+    rewards,
+    scanner: {
+      // No recognition is connected. The demo picture (old furniture) gets the answer that fits
+      // it; any other photo gets one fixed answer. Both are marked as samples.
+      async classify(photo) {
+        await wait(900);
+        return photo.kind === 'sample' && photo.id === 'bulky'
+          ? { item: 'old_furniture', sortClass: 'special', sample: true }
+          : { item: 'plastic_bottle', sortClass: 'recyclable', sample: true };
       },
     },
   };

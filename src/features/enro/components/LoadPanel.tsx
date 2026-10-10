@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  selected: { borderColor: colors.navy, backgroundColor: colors.greySoft },
+  selected: { borderColor: colors.primary, backgroundColor: colors.mintSoft },
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
   name: { flex: 1 },
 });

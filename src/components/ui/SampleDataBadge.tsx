@@ -8,18 +8,18 @@ import { AppText } from './AppText';
 import { Icon } from './Icon';
 
 /** Marks sample numbers as such: the pitch guide says never present invented data as real. */
-export function SampleDataBadge() {
+export function SampleDataBadge({ centered = false }: { centered?: boolean }) {
   const { t } = useTranslation();
   const demoMode = useDemo((s) => s.demoMode);
   if (!demoMode) return null;
   return (
     <View
-      style={styles.badge}
+      style={[styles.badge, centered && styles.centered]}
       accessible
       accessibilityLabel={`${t('common.sampleData')}. ${t('common.sampleDataHint')}`}
     >
-      <Icon name="flask-outline" size={16} color={colors.navy} />
-      <AppText variant="caption" style={styles.text}>
+      <Icon name="flask-outline" size={16} color={colors.ink} />
+      <AppText variant="caption" color={colors.ink} style={styles.text}>
         {t('common.sampleData')}
       </AppText>
     </View>
@@ -39,5 +39,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
+  centered: { alignSelf: 'center' },
   text: { fontWeight: '600' },
 });

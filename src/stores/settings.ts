@@ -54,7 +54,7 @@ export const smsKey = (sms: SmsSubscription | null) =>
 
 /**
  * Per-device preferences. Data minimisation (RA 10173): only a barangay and, if the resident
- * opts in, a mobile number. Never a name or home address.
+ * opts in, a mobile number. A name and area are kept only with an account the resident makes.
  */
 export const useSettings = create<SettingsState>()(
   persist(

@@ -2,54 +2,93 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { colors, radius, spacing } from '@/theme/tokens';
+import type { PressState } from '@/components/ui/interaction';
+import { colors, fonts, radius, spacing } from '@/theme/tokens';
 
 interface QuickActionProps {
   icon: IconName;
   label: string;
   onPress: () => void;
+  /** A number on the circle's corner, e.g. how many reports. */
+  badge?: string | null;
+  /** What the number means, read out with the label ("3 report"). */
+  badgeLabel?: string | null;
+  /** Set by the grid: every shortcut in a row is this wide. */
+  width?: number;
+  /** Shown but not usable now (a shift shortcut before the shift starts). */
+  disabled?: boolean;
 }
 
-/** Square icon-over-label tile for the Home 2×2 grid. */
-export function QuickAction({ icon, label, onPress }: QuickActionProps) {
+/** A Home shortcut: a mint circle with an icon and its name underneath. */
+export function QuickAction({
+  icon,
+  label,
+  onPress,
+  badge,
+  badgeLabel,
+  width,
+  disabled,
+}: QuickActionProps) {
+  const spoken = badgeLabel ?? badge;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={spoken ? `${label}. ${spoken}` : label}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.tile, pressed && { backgroundColor: colors.greySoft }]}
+      style={[styles.tile, width ? { width } : styles.loose, disabled && styles.disabled]}
     >
-      <View style={styles.iconWrap}>
-        <Icon name={icon} size={30} color={colors.navy} />
-      </View>
-      <AppText variant="bodyStrong" style={styles.label}>
-        {label}
-      </AppText>
+      {({ pressed, hovered }: PressState) => (
+        <>
+          <View style={[styles.circle, (pressed || hovered) && styles.circleActive]}>
+            <Icon name={icon} size={32} color={colors.primary} />
+            {badge ? (
+              <View style={styles.badge}>
+                <AppText variant="caption" color={colors.ink} style={styles.badgeText}>
+                  {badge}
+                </AppText>
+              </View>
+            ) : null}
+          </View>
+          <AppText variant="caption" color={colors.primary} style={styles.label}>
+            {label}
+          </AppText>
+        </>
+      )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   tile: {
-    flexBasis: '47%',
-    flexGrow: 1,
-    minHeight: 104,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    gap: spacing.xs,
+    paddingHorizontal: 2,
+    paddingVertical: spacing.xs,
   },
-  iconWrap: {
-    width: 52,
-    height: 52,
+  loose: { flexGrow: 1, flexBasis: 76 },
+  disabled: { opacity: 0.45 },
+  circle: {
+    width: 64,
+    height: 64,
     borderRadius: radius.pill,
-    backgroundColor: colors.greySoft,
+    backgroundColor: colors.mint,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { textAlign: 'center' },
+  circleActive: { backgroundColor: colors.mintEdge },
+  // Kept inside its tile: a long name wraps there instead of running over the next one.
+  label: { textAlign: 'center', fontFamily: fonts.bold, maxWidth: '100%' },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -10,
+    minWidth: 22,
+    alignItems: 'center',
+    paddingHorizontal: spacing.xs,
+    borderRadius: radius.pill,
+    backgroundColor: colors.yellow,
+  },
+  badgeText: { fontFamily: fonts.semibold },
 });

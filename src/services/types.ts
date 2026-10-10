@@ -694,6 +694,237 @@ export interface KolekContext {
   myTicketIds: string[];
 }
 
+// ---------- Newer features (accounts, private hauling, Eco Points, scanner) ----------
+
+/**
+ * Which newer features this build offers. All are on with the sample data; with the pilot
+ * database each turns on once its tables and entry points exist. Screens hide what is off.
+ */
+export interface FeatureFlags {
+  accounts: boolean;
+  hauling: boolean;
+  rewards: boolean;
+  scanner: boolean;
+}
+
+/** What a registered resident told the City about themselves. */
+export interface ResidentProfile {
+  fullName: string;
+  /** E.164, e.g. "+639171234567". */
+  mobile: string;
+  email: string | null;
+  barangayId: string | null;
+  /** Zone, block, phase or purok, as the resident wrote it. */
+  area: string;
+}
+
+/** A device is a guest (no account, as before) or signed in to a registered account. */
+export type AccountState = { status: 'guest' } | { status: 'registered'; profile: ResidentProfile };
+
+export interface NewAccount {
+  fullName: string;
+  mobile: string;
+  password: string;
+  barangayId: string | null;
+  area: string;
+  email: string | null;
+}
+
+/** What the guest identity on a device holds, offered to the account it signs in to. */
+export interface GuestTransferOffer {
+  reports: number;
+  /** The points the device holds, in total. */
+  points: number;
+}
+
+export type HaulingRequester = 'resident' | 'business';
+export type HaulingSlot = 'morning' | 'afternoon';
+/** Small = 1 to 5 sacks, medium = half a truck, large = a full truck, unsure = the City assesses. */
+export type HaulingVolume = 'small' | 'medium' | 'large' | 'unsure';
+export type HaulingLoadType = 'garden' | 'construction' | 'furniture' | 'appliances' | 'general';
+
+export type HaulingStatus =
+  | 'requested'
+  | 'quoted'
+  | 'accepted'
+  | 'scheduled'
+  | 'in_progress'
+  | 'completed'
+  | 'declined'
+  | 'cancelled';
+
+export type PaymentMethod = 'gcash' | 'maya' | 'card' | 'cash';
+
+/** What the City answered: the slot it confirms and the fee, in whole pesos. */
+export interface HaulingQuote {
+  /** Manila midnight of the confirmed day (it may differ from the day asked for). */
+  day: number;
+  slot: HaulingSlot;
+  volume: Exclude<HaulingVolume, 'unsure'>;
+  baseFee: number;
+  distanceFee: number;
+  disposalFee: number;
+  quotedAt: number;
+  /** The quotation stands until then (24 hours). */
+  validUntil: number;
+}
+
+export interface HaulingPayment {
+  method: PaymentMethod;
+  /** Eco Points spent on this booking and the pesos they took off. */
+  pointsUsed: number;
+  pointsDiscount: number;
+  total: number;
+  at: number;
+  /** "paid" = the online payment went through; "due" = cash, handed to the crew at pickup. */
+  state: 'paid' | 'due';
+  /** No real money moved (every payment is a sample until a payment provider is connected). */
+  sample: boolean;
+}
+
+export interface HaulingEvent {
+  id: string;
+  status: HaulingStatus;
+  at: number;
+  by: TicketActor;
+  note: string | null;
+}
+
+export interface NewHaulingRequest {
+  requester: HaulingRequester;
+  /** For a business: its name. The contact below is then its contact person. */
+  businessName: string | null;
+  contactName: string;
+  /** E.164. */
+  contactMobile: string;
+  location: LngLat;
+  landmark: string;
+  /** Manila midnight of the day asked for. */
+  day: number;
+  slot: HaulingSlot;
+  volume: HaulingVolume;
+  loadTypes: HaulingLoadType[];
+  description: string;
+  photos: PhotoRef[];
+  /** A reference made on the device, so a request sent twice is filed once. */
+  clientRef?: string;
+}
+
+export interface HaulingRequest extends Omit<NewHaulingRequest, 'clientRef'> {
+  /** "HR-2026-000012" */
+  id: string;
+  barangayId: string | null;
+  createdAt: number;
+  status: HaulingStatus;
+  quote: HaulingQuote | null;
+  payment: HaulingPayment | null;
+  history: HaulingEvent[];
+  /** Sample request shipped with the prototype. */
+  sample: boolean;
+}
+
+export type PointsEarnKind =
+  'valid_report' | 'pickup_confirmed' | 'segregation_check' | 'cleanup_drive' | 'week_complete';
+export type PointsSpendKind = 'redeemed' | 'hauling_discount';
+
+/** One line of a resident's Eco Points: earned (positive) or spent (negative). */
+export interface PointsEntry {
+  id: string;
+  kind: PointsEarnKind | PointsSpendKind;
+  points: number;
+  at: number;
+  /** What it was for: a ticket number, a perk, a booking number. */
+  ref: string | null;
+}
+
+export interface PointsTier {
+  id: 'bronze' | 'silver' | 'gold';
+  /** Lifetime points from which the tier is reached. */
+  from: number;
+}
+
+/** What the City set (sample values until it does). */
+/** The City's fees for a private-hauling booking, in whole pesos. Sample figures until it sets them. */
+export interface HaulingRates {
+  /** The base fee for each load size. */
+  base: Record<Exclude<HaulingVolume, 'unsure'>, number>;
+  /** Charged per trip, for the distance from the depot. */
+  distanceFee: number;
+  /** Charged per trip, for the disposal at the City's facility. */
+  disposalFee: number;
+  sample: boolean;
+}
+
+export interface PointsRules {
+  earn: Record<PointsEarnKind, number>;
+  tiers: PointsTier[];
+  /** Pesos taken off a hauling fee for every 100 points spent. */
+  pesosPer100: number;
+}
+
+/** One collection day of this week in the resident's barangay. */
+export interface StreakDay {
+  /** Manila midnight. */
+  day: number;
+  state: 'confirmed' | 'missed' | 'upcoming';
+}
+
+export interface PointsSummary {
+  balance: number;
+  /** Everything ever earned, which decides the tier. */
+  lifetime: number;
+  /** Newest first. */
+  entries: PointsEntry[];
+  week: StreakDay[];
+  rules: PointsRules;
+}
+
+export type PerkGroup = 'bills' | 'stores' | 'city';
+
+/** Something Eco Points can be exchanged for, entered by City ENRO. */
+export interface Perk {
+  id: string;
+  title: Record<'fil' | 'en', string>;
+  partner: string;
+  group: PerkGroup;
+  cost: number;
+  /** Sample perk shipped with the prototype: not a real offer of the City or a partner. */
+  sample: boolean;
+}
+
+export interface Voucher {
+  id: string;
+  perkId: string;
+  /** Shown at the counter, e.g. "KPH-7F3K-2QXM". */
+  code: string;
+  issuedAt: number;
+  validUntil: number;
+  status: 'issued' | 'used' | 'expired';
+}
+
+/** A clean-up drive the City holds: residents who join earn points for it. */
+export interface CleanupDrive {
+  id: string;
+  barangayId: string;
+  /** The place, as the City writes it. */
+  place: string;
+  /** Manila time the drive starts. */
+  startsAt: number;
+  /** Residents who have joined so far. */
+  attendees: number;
+  /** A sample drive: not one the City has announced. */
+  sample: boolean;
+}
+
+/** What the scanner says a photo shows, in the classes of RA 9003. */
+export interface ScanResult {
+  /** A common household item the guide knows, e.g. "plastic_bottle". */
+  item: string;
+  sortClass: 'biodegradable' | 'recyclable' | 'residual' | 'special';
+  /** A sample answer, not a reading of the photo (no recognition is connected yet). */
+  sample: boolean;
+}
+
 // ---------- Services (screens only talk to these) ----------
 
 export interface GeoService {
@@ -834,6 +1065,71 @@ export interface PhotoService {
   getUrl(path: string): Promise<string>;
 }
 
+/** Resident accounts. A device works without one; registering keeps what it already owns. */
+export interface AccountService {
+  /** Pushes the current state at once and on every change. Returns an unsubscribe function. */
+  subscribe(listener: (state: AccountState) => void): () => void;
+  /** Turns this device's identity into a registered account. Rejects with ServerError('mobile_taken'). */
+  register(input: NewAccount): Promise<void>;
+  /** Rejects with ServerError('invalid_credentials'). */
+  logIn(mobile: string, password: string): Promise<void>;
+  /** Back to this device's own guest identity. */
+  logOut(): Promise<void>;
+  saveProfile(profile: ResidentProfile): Promise<void>;
+  /** Rejects with ServerError('invalid_credentials') when the current password is wrong. */
+  changePassword(current: string, next: string): Promise<void>;
+  /**
+   * What the device held as a guest, offered once after signing in to an account. Null when
+   * there is nothing to offer.
+   */
+  subscribeTransfer(listener: (offer: GuestTransferOffer | null) => void): () => void;
+  /** Moves the offered reports, points and vouchers into the signed-in account. */
+  acceptTransfer(): Promise<void>;
+  /** Leaves them on the device: they come back when the account is signed out. */
+  declineTransfer(): Promise<void>;
+  /**
+   * Sends a one-time code to the account's number. On the sample data nothing is sent: the code
+   * comes back to be shown on screen. Rejects with ServerError('unknown_account').
+   */
+  requestRecovery(mobile: string): Promise<{ sampleCode: string | null }>;
+  /** Rejects with ServerError('wrong_code'). */
+  confirmRecovery(mobile: string, code: string, password: string): Promise<void>;
+}
+
+export interface HaulingService {
+  /** This resident's hauling requests, newest first. */
+  subscribeMine(listener: (requests: HaulingRequest[]) => void): () => void;
+  /** Every request the City holds, newest first (City ENRO). A sample list in the prototype. */
+  subscribeAll(listener: (requests: HaulingRequest[]) => void): () => void;
+  /** The City's fees for a booking; null until the City sets them (the pilot starts empty). */
+  subscribeRates(listener: (rates: HaulingRates | null) => void): () => void;
+  /** Rejects with OfflineError without signal. */
+  submit(request: NewHaulingRequest): Promise<HaulingRequest>;
+  /** Accepts the quotation and pays, or chooses cash on pickup. */
+  pay(id: string, method: PaymentMethod, pointsUsed: number): Promise<HaulingRequest>;
+  /** The requester calls it off, any time before the crew sets out. */
+  cancel(id: string): Promise<HaulingRequest>;
+}
+
+export interface RewardsService {
+  subscribeSummary(listener: (summary: PointsSummary) => void): () => void;
+  subscribePerks(listener: (perks: Perk[]) => void): () => void;
+  /** This resident's vouchers, newest first. */
+  subscribeVouchers(listener: (vouchers: Voucher[]) => void): () => void;
+  /** The City's clean-up drives, newest first (City ENRO). Sample drives in the prototype. */
+  subscribeCleanups(listener: (drives: CleanupDrive[]) => void): () => void;
+  /** Looks a voucher up by its code, as the counter does. Null when there is none like it. */
+  findVoucher(code: string): Promise<Voucher | null>;
+  /** Exchanges points for a perk. Rejects with ServerError('not_enough_points'). */
+  redeem(perkId: string): Promise<Voucher>;
+}
+
+/** The segregation scanner. A sample today; a vision model can implement the same interface. */
+export interface ScannerProvider {
+  /** What the photo shows and how it is segregated; null when it cannot tell. */
+  classify(photo: PhotoRef): Promise<ScanResult | null>;
+}
+
 export interface Services {
   geo: GeoService;
   fleet: FleetService;
@@ -849,4 +1145,9 @@ export interface Services {
   auth: AuthService;
   demo: DemoService;
   photos: PhotoService;
+  features: FeatureFlags;
+  account: AccountService;
+  hauling: HaulingService;
+  rewards: RewardsService;
+  scanner: ScannerProvider;
 }

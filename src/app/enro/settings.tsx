@@ -13,9 +13,20 @@ import { TextField } from '@/components/ui/TextField';
 import { useCityConfig, useStaff, useStaffRights } from '@/features/admin/hooks';
 import { sms } from '@/features/alerts/templates';
 import { Panel } from '@/features/enro/components/Panel';
+import { formatPesos } from '@/features/hauling/pricing';
+import { useHaulingRates } from '@/features/hauling/hooks';
+import { formatPoints } from '@/features/rewards/format';
+import { usePoints } from '@/features/rewards/hooks';
 import { useBarangays } from '@/features/tracking/hooks';
+import { Notice } from '@/components/ui/Notice';
 import { ServerError, services } from '@/services';
-import type { ContactInfo, ContactTarget, StaffRole, StaffUser } from '@/services/types';
+import type {
+  ContactInfo,
+  ContactTarget,
+  PointsEarnKind,
+  StaffRole,
+  StaffUser,
+} from '@/services/types';
 import { colors, spacing } from '@/theme/tokens';
 
 const LEAD_CHOICES = [10, 15, 20, 30];
@@ -41,6 +52,10 @@ export default function EnroSettings() {
   /** On the server, accounts are real City ENRO logins, each made in the Supabase dashboard. */
   const realAccounts = services.auth.required;
   const { data: barangays } = useBarangays();
+  // The City's fees and Eco Points, shown as sample figures until the City sets them.
+  const rates = useHaulingRates();
+  const points = usePoints();
+  const [feeNote, setFeeNote] = useState<'fees' | 'points' | null>(null);
 
   // SMS lead time
   const [lead, setLead] = useState<number | null>(null);
@@ -90,6 +105,7 @@ export default function EnroSettings() {
   const nameOf = (id: string) =>
     barangays.features.find((f) => f.properties.id === id)?.properties.name ?? id;
   const chosenLead = lead ?? config.smsLeadMinutes;
+  const pointsKinds = points ? (Object.keys(points.rules.earn) as PointsEarnKind[]) : [];
 
   // ---------- SMS lead time ----------
   const leadPanel = (
@@ -383,6 +399,82 @@ export default function EnroSettings() {
     </Panel>
   );
 
+  // ---------- Hauling fees (sample until the City sets them) ----------
+  const feesPanel = services.features.hauling ? (
+    <Panel title={t('enro.settings.fees.title')}>
+      <AppText>{t('enro.settings.fees.body')}</AppText>
+      {rates ? (
+        <>
+          {(['small', 'medium', 'large'] as const).map((v) => (
+            <Fact
+              key={v}
+              label={t('enro.settings.fees.base', { volume: t(`hauling.volume.${v}`) })}
+              value={t('hauling.pesos', { amount: formatPesos(rates.base[v]) })}
+            />
+          ))}
+          <Fact
+            label={t('enro.settings.fees.distance')}
+            value={t('hauling.pesos', { amount: formatPesos(rates.distanceFee) })}
+          />
+          <Fact
+            label={t('enro.settings.fees.disposal')}
+            value={t('hauling.pesos', { amount: formatPesos(rates.disposalFee) })}
+          />
+        </>
+      ) : (
+        <AppText color={colors.textMuted}>{t('enro.settings.fees.unset')}</AppText>
+      )}
+      {rights.act ? (
+        <Button
+          variant="secondary"
+          icon="cog-outline"
+          label={t('enro.settings.fees.change')}
+          onPress={() => setFeeNote('fees')}
+        />
+      ) : null}
+      {feeNote === 'fees' ? (
+        <Notice tone="warning" live="polite" text={t('enro.sampleAction')} />
+      ) : null}
+    </Panel>
+  ) : null;
+
+  // ---------- Eco Points rules (sample until the City sets them) ----------
+  const pointsPanel =
+    services.features.rewards && points ? (
+      <Panel title={t('enro.settings.points.title')}>
+        <AppText>{t('enro.settings.points.body')}</AppText>
+        {pointsKinds.map((k) => (
+          <Fact
+            key={k}
+            label={t(`rewards.earn.${k}`)}
+            value={t('rewards.cost', { points: formatPoints(points.rules.earn[k]) })}
+          />
+        ))}
+        {points.rules.tiers.map((tier) => (
+          <Fact
+            key={tier.id}
+            label={t(`rewards.tier.${tier.id}`)}
+            value={t('enro.settings.points.from', { points: formatPoints(tier.from) })}
+          />
+        ))}
+        <Fact
+          label={t('enro.settings.points.discount')}
+          value={t('enro.settings.points.discountValue', { pesos: points.rules.pesosPer100 })}
+        />
+        {rights.act ? (
+          <Button
+            variant="secondary"
+            icon="cog-outline"
+            label={t('enro.settings.points.change')}
+            onPress={() => setFeeNote('points')}
+          />
+        ) : null}
+        {feeNote === 'points' ? (
+          <Notice tone="warning" live="polite" text={t('enro.sampleAction')} />
+        ) : null}
+      </Panel>
+    ) : null;
+
   return (
     <Screen width="dashboard" safeTop={false}>
       <View style={styles.header}>
@@ -395,18 +487,36 @@ export default function EnroSettings() {
         <View style={styles.columns}>
           <View style={styles.col}>
             {leadPanel}
+            {feesPanel}
             {usersPanel}
           </View>
-          <View style={styles.col}>{contactsPanel}</View>
+          <View style={styles.col}>
+            {contactsPanel}
+            {pointsPanel}
+          </View>
         </View>
       ) : (
         <>
           {leadPanel}
           {contactsPanel}
+          {feesPanel}
+          {pointsPanel}
           {usersPanel}
         </>
       )}
     </Screen>
+  );
+}
+
+/** One fact of the City's settings: its name, and its value in bold beside it. */
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.fact}>
+      <AppText style={styles.factLabel}>{label}</AppText>
+      <AppText variant="bodyStrong" style={styles.factValue}>
+        {value}
+      </AppText>
+    </View>
   );
 }
 
@@ -420,4 +530,7 @@ const styles = StyleSheet.create({
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flexWrap: 'wrap' },
   flex: { flex: 1, minWidth: 200 },
   inactive: { opacity: 0.7 },
+  fact: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md },
+  factLabel: { flexGrow: 1, flexShrink: 1, flexBasis: 160, minWidth: 0 },
+  factValue: { marginLeft: 'auto', textAlign: 'right' },
 });

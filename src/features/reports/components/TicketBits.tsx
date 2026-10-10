@@ -4,9 +4,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { PhotoView } from '@/components/photos/PhotoView';
 import { AppText } from '@/components/ui/AppText';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import type { PressState } from '@/components/ui/interaction';
+import { useNarrow } from '@/components/ui/narrow';
+import { formatDate } from '@/features/resident/format';
 import { formatClock } from '@/lib/time';
 import type { ReportCategory, Ticket, TicketStatus } from '@/services/types';
-import { colors, radius, spacing, touch } from '@/theme/tokens';
+import { colors, radius, shadows, spacing, touch } from '@/theme/tokens';
 
 import { CATEGORY_META } from '../categories';
 import type { Priority } from '../priority';
@@ -15,11 +18,12 @@ export const TICKET_STATUS_META: Record<
   TicketStatus,
   { icon: IconName; color: string; soft: string }
 > = {
-  submitted: { icon: 'inbox-arrow-down', color: colors.navy, soft: colors.greySoft },
-  verified: { icon: 'shield-check', color: colors.navy, soft: colors.greySoft },
-  scheduled: { icon: 'calendar-clock', color: colors.amber, soft: colors.amberSoft },
-  in_progress: { icon: 'truck-fast', color: colors.green, soft: colors.greenSoft },
-  collected: { icon: 'check-circle', color: colors.green, soft: colors.greenSoft },
+  // Three colour groups, as in the design: being looked at, a pickup is set, done.
+  submitted: { icon: 'inbox-arrow-down', color: colors.amber, soft: colors.amberSoft },
+  verified: { icon: 'shield-check', color: colors.amber, soft: colors.amberSoft },
+  scheduled: { icon: 'calendar-clock', color: colors.blue, soft: colors.blueSoft },
+  in_progress: { icon: 'truck-fast', color: colors.blue, soft: colors.blueSoft },
+  collected: { icon: 'check-circle', color: colors.primary, soft: colors.greenSoft },
   closed: { icon: 'lock-check', color: colors.grey, soft: colors.greySoft },
   merged: { icon: 'call-merge', color: colors.grey, soft: colors.greySoft },
   rejected: { icon: 'close-octagon', color: colors.red, soft: colors.redSoft },
@@ -71,23 +75,32 @@ interface CategoryTileProps {
 /** One big tile per problem type (icon + name + short hint). */
 export function CategoryTile({ category, onPress, emergency }: CategoryTileProps) {
   const { t } = useTranslation();
-  const tone = emergency ? colors.red : colors.navy;
+  // On a very narrow screen the picture goes above the words, which then get the whole width.
+  const narrow = useNarrow();
+  const tone = emergency ? colors.red : colors.ink;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${t(`reports.category.${category}`)}. ${t(`reports.categoryHint.${category}`)}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.tile, pressed && { backgroundColor: colors.greySoft }]}
+      style={({ pressed, hovered }: PressState) => [
+        styles.tile,
+        narrow && styles.tileStacked,
+        (pressed || hovered) && { backgroundColor: pressed ? colors.mint : colors.mintSoft },
+      ]}
     >
-      <View style={[styles.tileIcon, { backgroundColor: tone }]}>
-        <Icon name={CATEGORY_META[category].icon} size={30} color={colors.textOnDark} />
+      <View
+        style={[styles.tileIcon, { backgroundColor: emergency ? colors.redSoft : colors.mint }]}
+      >
+        <Icon name={CATEGORY_META[category].icon} size={30} color={tone} />
       </View>
-      <View style={styles.flex}>
+      <View style={narrow ? styles.tileWords : styles.flex}>
         <AppText variant="bodyStrong">{t(`reports.category.${category}`)}</AppText>
         <AppText variant="label" color={colors.textMuted}>
           {t(`reports.categoryHint.${category}`)}
         </AppText>
       </View>
+      {narrow ? null : <Icon name="chevron-right" size={24} color={colors.textMuted} />}
     </Pressable>
   );
 }
@@ -100,6 +113,30 @@ const STEPS: TicketStatus[] = [
   'collected',
   'closed',
 ];
+
+/**
+ * How far along a report is, at a glance: one segment per step, filled up to the current one.
+ * The timeline under it says the same in words, with times.
+ */
+export function TicketProgress({ ticket }: { ticket: Ticket }) {
+  const { t } = useTranslation();
+  const index = STEPS.indexOf(ticket.status);
+  // Merged and rejected reports stop where they were: no bar, the timeline explains.
+  if (index < 0) return null;
+  return (
+    <View
+      style={styles.progress}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={`${t('reports.detail.timeline')}: ${t(`reports.status.${ticket.status}`)}`}
+      accessibilityValue={{ min: 1, max: STEPS.length, now: index + 1 }}
+    >
+      {STEPS.map((s, i) => (
+        <View key={s} style={[styles.segment, i <= index && styles.segmentDone]} />
+      ))}
+    </View>
+  );
+}
 
 /**
  * Natanggap → Na-verify → Naka-iskedyul → Papunta na → Nakolekta → Sarado, with the time of
@@ -118,7 +155,6 @@ export function TicketTimeline({ ticket }: { ticket: Ticket }) {
         const at = reachedAt(s);
         const done = !terminal && i <= currentIndex ? at != null || i < currentIndex : at != null;
         const current = !terminal && s === ticket.status;
-        const meta = TICKET_STATUS_META[s];
         return (
           <View
             key={s}
@@ -126,13 +162,7 @@ export function TicketTimeline({ ticket }: { ticket: Ticket }) {
             accessible
             accessibilityLabel={`${t(`reports.status.${s}`)}${at ? `, ${formatClock(at)}` : ''}`}
           >
-            <View
-              style={[
-                styles.dot,
-                done ? { backgroundColor: meta.color, borderColor: meta.color } : null,
-                current && styles.dotCurrent,
-              ]}
-            >
+            <View style={[styles.dot, done ? styles.dotDone : null, current && styles.dotCurrent]}>
               {done ? <Icon name="check" size={14} color={colors.textOnDark} /> : null}
             </View>
             <View style={styles.flex}>
@@ -211,34 +241,41 @@ export function TicketCard({
       accessibilityState={{ selected: !!selected }}
       accessibilityLabel={`${t(`reports.category.${ticket.category}`)}, ${barangayName}. ${t(`reports.status.${ticket.status}`)}. ${ticket.id}`}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={({ pressed, hovered }: PressState) => [
         styles.card,
         selected && styles.cardSelected,
-        pressed && { opacity: 0.9 },
+        { opacity: pressed ? 0.85 : hovered ? 0.94 : 1 },
       ]}
     >
       <View style={styles.thumb}>
         <PhotoView photo={photo} accessibilityLabel="" />
       </View>
-      <View style={styles.flex}>
-        <AppText variant="bodyStrong">{t(`reports.category.${ticket.category}`)}</AppText>
+      <View style={styles.cardText}>
+        <View style={styles.cardHead}>
+          <AppText variant="bodyStrong" style={styles.cardTitle}>
+            {t(`reports.category.${ticket.category}`)}
+          </AppText>
+          <TicketStatusPill status={ticket.status} />
+        </View>
         <AppText variant="label" color={colors.textMuted}>
-          {barangayName} · {formatClock(ticket.createdAt)}
+          {ticket.id}
+          {barangayName ? ` · ${barangayName}` : ''}
         </AppText>
         <AppText variant="caption" color={colors.textMuted}>
-          {ticket.id}
+          {formatDate(t, ticket.createdAt)} · {formatClock(ticket.createdAt)}
         </AppText>
-        <View style={styles.row}>
-          <TicketStatusPill status={ticket.status} />
-          {right}
-          {badge ? (
-            <View style={styles.badge}>
-              <AppText variant="caption" color={colors.navy}>
-                {badge}
-              </AppText>
-            </View>
-          ) : null}
-        </View>
+        {right || badge ? (
+          <View style={styles.row}>
+            {right}
+            {badge ? (
+              <View style={styles.badge}>
+                <AppText variant="caption" color={colors.ink}>
+                  {badge}
+                </AppText>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -275,14 +312,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
+    ...shadows.card,
   },
+  tileStacked: { flexDirection: 'column', alignItems: 'flex-start', gap: spacing.sm },
+  tileWords: { alignSelf: 'stretch' },
   tileIcon: {
     width: 52,
     height: 52,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  progress: { flexDirection: 'row', gap: spacing.xs },
+  segment: { flex: 1, height: 6, borderRadius: radius.pill, backgroundColor: colors.border },
+  segmentDone: { backgroundColor: colors.primary },
   timeline: { gap: spacing.sm },
   step: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
   dot: {
@@ -296,17 +339,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 1,
   },
+  dotDone: { backgroundColor: colors.primary, borderColor: colors.primary },
   dotCurrent: { borderColor: colors.yellow, borderWidth: 3 },
+  // The words drop under the photo at 200% text instead of being squeezed beside it.
   card: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
-    padding: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
     backgroundColor: colors.surface,
+    ...shadows.card,
   },
-  cardSelected: { borderColor: colors.navy, backgroundColor: colors.greySoft },
+  cardSelected: { borderColor: colors.primary, backgroundColor: colors.mintSoft },
+  cardText: { flexGrow: 1, flexShrink: 1, flexBasis: 150, minWidth: 0, gap: 2 },
+  // The status sits beside the title, and drops under it when there is no room.
+  cardHead: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.xs,
+  },
+  cardTitle: { flexGrow: 1, flexShrink: 1, flexBasis: 96, minWidth: 0 },
   thumb: { width: 88 },
   badge: {
     backgroundColor: colors.yellow,

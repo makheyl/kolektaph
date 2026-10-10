@@ -23,6 +23,12 @@ import { getSimTime } from '@/stores/demo';
 import { localEvents, useDriver } from '@/stores/driver';
 
 import { OfflineError, ServerError, SignInError } from '../errors';
+import {
+  NO_FEATURES,
+  unavailableHauling,
+  unavailableRewards,
+  unavailableScanner,
+} from '../unavailable';
 import { createMockServices, SMS_LEAD_MAX, SMS_LEAD_MIN } from '../mock';
 import { evaluateClaim, missedStreetKey } from '../mock/reports';
 import type {
@@ -38,6 +44,7 @@ import type {
   UploadResult,
 } from '../types';
 import { createAuth } from './auth';
+import { createSupabaseAccount } from './account';
 import type { ApiConfig } from './config';
 import { type Caller, createHttp } from './http';
 import {
@@ -796,5 +803,13 @@ export function createSupabaseServices(config: ApiConfig): Services {
     photos: {
       getUrl: (path) => photos.getUrl(path, readerAs()),
     },
+
+    // Not on the pilot database yet: each turns on when its tables and entry points exist.
+    features: NO_FEATURES,
+    // Real on the pilot once its migration is applied; the switch above keeps the screens hidden.
+    account: createSupabaseAccount({ auth, http, store: AsyncStorage }),
+    hauling: unavailableHauling,
+    rewards: unavailableRewards,
+    scanner: unavailableScanner,
   };
 }

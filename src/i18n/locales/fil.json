@@ -14,7 +14,12 @@
     "cancel": "Huwag na",
     "close": "Isara",
     "settings": "Mga setting",
-    "minutes": "{{count}} minuto"
+    "minutes": "{{count}} minuto",
+    "loading": "Naglo-load…",
+    "showPassword": "Ipakita ang password",
+    "hidePassword": "Itago ang password",
+    "offline": "Walang signal. Maaaring luma ang nakikita mo.",
+    "toStart": "Bumalik sa simula"
   },
   "date": {
     "today": "Ngayon",
@@ -163,7 +168,9 @@
       "home": "Bahay",
       "map": "Mapa",
       "kolek": "Kolek",
-      "report": "Report"
+      "report": "Report",
+      "profile": "Profile",
+      "alerts": "Abiso"
     },
     "home": {
       "yourBarangay": "Ang barangay mo",
@@ -179,8 +186,10 @@
       "actions": {
         "map": "Mapa",
         "schedule": "Iskedyul",
-        "report": "Mag-report",
-        "kolek": "Tanong kay Kolek"
+        "report": "I-report ang basura",
+        "kolek": "Tanong kay Kolek",
+        "missed": "Hindi nadaanan?",
+        "redeem": "Palitan ng points"
       },
       "status": {
         "noneTodayTitle": "Walang koleksyon ngayon",
@@ -216,7 +225,11 @@
         "unfinishedBody": "Hindi naabot ng truck ang barangay mo ngayon. Alam na ito ng City ENRO. Huwag munang ilabas ang basura."
       },
       "alertsLabel": "Mga abiso",
-      "alertsUnread": "Mga abiso, {{count}} bago"
+      "alertsUnread": "Mga abiso, {{count}} bago",
+      "menu": "Menu ng profile",
+      "greeting": "Kamusta!",
+      "askKolek": "Itanong kay Kolek…",
+      "greetingName": "Kamusta, {{name}}!"
     },
     "map": {
       "showMine": "Ang barangay ko",
@@ -233,7 +246,9 @@
       "upcomingStreets": "Mga susunod na kalye",
       "noEta": "Walang tantiyang oras habang nakahinto ang truck.",
       "tapTruck": "Pindutin ang truck para makita ang ruta nito.",
-      "timesAreEstimates": "Tantiya lang ang mga oras at puwedeng magbago."
+      "timesAreEstimates": "Tantiya lang ang mga oras at puwedeng magbago.",
+      "textOn": "Text alert: naka-on",
+      "textOff": "Text alert: naka-off"
     },
     "schedule": {
       "title": "Iskedyul",
@@ -245,8 +260,15 @@
       "cancelled": "Walang koleksyon ({{reason}})",
       "none": "Walang koleksyon sa susunod na 2 linggo.",
       "otherBarangay": "Tingnan ang iskedyul ng ibang barangay",
-      "pickOther": "Pumili ng barangay",
-      "changeFrom": "Bagong iskedyul simula {{day}}: {{days}}, {{window}}"
+      "changeFrom": "Bagong iskedyul simula {{day}}: {{days}}, {{window}}",
+      "tabSchedule": "Iskedyul",
+      "tabRoutes": "Mga ruta",
+      "routesHint": "Mga ruta ng garbage truck sa lungsod at ang mga araw ng koleksyon ng bawat isa.",
+      "routeN": "Ruta {{n}}",
+      "routeDays": "Araw ng koleksyon: {{days}}",
+      "yourRoute": "Ruta ng barangay mo",
+      "viewMap": "Tingnan sa mapa",
+      "backToMine": "Bumalik sa barangay ko"
     },
     "settings": {
       "barangay": "Barangay",
@@ -267,25 +289,98 @@
     },
     "alerts": {
       "title": "Mga abiso",
-      "subtitle": "Mga paalala at text para sa {{barangay}}, nitong nakaraang 7 araw.",
+      "subtitle": "Mga abiso para sa {{barangay}} nitong nakaraang 7 araw, at balita sa mga report mo.",
       "empty": "Wala pang abiso.",
       "pickBarangay": "Pumili muna ng barangay para makita ang mga abiso.",
-      "viaSms": "Natanggap mo rin ito bilang SMS.",
+      "viaSms": "Natatanggap mo rin bilang SMS ang mga abiso ng truck.",
       "smsOff": "I-on ang text alert para matanggap ito kahit walang internet.",
-      "new": "Bago"
+      "new": "Bago",
+      "filterAllCount": "Lahat ({{count}})",
+      "filterTruck": "Truck",
+      "filterReports": "Report",
+      "today": "Ngayon",
+      "earlier": "Mas nauna",
+      "noneInFilter": "Walang abiso rito.",
+      "filterHauling": "Hakot"
+    },
+    "profile": {
+      "title": "Profile",
+      "guest": "Residente · hindi kailangan ng account",
+      "staff": "Crew ng truck o staff ng City ENRO",
+      "staffHint": "Mag-sign in sa ibang bahagi ng app"
+    },
+    "account": {
+      "title": "Mga setting ng account",
+      "hint": "Barangay, wika, data at privacy",
+      "notifications": "Mga abiso at text alert",
+      "smsOffShort": "Naka-off ang text alert",
+      "help": "Tulong",
+      "address": "Barangay ko",
+      "language": "Wika at laki ng teksto",
+      "privacy": "Data at privacy",
+      "smsHint": "Isang text bago dumating ang truck sa barangay mo, kahit walang internet.",
+      "alertsHint": "Lahat ng naipadalang abiso",
+      "largeTextHint": "Pinalalaki ang mga letra sa buong app.",
+      "languageHint": "Ang Kolek ay sasagot sa wikang pipiliin mo.",
+      "preferences": "Mga abiso sa text",
+      "addressHint": "Itinatakda ng barangay ninyo ang iskedyul ng koleksyon at ang alerto ng truck."
+    },
+    "help": {
+      "offices": "Mga opisina",
+      "enro": "Carmona City ENRO",
+      "barangayHall": "Barangay Hall ng {{barangay}}",
+      "noNumber": "Wala pang opisyal na number sa app.",
+      "kolekHint": "Magtanong tungkol sa iskedyul, truck at pag-report",
+      "missedHint": "Kung hindi dumaan ang truck sa kalye ninyo",
+      "search": "Maghanap ng tulong",
+      "common": "Mga madalas itanong",
+      "noResults": "Walang tanong na tumutugma. Subukan ang ibang salita, o itanong kay Kolek.",
+      "contact": "Makipag-ugnayan",
+      "askKolek": "Itanong kay Kolek",
+      "callUs": "Tawagan kami",
+      "callFailed": "Hindi mabuksan ang tawag sa telepono na ito.",
+      "goTo": "Pumunta roon",
+      "faq": {
+        "pickup": {
+          "q": "Kailan ang pickup ng basura namin?",
+          "a": "Makikita sa Iskedyul ang araw at oras ng koleksyon sa barangay ninyo, pati ang mga pagbabago dahil sa holiday."
+        },
+        "missed": {
+          "q": "Paano ko ire-report ang hindi nadaanang koleksyon?",
+          "a": "Buksan ang Hindi nadaanan? at piliin ang kalye. Kung walang dumaang truck doon, may bubukasang report para sa City."
+        },
+        "points": {
+          "q": "Paano ako kumikita ng Eco Points?",
+          "a": "Mag-report ng totoong basura, at tingnan sa Rewards ang bawat paraan ng pagkita at ang halaga nito."
+        },
+        "hauling": {
+          "q": "Paano ako mag-book ng private hauling?",
+          "a": "Punan ang form ng Magpahakot: lugar, petsa, oras at laki ng basura. Kokumpirmahin ng team ang slot at ang bayad."
+        }
+      }
+    },
+    "privacyPage": {
+      "devices": "Mga setting ng telepono",
+      "location": "Lokasyon",
+      "locationHint": "Ginagamit sa report at sa malapit na truck.",
+      "camera": "Kamera",
+      "cameraHint": "Ginagamit sa report at sa scanner.",
+      "openSettings": "Buksan ang settings ng telepono para baguhin ito."
     }
   },
   "privacy": {
     "title": "Paunawa sa privacy",
     "draft": "Draft para sa prototype. Ire-review pa ng Data Protection Officer ng lungsod.",
     "collectTitle": "Ano ang kinukuha namin",
-    "collectBody": "Ang barangay mo lang. Kung gusto mong ma-text, ang mobile number mo rin. Kung magpadala ka ng report: ang mga litrato, ang lugar na itinuro mo at ang tala mo. Hindi namin kailangan ang pangalan, address o ID mo.",
+    "collectBody": "Ang barangay mo. Kung gusto mo ng text alert, ang mobile number mo. Kung gagawa ka ng account: ang buong pangalan, mobile number, barangay at lugar mo, at email kung ibibigay mo. Kung magpapadala ka ng report: ang mga larawan, ang lugar na itinusok mo sa mapa, at ang note mo. Kung magpapahakot ka: ang pangalan at mobile number na ibibigay mo, ang lugar, ang mga larawan, at ang hinihingi mo. Hindi namin hinihingi ang ID mo.",
     "whyTitle": "Bakit",
-    "whyBody": "Para maipakita ang iskedyul ng barangay mo at ma-text ka bago dumating ang truck.",
+    "whyBody": "Para ipakita ang iskedyul ng barangay mo, mag-text bago dumating ang truck, pagsamahin ang account, points at mga request mo, at sagutin ang report o booking mo.",
     "whoTitle": "Sino ang makakakita",
-    "whoBody": "Ang City ENRO lang, para magpadala ng paalala at aksyunan ang mga report. Makikita ng crew ng truck na ipinadala ang litrato at lugar ng report. Hindi ito ibebenta o ibibigay sa iba.",
+    "whoBody": "Ang City ENRO staff lang na kumikilos sa report, text o booking mo, at ang kailangan lang ng bawat gawain. Ang truck crew na pinadalhan ng report ay nakakakita ng mga larawan at lugar nito. Hindi ito ibinebenta o ibinabahagi.",
     "rightsTitle": "Ang karapatan mo",
-    "rightsBody": "Puwede mong itigil ang text anumang oras (reply STOP) at burahin ang data mo sa Mga setting. Mananatili sa lungsod bilang tala ang mga report na naipadala mo, pero hindi na nakaugnay sa phone mo. Sumusunod ito sa Data Privacy Act of 2012 (RA 10173)."
+    "rightsBody": "Maaari mong ihinto ang mga text anumang oras (mag-reply ng STOP), baguhin ang detalye ng account sa Settings, mag-log out, at burahin ang data mo sa Settings. Nananatili sa City bilang tala ang mga report na ipinadala mo, pero hindi na ito nakatali sa iyo. Sumusunod ito sa Data Privacy Act of 2012 (RA 10173).",
+    "accountTitle": "Ang account mo",
+    "accountBody": "Opsyonal ang account. Pinagsasama nito ang mga report at points mo, at magagamit mo ito sa ibang telepono. Hindi naitatago ang password na tulad ng tinipa. Nananatili sa device ang mga report at points hanggang ilipat mo ang mga ito sa account."
   },
   "alert": {
     "kind": {
@@ -309,7 +404,10 @@
       "soon": "Sa {{sprint}}",
       "backToDemo": "Bumalik sa demo",
       "missed": "Hindi nadaanan",
-      "settings": "Settings"
+      "settings": "Settings",
+      "hauling": "Pribadong hakot",
+      "rewards": "Eco Points",
+      "exit": "Lumabas sa dashboard"
     },
     "live": {
       "title": "Live Operations",
@@ -634,6 +732,23 @@
         "last_admin": "Kailangang may isang aktibong admin palagi.",
         "not_allowed": "Hindi ito mababago ng tungkulin mo.",
         "bad_barangay": "Kailangan ng barangay ang barangay focal."
+      },
+      "fees": {
+        "title": "Singil sa pribadong hakot",
+        "body": "Ito ang singil sa bawat booking. Halimbawa lang ang mga numero hanggang magtakda ang City.",
+        "base": "Base na singil: {{volume}}",
+        "distance": "Singil sa layo, bawat biyahe",
+        "disposal": "Singil sa tapunan, bawat biyahe",
+        "unset": "Wala pang singil. Ilalagay ng City ang mga ito.",
+        "change": "Baguhin ang singil"
+      },
+      "points": {
+        "title": "Eco Points",
+        "body": "Mga puntos sa bawat gawain at ang diskuwento sa hakot. Halimbawa lang hanggang magtakda ang City.",
+        "discount": "Diskuwento sa hakot",
+        "discountValue": "₱{{pesos}} kada 100 puntos",
+        "from": "Mula sa {{points}} pts",
+        "change": "Baguhin ang mga puntos"
       }
     },
     "signIn": {
@@ -654,7 +769,58 @@
     },
     "notSaved": "Hindi nai-save. Subukan ulit.",
     "viewOnly": "Makikita mo ito pero hindi mo mababago sa tungkulin mo.",
-    "adminOnly": "Admin lang ang makakapagbago nito."
+    "adminOnly": "Admin lang ang makakapagbago nito.",
+    "sampleAction": "Halimbawa lang ito. Walang naipapadala o nasasave.",
+    "hauling": {
+      "off": "Hindi pa bukas ang pribadong hakot sa build na ito.",
+      "title": "Pribadong hakot",
+      "subtitle": "Mga request ng residente at negosyo: quotation at iskedyul.",
+      "kpiNew": "Bagong request",
+      "kpiQuoted": "Naka-quote",
+      "kpiScheduled": "Naka-iskedyul",
+      "listTitle": "Mga request",
+      "empty": "Walang request ngayon.",
+      "detailTitle": "Detalye",
+      "requester": "Humihiling",
+      "contact": "Kontak",
+      "place": "Lugar",
+      "when": "Petsa at oras",
+      "volume": "Dami",
+      "loads": "Uri ng basura",
+      "quoteTitle": "Quotation",
+      "suggested": "Iminumungkahing singil mula sa halimbawang singil. Hindi pa ito naipapadala.",
+      "unsureVolume": "Hindi pa matukoy ang dami. Titingnan ito ng City.",
+      "noQuote": "Wala pang quotation para sa request na ito.",
+      "noRates": "Wala pang singil na itinakda ang City.",
+      "actions": {
+        "quote": "Ipadala ang quotation",
+        "decline": "Tanggihan ang request",
+        "schedule": "Itakda ang iskedyul"
+      }
+    },
+    "rewards": {
+      "off": "Hindi pa bukas ang Eco Points sa build na ito.",
+      "title": "Eco Points",
+      "subtitle": "Mga perk, voucher sa counter, at clean-up drive.",
+      "kpiPerks": "Mga perk",
+      "kpiDrives": "Paparating na clean-up",
+      "perksTitle": "Mga perk",
+      "addPerk": "Magdagdag ng perk",
+      "voucherTitle": "Hanapin ang voucher",
+      "voucherHint": "Ilagay ang code na ipinakita ng residente sa counter.",
+      "voucherCode": "Code ng voucher",
+      "find": "Hanapin",
+      "notFound": "Walang voucher na may ganitong code.",
+      "markUsed": "Markahan na nagamit",
+      "drivesTitle": "Clean-up drive",
+      "drivesHint": "Sa drive, nagkakaroon ng points ang dumalo.",
+      "noDrives": "Walang clean-up drive na nakatakda.",
+      "upcoming": "Paparating",
+      "done": "Tapos na",
+      "attendees": "{{count}} ang dumalo",
+      "perAttendee": "{{points}} bawat dumalo",
+      "newDrive": "Gumawa ng drive"
+    }
   },
   "incident": {
     "breakdown": "Sira ang truck",
@@ -670,9 +836,7 @@
     "other": "Iba pa"
   },
   "driver": {
-    "brand": "Driver",
     "signIn": {
-      "title": "Mag-sign in bilang driver",
       "pickTruck": "Piliin ang truck mo",
       "pinFor": "PIN para sa {{truck}}",
       "digit": "Numero {{digit}}",
@@ -687,10 +851,21 @@
       "locked": "Maraming maling PIN. Naka-lock ang truck na ito hanggang {{time}}.",
       "wrongPinLeft": "Mali ang PIN. Natitirang subok bago ma-lock ang truck: {{count}}.",
       "failed": "Hindi nakapag-sign in. Subukan ulit.",
-      "again": "Natapos na ang sign-in ng truck. Ilagay ulit ang PIN. Ligtas sa phone na ito ang shift at ang mga hindi pa naipapadalang report."
+      "again": "Natapos na ang sign-in ng truck. Ilagay ulit ang PIN. Ligtas sa phone na ito ang shift at ang mga hindi pa naipapadalang report.",
+      "tagline": "Mag-sign in para simulan ang shift",
+      "truck": "Truck",
+      "logIn": "Mag-log in",
+      "useFingerprint": "Gamitin ang fingerprint",
+      "fingerprintFor": "Para sa {{truck}}",
+      "rememberFingerprint": "Sa susunod, fingerprint na lang ang gamitin sa phone na ito",
+      "rememberHint": "Itatago ang PIN sa secure storage ng phone, at fingerprint ang magbubukas nito.",
+      "fingerprintPrompt": "Mag-sign in sa KolektaPH Driver",
+      "fingerprintSave": "I-save ang sign-in ng truck",
+      "fingerprintGone": "Nabago ang fingerprint ng phone. Mag-sign in gamit ang PIN at i-set up ulit.",
+      "fingerprintOldPin": "Napalitan na ang PIN ng truck. Mag-sign in gamit ang bagong PIN.",
+      "fingerprintNotSaved": "Hindi na-save ang fingerprint sign-in. Naka-sign in ka pa rin."
     },
     "start": {
-      "title": "Simulan ang shift",
       "truck": "Truck",
       "route": "Ruta ngayon",
       "noRoute": "Walang nakatakdang ruta ngayon. Puwede pa ring magsimula ng shift (hal. para subukan ang GPS).",
@@ -713,7 +888,33 @@
         "failed": "Hindi nabuksan ang GPS. Subukan ulit."
       },
       "openSettings": "Buksan ang Settings",
-      "useDemo": "Gamitin muna ang Demo"
+      "useDemo": "Gamitin muna ang Demo",
+      "greeting": {
+        "morning": "Magandang umaga",
+        "afternoon": "Magandang hapon",
+        "evening": "Magandang gabi"
+      },
+      "offDuty": "Wala pang shift",
+      "hours": "Oras ng koleksyon",
+      "streets": "{{count}} kalye",
+      "startLoad": "Karga sa simula",
+      "loadEmpty": "Walang laman",
+      "checklist": "Checklist bago bumiyahe",
+      "checklistNeeded": "Markahan muna ang lahat sa checklist ({{done}} sa {{total}}).",
+      "checkAll": "Markahan lahat (demo)",
+      "check": {
+        "vehicle": "Nasuri ang sasakyan",
+        "fuel": "Sapat ang krudo",
+        "tires": "Maayos ang mga gulong",
+        "brakes": "Gumagana ang preno",
+        "lights": "Gumagana ang mga ilaw at signal",
+        "location": "Naka-on ang Location ng phone",
+        "route": "Nabasa ang ruta ngayon",
+        "equipment": "Kumpleto ang gamit"
+      },
+      "today": "Ngayon",
+      "online": "Online",
+      "offline": "Offline"
     },
     "shift": {
       "onShift": "Naka-shift · {{duration}}",
@@ -766,7 +967,17 @@
       "gpsStopped": "Hindi nagre-record ang GPS.",
       "restartGps": "Buksan ulit ang GPS",
       "map": "Mapa ng ruta mo",
-      "noRoute": "Walang ruta ngayon. Nire-record pa rin ang GPS."
+      "noRoute": "Walang ruta ngayon. Nire-record pa rin ang GPS.",
+      "more": "Iba pa",
+      "streetsShort": "Mga kalye",
+      "openMap": "Mapa",
+      "openLoad": "Karga",
+      "tileMap": "Mapa ng GPS",
+      "tileLoad": "Kapasidad ng karga",
+      "tileStreets": "Mga kalye ng ruta",
+      "tileIncident": "Aberya",
+      "tileGps": "GPS log",
+      "tileEnd": "Tapusin ang shift"
     },
     "streets": {
       "title": "Mga kalye",
@@ -855,9 +1066,9 @@
       "blocked": "Hindi tinatanggap ng server ang GPS ng shift na ito ({{reason}}). Nananatili sa phone na ito ang recording."
     },
     "tasks": {
-      "title": "Espesyal na koleksyon",
+      "title": "Report ng hindi nakolekta",
       "count": "Espesyal na koleksyon ({{count}})",
-      "none": "Walang espesyal na koleksyon.",
+      "none": "Walang report na nakatalaga sa truck na ito.",
       "open": "Buksan",
       "due": "Target: {{time}}",
       "start": "Papunta na",
@@ -870,6 +1081,52 @@
       "landmark": "Palatandaan: {{landmark}}",
       "residentPhotos": "Larawan ng nag-report",
       "doneState": "Tapos na ito."
+    },
+    "tabs": {
+      "home": "Bahay",
+      "route": "Ruta",
+      "gps": "GPS",
+      "truck": "Truck",
+      "more": "Iba pa"
+    },
+    "load": {
+      "title": "Kapasidad ng truck",
+      "pick": "I-update ang kasalukuyang karga",
+      "update": "I-update ang karga",
+      "empty": "Walang laman",
+      "full": "Puno",
+      "estimate": "tantiya",
+      "reported": "iniulat ng crew",
+      "warn": "Lampas 85%: aalertuhin ang dispatcher para magplano ng biyahe sa tapunan."
+    },
+    "map": {
+      "title": "Mapa ng GPS",
+      "load": "Karga: {{value}}",
+      "updateLoad": "I-update ang karga",
+      "collected": "Markahang nakolekta",
+      "skip": "Laktawan",
+      "marked": "Namarkahang nakolekta"
+    },
+    "home": {
+      "greeting": "Kamusta, {{name}}!",
+      "noShift": "Wala pang shift",
+      "noRouteToday": "Walang ruta ngayon para sa truck na ito",
+      "start": "Simulan ang shift",
+      "cancel": "Kanselahin",
+      "tileStart": "Simulan ang shift",
+      "tileEnd": "Tapusin ang shift",
+      "tileMap": "Mapa ng GPS ng shift",
+      "tileLoad": "Karga ng truck",
+      "tileTasks": "Report ng hindi nakolekta",
+      "tileStreets": "Hindi nadaanan at ruta",
+      "tileMore": "Iba pa",
+      "startFirst": "Simulan muna ang shift para magamit ang iba."
+    },
+    "more": {
+      "title": "Iba pa",
+      "signOut": "Mag-sign out",
+      "fingerprintOff": "Alisin ang fingerprint sign-in sa phone na ito",
+      "fingerprintOffDone": "Inalis na. PIN na ulit ang gagamitin."
     }
   },
   "reports": {
@@ -1027,7 +1284,15 @@
       "linkFromHome": "Aking mga report",
       "count": "{{count}} report",
       "refused": "Hindi tinanggap",
-      "remove": "Alisin"
+      "remove": "Alisin",
+      "search": "Hanapin",
+      "searchHint": "Ticket number o lugar",
+      "filterAll": "Lahat ({{count}})",
+      "filterReview": "Sinusuri",
+      "filterScheduled": "Naka-iskedyul",
+      "filterDone": "Tapos na",
+      "showMore": "Ipakita ang {{count}} pa",
+      "noMatch": "Walang tumugma sa hinanap mo."
     },
     "detail": {
       "title": "Report {{ticket}}",
@@ -1048,7 +1313,9 @@
       "mergedInto": "Parehong lugar at problema ng {{ticket}}; doon na susundan.",
       "notFound": "Hindi makita ang report.",
       "sample": "Halimbawang report",
-      "notSent": "Hindi natuloy. Subukan ulit."
+      "notSent": "Hindi natuloy. Subukan ulit.",
+      "sent": "Naipadala",
+      "note": "Dagdag na detalye mo"
     },
     "refused": {
       "rate_limited": "Masyado nang maraming report mula sa phone na ito sa ngayon. Subukan ulit mamaya.",
@@ -1266,6 +1533,434 @@
       "8": "Mahirap at nakakapagod gamitin ang KolektaPH.",
       "9": "Kampante ako habang ginagamit ang KolektaPH.",
       "10": "Marami akong kinailangang matutunan bago ko nagamit ang KolektaPH."
+    }
+  },
+  "welcome": {
+    "body": "Subaybayan ang garbage truck, ma-text bago ito dumating, at mag-report ng problema sa basura sa Carmona.",
+    "start": "Magsimula",
+    "startHint": "Para sa mga residente. Hindi kailangan ng account.",
+    "staff": "Driver o City ENRO? Mag-sign in",
+    "demoTools": "Mga demo tool",
+    "logIn": "May account na? Mag-log in"
+  },
+  "signIn": {
+    "title": "Mag-sign in",
+    "body": "Para sa mga crew ng truck at mga kawani ng City ENRO.",
+    "driverHint": "Piliin ang truck at ilagay ang PIN nito",
+    "enroHint": "Email at password mula sa administrator ng lungsod",
+    "residentNote": "Residente ka? Hindi mo kailangang mag-sign in. Bumalik at pindutin ang Magsimula."
+  },
+  "rewards": {
+    "title": "Rewards",
+    "redeemTitle": "Palitan ng points",
+    "yourPoints": "Ang Eco Points mo",
+    "pts": "pts",
+    "pointsCount": "{{points}} points",
+    "toNextTier": "{{points}} points pa para sa {{tier}}",
+    "topTier": "Nasa {{tier}} ka na, ang pinakamataas na antas",
+    "tier": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold"
+    },
+    "redeem": "Palitan",
+    "howItWorks": "Paano ito gumagana",
+    "week": "Linggong ito",
+    "day": {
+      "confirmed": "nakumpirma",
+      "missed": "hindi nakumpirma",
+      "upcoming": "darating pa"
+    },
+    "weekHint": "Kumpirmahin ang pagkolekta sa bawat araw ng koleksyon ng barangay mo. Kapag kumpleto ang linggo, may dagdag na {{points}} points.",
+    "weekNoDays": "Pumili ng barangay para makita ang mga araw ng koleksyon ngayong linggo.",
+    "waysToEarn": "Mga paraan para kumita",
+    "earn": {
+      "valid_report": "Tamang report",
+      "pickup_confirmed": "Kumpirmahin ang pagkolekta",
+      "segregation_check": "Tamang paghihiwalay",
+      "cleanup_drive": "Clean-up drive",
+      "week_complete": "Kumpletong linggo"
+    },
+    "plusPoints": "+ {{points}} points",
+    "recent": "Kamakailang aktibidad",
+    "seeAll": "Tingnan lahat",
+    "seeLess": "Bawasan",
+    "noActivity": "Wala pang aktibidad.",
+    "entry": {
+      "valid_report": "Na-verify na report",
+      "pickup_confirmed": "Kinumpirmang pagkolekta",
+      "segregation_check": "Segregation check",
+      "cleanup_drive": "Clean-up drive",
+      "week_complete": "Kumpletong linggo",
+      "redeemed": "Ipinalit sa perk",
+      "hauling_discount": "Diskwento sa hakot"
+    },
+    "myVouchers": "Mga voucher ko",
+    "voucher": {
+      "title": "Voucher",
+      "notFound": "Hindi makita ang voucher na ito.",
+      "show": "Ipakita ang code na ito sa counter.",
+      "validUntil": "magagamit hanggang {{day}}",
+      "status": {
+        "issued": "Hindi pa nagagamit",
+        "used": "Nagamit na",
+        "expired": "Lipas na"
+      },
+      "sample": "Halimbawang voucher ito. Hindi ito tatanggapin ng lungsod o ng anumang tindahan."
+    },
+    "perks": "Mga perk at diskwento",
+    "group": {
+      "all": "Lahat",
+      "bills": "Bayarin",
+      "stores": "Tindahan",
+      "city": "Serbisyo ng lungsod"
+    },
+    "noPerks": "Walang perk dito sa ngayon.",
+    "samplePerk": "halimbawa",
+    "cost": "{{points}} pts",
+    "needMore": "{{points}} pa",
+    "confirmTitle": "Ipalit ang {{points}} points?",
+    "confirmBody": "Hindi na ito mababawi kapag naipalit na.",
+    "confirmYes": "Oo, ipalit",
+    "failed": {
+      "offline": "Walang signal. Subukan ulit kapag may signal na.",
+      "points": "Kulang ang points mo para dito.",
+      "other": "Hindi natuloy. Subukan ulit."
+    },
+    "how": {
+      "intro": "Kumikita ka ng Eco Points sa pagtulong na mapanatiling malinis ang Carmona. Maipapalit ang points sa mga perk.",
+      "valid_report": "Kapag na-verify ng City ENRO ang report mo.",
+      "pickup_confirmed": "Isang beses sa bawat araw ng koleksyon, pagkatapos dumaan ng truck.",
+      "segregation_check": "Isang beses sa isang araw kapag nag-scan ka ng basura.",
+      "cleanup_drive": "Kapag sumali ka sa clean-up drive ng lungsod o ng barangay.",
+      "week_complete": "Kapag nakumpirma mo ang lahat ng araw ng koleksyon sa isang linggo.",
+      "spendTitle": "Saan magagamit",
+      "spendPerks": "Ipalit sa mga perk at diskwento sa Palitan ng points.",
+      "spendHauling": "Bawas sa bayad sa pribadong hakot: ₱{{pesos}} sa bawat 100 points.",
+      "tiersTitle": "Mga antas",
+      "tiers": "Tumataas ang antas mo ayon sa kabuuang points na nakuha mo, kahit naipalit mo na ang iba.",
+      "tierFrom": "mula {{points}} points"
+    },
+    "feed": {
+      "earned": "Nakakuha ka ng {{points}} points"
+    },
+    "savePoints": {
+      "title": "I-save ang points mo",
+      "body": "Nasa device lang na ito ang points at mga report mo. Gumawa ng account para hindi mawala ang mga ito.",
+      "button": "Gumawa ng account"
+    }
+  },
+  "scanner": {
+    "title": "I-scan ang basura",
+    "short": "Scanner",
+    "intro": "Itutok ang camera sa basura para makita kung paano ito ihihiwalay.",
+    "photo": "Larawan ng basurang ini-scan",
+    "scan": "Mag-scan",
+    "again": "Mag-scan ulit",
+    "failed": "Hindi nabasa ang larawan. Subukan ulit.",
+    "unknown": "Hindi matukoy ang nasa larawan. Subukang lumapit, o tanungin si Kolek.",
+    "result": "Resulta ng scan",
+    "item": {
+      "plastic_bottle": "Plastik na bote",
+      "old_furniture": "Lumang muwebles"
+    },
+    "class": {
+      "biodegradable": "Nabubulok",
+      "recyclable": "Nare-recycle",
+      "residual": "Residual",
+      "special": "Espesyal na basura"
+    },
+    "instruction": {
+      "biodegradable": "Ilagay sa lalagyan ng nabubulok. Puwede rin itong i-compost.",
+      "recyclable": "Banlawan at patuyuin. Ilagay sa lalagyan ng nare-recycle.",
+      "residual": "Ilagay sa lalagyan ng residual na basura.",
+      "special": "Huwag ihalo sa ibang basura. Ihiwalay ito at itanong sa barangay kung paano ito kukunin."
+    },
+    "sample": "Halimbawang resulta ito: hindi pa binabasa ng app ang larawan mo.",
+    "tipsTitle": "Tip",
+    "tips": "Linisin, patuyuin at ihiwalay ang mga nare-recycle para magamit pa.",
+    "helpful": "Nakatulong ba ang resultang ito?",
+    "yes": "Oo",
+    "no": "Hindi",
+    "thanks": "Salamat sa sagot mo.",
+    "haul": "Ipahakot ito (may bayad)"
+  },
+  "impact": {
+    "title": "Kalagayan ng lungsod",
+    "short": "Kalagayan ng lungsod",
+    "period": "Saklaw na panahon",
+    "week": "7 araw",
+    "month": "30 araw",
+    "collected": "Nakolektang basura sa buong lungsod",
+    "tonnes": "{{tonnes}} tonelada",
+    "estimate": "Tantiya mula sa {{trips}} biyahe ng truck",
+    "served": "Nadaanang kalye",
+    "servedHint": "ayon sa GPS ng truck",
+    "missed": "Hindi nadaanang kalye",
+    "missedHint": "ngayong araw",
+    "perDay": "Nakolekta kada araw",
+    "perDayHint": "Lahat ng truck, tantiyang tonelada",
+    "todayLegend": "Araw ngayon",
+    "ranking": "Mga barangay na nasa oras",
+    "rankingHint": "Bahagi ng mga koleksyong natapos sa loob ng oras",
+    "onTime": "{{rate}} nasa oras",
+    "noData": "Wala pang datos sa panahong ito."
+  },
+  "hauling": {
+    "title": "Pribadong hakot",
+    "short": "Magpahakot",
+    "bookings": "Mga pribadong hakot",
+    "bookingsHint": "Kasama sa Aking mga report",
+    "sample": "halimbawa",
+    "sampleNotice": "Halimbawa pa lamang ito: hindi umaabot sa City ENRO ang request na ito.",
+    "sampleRequest": "Halimbawang request ito, para masubukan ang quotation at ang pagbabayad.",
+    "pesos": "₱{{amount}}",
+    "status": {
+      "requested": "Sinusuri",
+      "quoted": "May quotation",
+      "accepted": "Tinanggap",
+      "scheduled": "Naka-iskedyul",
+      "in_progress": "Papunta na ang crew",
+      "completed": "Tapos na",
+      "declined": "Hindi tinanggap",
+      "cancelled": "Kinansela",
+      "expired": "Lipas na ang quotation"
+    },
+    "slot": {
+      "morning": "Umaga",
+      "afternoon": "Hapon"
+    },
+    "volume": {
+      "small": "Kaunti",
+      "medium": "Katamtaman",
+      "large": "Marami",
+      "unsure": "Hindi sigurado"
+    },
+    "volumeHint": {
+      "small": "1 hanggang 5 sako",
+      "medium": "Kalahating truck",
+      "large": "Isang buong truck",
+      "unsure": "Kami na ang titingin"
+    },
+    "load": {
+      "garden": "Halaman at damo",
+      "construction": "Tira ng konstruksyon",
+      "furniture": "Muwebles",
+      "appliances": "Appliances",
+      "general": "Karaniwang basura"
+    },
+    "requester": {
+      "resident": "Residente",
+      "business": "Negosyo"
+    },
+    "summary": {
+      "title": "Buod ng booking",
+      "when": "Kailan",
+      "volume": "Dami",
+      "load": "Ihahakot",
+      "where": "Saan",
+      "business": "Negosyo"
+    },
+    "fee": {
+      "title": "Detalye ng bayad",
+      "base": "Base fee ({{volume}})",
+      "distance": "Bayad sa layo",
+      "disposal": "Bayad sa pagtatapon",
+      "points": "Diskwento ng Eco Points ({{points}} pts)",
+      "total": "Kabuuan"
+    },
+    "payment": {
+      "gcash": "GCash",
+      "maya": "Maya",
+      "card": "Credit o debit card",
+      "cash": "Cash sa pickup"
+    },
+    "form": {
+      "intro": "Para sa basurang hindi kinukuha ng regular na koleksyon: malalaking gamit, tira ng konstruksyon, maraming halaman. May bayad ito.",
+      "who": "Sino ang magpapahakot?",
+      "businessName": "Pangalan ng negosyo",
+      "contactName": "Pangalan mo",
+      "contactPerson": "Pangalan ng kokontakin",
+      "mobile": "Mobile number",
+      "mobileHint": "Halimbawa: 0917 123 4567",
+      "contactUse": "Gagamitin lang ang pangalan at number para kontakin ka tungkol sa hakot na ito.",
+      "where": "Saan kukunin?",
+      "landmark": "Palatandaan o address",
+      "landmarkHint": "Hal. Zone 3, tapat ng tindahan",
+      "day": "Kailan?",
+      "slot": "Oras",
+      "volume": "Tantiyang dami",
+      "load": "Ano ang ihahakot?",
+      "description": "Paglalarawan",
+      "descriptionHint": "Hal. mga sanga at dahon, nakasako na",
+      "photos": "Larawan ng ihahakot",
+      "addPhoto": "Magdagdag ng larawan",
+      "removePhoto": "Alisin",
+      "photoN": "Larawan {{n}}",
+      "after": "Kukumpirmahin ng team ang araw, oras at bayad sa loob ng 24 oras.",
+      "submit": "Magpatuloy",
+      "errors": {
+        "business": "Ilagay ang pangalan ng negosyo.",
+        "name": "Ilagay ang pangalan.",
+        "mobile": "Ilagay ang tamang mobile number.",
+        "day": "Pumili ng araw.",
+        "load": "Pumili ng kahit isang uri ng ihahakot.",
+        "fix": "Kumpletuhin muna ang mga kulang sa itaas."
+      },
+      "failed": {
+        "offline": "Walang signal. Subukan ulit kapag may signal na.",
+        "other": "Hindi natuloy. Subukan ulit."
+      }
+    },
+    "sent": {
+      "title": "Naipadala ang request",
+      "body": "Kukumpirmahin ng team ang araw, oras at bayad sa loob ng 24 oras. Makikita mo ito sa Aking mga report.",
+      "open": "Tingnan ang request",
+      "home": "Bumalik sa Bahay"
+    },
+    "detail": {
+      "notFound": "Hindi makita ang request na ito.",
+      "pay": "Tingnan ang bayad at magbayad",
+      "next": {
+        "requested": "Sinusuri ng City ENRO ang request mo. Sasagot sila tungkol sa araw at bayad.",
+        "quoted": "May quotation na. Tingnan ang bayad at magbayad para ma-iskedyul.",
+        "accepted": "Tinanggap mo na ang quotation. Hinihintay ang iskedyul ng truck.",
+        "scheduled": "Naka-iskedyul na ang pagkuha.",
+        "in_progress": "Papunta na ang crew.",
+        "completed": "Tapos na ang hakot. Salamat!",
+        "declined": "Hindi natanggap ng City ENRO ang request na ito.",
+        "cancelled": "Kinansela mo ang request na ito.",
+        "expired": "Lumipas na ang quotation. Mag-request ulit kung kailangan pa."
+      },
+      "validUntil": "May bisa ang quotation hanggang {{day}}, {{time}}.",
+      "payment": "Bayad",
+      "paymentState": {
+        "paid": "bayad na",
+        "due": "babayaran sa crew"
+      },
+      "progress": "Kalagayan",
+      "cancel": "Kanselahin ang request",
+      "cancelTitle": "Kanselahin ang request na ito?",
+      "cancelBody": "Hindi na ito itutuloy ng City ENRO.",
+      "cancelYes": "Oo, kanselahin"
+    },
+    "checkout": {
+      "title": "Bayaran",
+      "method": "Paraan ng pagbabayad",
+      "sampleShort": "Halimbawang bayad",
+      "sample": "Halimbawang bayad lang ito: walang totoong perang gagalaw at walang sisingilin sa iyo.",
+      "terms": "May bisa ang quotation nang 24 oras. Maaaring magbago ang huling bayad kung mas marami ang ihahakot kaysa sa inilarawan.",
+      "pay": "Bayaran ang ₱{{amount}}",
+      "confirmCash": "Kumpirmahin: cash sa pickup",
+      "pointsTitle": "Gamitin ang Eco Points",
+      "pointsHint": "May {{balance}} points ka. ₱{{pesos}} ang bawas sa bawat 100 points.",
+      "pointsLess": "Bawasan ang points",
+      "pointsMore": "Dagdagan ang points",
+      "pointsUsed": "{{points}} points, bawas na ₱{{pesos}}",
+      "nothingToPay": "Walang babayaran sa request na ito sa ngayon.",
+      "donePaid": "Bayad na (halimbawa)",
+      "donePaidBody": "Iiskedyul na ito ng City ENRO.",
+      "doneCash": "Nakumpirma",
+      "doneCashBody": "Ihanda ang cash at iabot sa crew sa araw ng pagkuha."
+    },
+    "feed": {
+      "requested": "Natanggap ang request sa hakot",
+      "quoted": "May quotation na ang hakot mo",
+      "accepted": "Tinanggap ang quotation",
+      "scheduled": "Naka-iskedyul na ang hakot",
+      "in_progress": "Papunta na ang crew para sa hakot",
+      "completed": "Tapos na ang hakot",
+      "declined": "Hindi natanggap ang request sa hakot",
+      "cancelled": "Kinansela ang hakot"
+    }
+  },
+  "account": {
+    "logOut": "Mag-log out",
+    "logInOrRegister": "Mag-log in o gumawa ng account",
+    "offline": "Walang signal. Subukan ulit kapag may signal na.",
+    "sampleNotice": "Halimbawa pa lamang ang mga account: nasa device na ito lang at nawawala kapag isinara ang app.",
+    "mobile": "Mobile number",
+    "mobileHint": "Halimbawa: 0917 123 4567",
+    "password": "Password",
+    "passwordHint": "Hindi bababa sa {{count}} character",
+    "passwordAgain": "Ulitin ang password",
+    "fullName": "Buong pangalan",
+    "email": "Email (opsyonal)",
+    "emailHint": "Hindi kailangan para mag-sign in.",
+    "area": "Zone, block, phase o purok",
+    "areaHint": "Hal. Zone 3, Block 12",
+    "login": {
+      "title": "Mag-log in",
+      "body": "Para sa mga residenteng may account. Hindi kailangan ng account para gamitin ang app.",
+      "missing": "Ilagay ang mobile number at password.",
+      "wrong": "Mali ang number o password.",
+      "submit": "Mag-log in",
+      "forgot": "Nakalimutan ang password?",
+      "toRegister": "Wala pang account? Gumawa"
+    },
+    "register": {
+      "title": "Gumawa ng account",
+      "body": "Opsyonal ito. Mananatili sa account ang mga report, points at hakot ng device na ito.",
+      "barangay": "Barangay mo (mula sa setup ng app)",
+      "consent": "Nabasa ko ang privacy notice. Itinatago ang pangalan, mobile number, barangay at lugar ko para sa account ko.",
+      "submit": "Gumawa ng account",
+      "toLogin": "May account na? Mag-log in"
+    },
+    "errors": {
+      "name": "Ilagay ang buong pangalan.",
+      "mobile": "Ilagay ang tamang mobile number.",
+      "password": "Hindi bababa sa {{count}} character ang password.",
+      "again": "Hindi magkapareho ang dalawang password.",
+      "consent": "Kailangan ang pagpayag mo para makagawa ng account.",
+      "taken": "May account na ang number na ito. Mag-log in na lang.",
+      "email": "Hindi tama ang email.",
+      "other": "Hindi natuloy. Subukan ulit."
+    },
+    "recover": {
+      "title": "Bawiin ang account",
+      "body": "Ilagay ang mobile number ng account mo. Padadalhan ito ng code.",
+      "send": "Ipadala ang code",
+      "unknown": "Walang account ang number na ito.",
+      "codeTitle": "Ilagay ang code",
+      "codeBody": "Nagpadala kami ng 6-digit na code sa {{mobile}}.",
+      "sampleCode": "Halimbawa: walang text na ipinadala. Ito ang code:",
+      "code": "6-digit na code",
+      "codeMissing": "Ilagay ang 6-digit na code.",
+      "newPassword": "Bagong password",
+      "save": "I-save ang bagong password",
+      "resend": "Ipadala ulit ang code",
+      "wait": "Maaaring abutin ng ilang minuto bago dumating ang code.",
+      "wrongCode": "Mali ang code.",
+      "doneTitle": "Napalitan na ang password",
+      "doneBody": "Puwede ka nang mag-log in gamit ang bagong password."
+    },
+    "personal": {
+      "title": "Personal na impormasyon",
+      "save": "I-save ang mga pagbabago",
+      "saved": "Na-save na.",
+      "mobileFixed": "Ang number ang account mo, kaya hindi ito mapapalitan dito."
+    },
+    "security": {
+      "title": "Sign-in at seguridad",
+      "change": "Palitan ang password",
+      "current": "Kasalukuyang password",
+      "currentMissing": "Ilagay ang kasalukuyang password.",
+      "wrongCurrent": "Mali ang kasalukuyang password.",
+      "changed": "Napalitan na ang password.",
+      "submit": "Palitan ang password"
+    },
+    "invite": {
+      "title": "Gumawa ng account (opsyonal)",
+      "body": "Para hindi mawala ang points at mga report mo kapag nagpalit ka ng phone.",
+      "register": "Gumawa",
+      "logIn": "Mag-log in"
+    },
+    "transfer": {
+      "title": "Ilipat ang mga report at points?",
+      "body": "Bilang guest, may {{reports}} report at {{points}} points ang device na ito. Ilipat ang mga ito sa account mo, o iwan dito. Babalik sila kapag nag-log out ka.",
+      "move": "Ilipat sa account ko",
+      "leave": "Iwan na lang dito",
+      "failed": "Hindi natuloy ang paglipat. Subukan ulit."
     }
   }
 }

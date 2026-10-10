@@ -14,14 +14,19 @@ export async function beginShift(input: {
   routeId: string | null;
   crew: number;
   gpsSource: GpsSource;
+  /** What the truck already carries (0.25 or 0.5): reported as the shift's first load. */
+  startLoad?: number;
 }): Promise<StartGpsResult> {
   if (input.gpsSource === 'phone') {
     const ready = await preparePhoneGps();
     if (!ready.ok) return ready;
   }
-  useDriver.getState().startShift(input);
+  const { startLoad, ...start } = input;
+  useDriver.getState().startShift(start);
   const shift = useDriver.getState().shift;
   if (!shift) return { ok: false, reason: 'failed' };
+  // The same load report the crew taps during the shift, so everything downstream already knows it.
+  if (startLoad) useDriver.getState().report({ kind: 'load', load: startLoad });
   useGps.getState().begin(shift.shiftId, input.gpsSource);
   void syncNow(true);
   // The shift runs even if the GPS service fails to start; the shift screen offers a retry.

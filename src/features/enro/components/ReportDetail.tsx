@@ -205,7 +205,7 @@ export function ReportDetail(props: ReportDetailProps) {
       {rights.act && suggestion && ['submitted', 'verified'].includes(ticket.status) ? (
         <Panel title={t('enro.reports.suggestionTitle')}>
           <View style={styles.suggestion}>
-            <Icon name="lightbulb-on-outline" size={22} color={colors.navy} />
+            <Icon name="lightbulb-on-outline" size={22} color={colors.primary} />
             <AppText style={styles.flex}>
               {suggestion.action === 'merge'
                 ? t('enro.reports.suggestMerge', { ticket: suggestion.into })

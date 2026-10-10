@@ -22,7 +22,7 @@ export function WasteBadge({ type }: { type: WasteType }) {
       <View style={styles.icons}>
         {ICONS[type].map((name) => (
           <View key={name} style={styles.iconWrap}>
-            <Icon name={name} size={20} color={colors.green} />
+            <Icon name={name} size={20} color={colors.primary} />
           </View>
         ))}
       </View>
@@ -34,15 +34,16 @@ export function WasteBadge({ type }: { type: WasteType }) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  // The words drop under the pictograms at 200% text instead of running off the card.
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
   icons: { flexDirection: 'row', gap: spacing.xs },
   iconWrap: {
     width: 32,
     height: 32,
     borderRadius: radius.pill,
-    backgroundColor: colors.greenSoft,
+    backgroundColor: colors.mint,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: { flex: 1 },
+  text: { flexGrow: 1, flexShrink: 1, flexBasis: 120, minWidth: 0 },
 });

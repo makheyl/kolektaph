@@ -8,4 +8,9 @@ export interface PhotoCaptureProps {
   sample: SamplePhotoId;
   onCaptured: (photo: PhotoRef) => void;
   variant?: 'primary' | 'secondary';
+  /**
+   * Web has no camera screen to show the guide on, so it is written above the button. Set false
+   * when the screen already says it (the report wizard's empty viewfinder).
+   */
+  showGuide?: boolean;
 }

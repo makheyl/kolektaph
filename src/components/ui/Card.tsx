@@ -1,9 +1,18 @@
 import { StyleSheet, View, type ViewProps } from 'react-native';
 
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors, radius, shadows, spacing } from '@/theme/tokens';
 
-export function Card({ style, ...rest }: ViewProps) {
-  return <View {...rest} style={[styles.card, style]} />;
+interface CardProps extends ViewProps {
+  /**
+   * "elevated" = white with the soft shadow (the default); "mint" = the brand-tinted card
+   * (Kolek, success); "flat" = white with only the hairline, for cards inside cards; "hero" =
+   * brand green for a page's headline number (points, tonnes). Text inside it is white.
+   */
+  variant?: 'elevated' | 'mint' | 'flat' | 'hero';
+}
+
+export function Card({ style, variant = 'elevated', ...rest }: CardProps) {
+  return <View {...rest} style={[styles.card, styles[variant], style]} />;
 }
 
 const styles = StyleSheet.create({
@@ -15,4 +24,8 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
+  elevated: shadows.card,
+  mint: { backgroundColor: colors.mint, borderColor: colors.mint, ...shadows.card },
+  flat: {},
+  hero: { backgroundColor: colors.primary, borderColor: colors.primary, ...shadows.card },
 });

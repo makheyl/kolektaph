@@ -9,5 +9,5 @@ export default function DriverIndex() {
   if (shift && shift.endedAt == null) return <Redirect href="/driver/shift" />;
   if (shift) return <Redirect href="/driver/end" />;
   if (!session) return <Redirect href="/driver/sign-in" />;
-  return <Redirect href="/driver/start" />;
+  return <Redirect href="/driver/shift" />;
 }

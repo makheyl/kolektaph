@@ -21,7 +21,7 @@ export function Panel({ title, children, action }: PanelProps) {
         </AppText>
         {action ? (
           <Pressable accessibilityRole="link" onPress={action.onPress} hitSlop={8}>
-            <AppText variant="label" color={colors.navy} style={styles.link}>
+            <AppText variant="label" color={colors.primary} style={styles.link}>
               {action.label}
             </AppText>
           </Pressable>

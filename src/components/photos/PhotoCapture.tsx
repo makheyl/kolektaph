@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { Notice } from '@/components/ui/Notice';
 import { Icon } from '@/components/ui/Icon';
 import { compressPhoto } from '@/features/reports/photos';
 import { useDemo } from '@/stores/demo';
@@ -65,15 +65,15 @@ export function PhotoCapture({
         />
       ) : null}
       {denied ? (
-        <Card style={styles.denied} accessibilityLiveRegion="polite">
-          <AppText>{t('reports.photo.denied')}</AppText>
+        <Notice tone="warning" live="polite" text={t('reports.photo.denied')}>
           <Button
             variant="secondary"
+            size="compact"
             icon="cog-outline"
             label={t('driver.start.openSettings')}
             onPress={() => void Linking.openSettings()}
           />
-        </Card>
+        </Notice>
       ) : null}
 
       <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
@@ -116,14 +116,13 @@ export function PhotoCapture({
 
 const styles = StyleSheet.create({
   wrap: { gap: spacing.sm },
-  denied: { backgroundColor: colors.yellowSoft, borderColor: colors.yellow },
   camera: { flex: 1, backgroundColor: '#000' },
   overlay: { flex: 1, justifyContent: 'space-between' },
   guide: {
     margin: spacing.lg,
     padding: spacing.md,
     borderRadius: radius.md,
-    backgroundColor: 'rgba(14, 35, 54, 0.8)',
+    backgroundColor: 'rgba(17, 67, 68, 0.85)',
     gap: 2,
   },
   frame: {
@@ -132,7 +131,7 @@ const styles = StyleSheet.create({
     marginVertical: spacing.lg,
     borderWidth: 3,
     borderStyle: 'dashed',
-    borderColor: colors.yellow,
+    borderColor: colors.mint,
     borderRadius: radius.lg,
   },
   controls: {

@@ -14,6 +14,7 @@ import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
 import { Screen } from '@/components/ui/Screen';
 import { Section } from '@/components/ui/Section';
+import { SkeletonCard, SkeletonGroup } from '@/components/ui/Skeleton';
 import { taskState } from '@/features/driver/tasks';
 import { CATEGORY_META } from '@/features/reports/categories';
 import { useTickets } from '@/features/reports/hooks';
@@ -55,8 +56,11 @@ export default function DriverTask() {
   );
   if (!ticket || !barangays || !meta) {
     return (
-      <Screen>
-        <AppHeader title={t('driver.tasks.title')} leading={back} />
+      <Screen header={<AppHeader title={t('driver.tasks.title')} leading={back} />}>
+        <SkeletonGroup>
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={4} />
+        </SkeletonGroup>
       </Screen>
     );
   }
@@ -68,16 +72,40 @@ export default function DriverTask() {
   const me = trucks.find((tr) => tr.id === shift.truckId);
 
   return (
-    <Screen>
-      <AppHeader
-        eyebrow={ticket.id}
-        title={t(`reports.category.${ticket.category}`)}
-        leading={back}
-      />
-
+    <Screen
+      header={
+        <AppHeader
+          eyebrow={ticket.id}
+          title={t(`reports.category.${ticket.category}`)}
+          leading={back}
+        />
+      }
+      footer={
+        state === 'done' ? undefined : (
+          <>
+            {!before || !after ? (
+              <AppText variant="label" color={colors.textMuted}>
+                {t('driver.tasks.needPhotos')}
+              </AppText>
+            ) : null}
+            <Button
+              size="driver"
+              icon="check-circle"
+              label={t('driver.tasks.done')}
+              disabled={!before || !after}
+              onPress={() => {
+                if (!before || !after) return;
+                report({ kind: 'task', ticketId: ticket.id, action: 'done', before, after });
+                goBack('/driver/shift');
+              }}
+            />
+          </>
+        )
+      }
+    >
       <Card>
         <View style={styles.row}>
-          <Icon name={CATEGORY_META[ticket.category].icon} size={28} color={colors.navy} />
+          <Icon name={CATEGORY_META[ticket.category].icon} size={28} color={colors.ink} />
           <View style={styles.flex}>
             <AppText variant="heading">{barangay}</AppText>
             {ticket.landmark ? (
@@ -143,9 +171,11 @@ export default function DriverTask() {
       ) : null}
 
       {state === 'done' ? (
-        <Card style={styles.done}>
-          <Icon name="check-circle" size={36} color={colors.green} />
-          <AppText variant="heading">{t('driver.tasks.doneState')}</AppText>
+        <Card variant="mint">
+          <Icon name="check-circle" size={36} color={colors.primary} />
+          <AppText variant="heading" color={colors.primary}>
+            {t('driver.tasks.doneState')}
+          </AppText>
           <AppText>{t('driver.tasks.sent')}</AppText>
         </Card>
       ) : (
@@ -153,6 +183,7 @@ export default function DriverTask() {
           {state === 'todo' ? (
             <Button
               size="driver"
+              variant="secondary"
               icon="truck-fast"
               label={t('driver.tasks.start')}
               onPress={() =>
@@ -166,7 +197,7 @@ export default function DriverTask() {
               }
             />
           ) : (
-            <AppText variant="bodyStrong" color={colors.green}>
+            <AppText variant="bodyStrong" color={colors.primary}>
               {t('driver.tasks.startedNote')}
             </AppText>
           )}
@@ -194,21 +225,6 @@ export default function DriverTask() {
               onCaptured={setAfter}
             />
           </Section>
-          {!before || !after ? (
-            <AppText color={colors.textMuted}>{t('driver.tasks.needPhotos')}</AppText>
-          ) : null}
-          <Button
-            size="driver"
-            variant="success"
-            icon="check-circle"
-            label={t('driver.tasks.done')}
-            disabled={!before || !after}
-            onPress={() => {
-              if (!before || !after) return;
-              report({ kind: 'task', ticketId: ticket.id, action: 'done', before, after });
-              goBack('/driver/shift');
-            }}
-          />
         </>
       )}
     </Screen>
@@ -221,10 +237,9 @@ const styles = StyleSheet.create({
   pair: { flexDirection: 'row', gap: spacing.sm },
   map: {
     height: 220,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,
   },
-  done: { backgroundColor: colors.greenSoft, borderColor: colors.green, alignItems: 'flex-start' },
 });

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
+import { Notice } from '@/components/ui/Notice';
 import { Screen } from '@/components/ui/Screen';
 import { formatShiftDuration } from '@/features/driver/format';
 import { finishShift } from '@/features/driver/shift';
@@ -19,7 +20,7 @@ import { goBack } from '@/lib/navigation';
 import { services } from '@/services';
 import { useDriver, useDriverLive } from '@/stores/driver';
 import { useGps } from '@/stores/gps';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, radius, spacing } from '@/theme/tokens';
 
 /** Shift summary; ending the shift stops the GPS. Afterwards, waits until everything is sent. */
 export default function EndShift() {
@@ -64,118 +65,139 @@ export default function EndShift() {
   };
 
   return (
-    <Screen>
-      <AppHeader
-        title={ended ? t('driver.end.doneTitle') : t('driver.end.title')}
-        leading={
-          ended ? undefined : (
-            <IconButton
-              icon="arrow-left"
-              label={t('common.back')}
-              onPress={() => goBack('/driver/shift')}
+    <Screen
+      header={
+        <AppHeader
+          title={ended ? t('driver.end.doneTitle') : t('driver.end.title')}
+          leading={
+            ended ? undefined : (
+              <IconButton
+                icon="arrow-left"
+                label={t('common.back')}
+                onPress={() => goBack('/driver/shift')}
+              />
+            )
+          }
+        />
+      }
+      // The action that ends or follows the shift stays in reach, under the summary.
+      footer={
+        !ended ? (
+          <>
+            <AppText variant="label" color={colors.textMuted}>
+              {t('driver.end.gpsStops')}
+            </AppText>
+            <Button
+              size="driver"
+              variant="danger"
+              icon="stop-circle-outline"
+              label={t('driver.end.confirm')}
+              loading={busy}
+              onPress={async () => {
+                setBusy(true);
+                await finishShift();
+                setBusy(false);
+              }}
             />
-          )
-        }
-      />
-
+          </>
+        ) : (
+          <>
+            {pending.total ? (
+              <AppText variant="label" color={colors.textMuted}>
+                {t('driver.end.signOutWait')}
+              </AppText>
+            ) : null}
+            <Button
+              size="driver"
+              icon="play-circle"
+              label={t('driver.end.newShift')}
+              disabled={pending.total > 0}
+              onPress={() => leave(() => router.replace('/driver/start'))}
+            />
+            <Button
+              variant="secondary"
+              icon="logout"
+              label={t('driver.end.signOut')}
+              disabled={pending.total > 0}
+              onPress={() =>
+                leave(() => {
+                  // Tell the server too (it never blocks leaving; see DriverService.signOut).
+                  void services.driver.signOut();
+                  signOut();
+                  router.replace('/driver/sign-in');
+                })
+              }
+            />
+          </>
+        )
+      }
+    >
       {ended ? (
-        <Card style={styles.done}>
-          <Icon name="check-circle" size={40} color={colors.green} />
-          <AppText variant="heading">{t('driver.end.doneBody')}</AppText>
+        <Card variant="mint" style={styles.done}>
+          <View style={styles.doneBadge} aria-hidden>
+            <Icon name="check" size={32} color={colors.textOnDark} />
+          </View>
+          <AppText variant="heading" color={colors.primary} style={styles.center}>
+            {t('driver.end.doneBody')}
+          </AppText>
         </Card>
       ) : null}
 
       <Card>
-        <AppText variant="heading">{t('driver.end.summary')}</AppText>
-        {rows.map(([label, value]) => (
-          <View key={label} style={styles.row}>
+        <AppText variant="heading" color={colors.primary} accessibilityRole="header">
+          {t('driver.end.summary')}
+        </AppText>
+        {rows.map(([label, value], i) => (
+          <View key={label} style={[styles.row, i > 0 && styles.rowLine]}>
             <AppText style={styles.flex}>{label}</AppText>
-            <AppText variant="bodyStrong">{value}</AppText>
+            <AppText variant="bodyStrong" style={styles.value}>
+              {value}
+            </AppText>
           </View>
         ))}
       </Card>
 
       {pending.total ? (
-        <Card style={styles.warn} accessibilityLiveRegion="polite">
-          <View style={styles.inline}>
-            <Icon name="cloud-upload-outline" size={24} color={colors.navy} />
-            <AppText variant="bodyStrong" style={styles.flex}>
-              {ended
-                ? t('driver.end.waitSync', { count: pending.total })
-                : t('driver.end.pendingWarning', { count: pending.total })}
-            </AppText>
-          </View>
+        <Notice tone="warning" icon="cloud-upload-outline" live="polite">
+          <AppText variant="bodyStrong">
+            {ended
+              ? t('driver.end.waitSync', { count: pending.total })
+              : t('driver.end.pendingWarning', { count: pending.total })}
+          </AppText>
           <Button
             variant="secondary"
             icon="send"
             label={t('driver.gps.sendNow')}
             onPress={() => void syncNow(true)}
           />
-        </Card>
+        </Notice>
       ) : ended ? (
-        <Card style={styles.done}>
-          <View style={styles.inline}>
-            <Icon name="cloud-check-outline" size={24} color={colors.green} />
-            <AppText variant="bodyStrong">{t('driver.end.allSynced')}</AppText>
-          </View>
-        </Card>
+        <Notice tone="success" icon="cloud-check-outline" text={t('driver.end.allSynced')} />
       ) : null}
-
-      {!ended ? (
-        <>
-          <AppText color={colors.textMuted}>{t('driver.end.gpsStops')}</AppText>
-          <Button
-            size="driver"
-            variant="danger"
-            icon="stop-circle-outline"
-            label={t('driver.end.confirm')}
-            disabled={busy}
-            onPress={async () => {
-              setBusy(true);
-              await finishShift();
-              setBusy(false);
-            }}
-          />
-        </>
-      ) : (
-        <>
-          <Button
-            size="driver"
-            variant="success"
-            icon="play-circle"
-            label={t('driver.end.newShift')}
-            disabled={pending.total > 0}
-            onPress={() => leave(() => router.replace('/driver/start'))}
-          />
-          <Button
-            variant="secondary"
-            icon="logout"
-            label={t('driver.end.signOut')}
-            disabled={pending.total > 0}
-            onPress={() =>
-              leave(() => {
-                // Tell the server too (it never blocks leaving; see DriverService.signOut).
-                void services.driver.signOut();
-                signOut();
-                router.replace('/driver/sign-in');
-              })
-            }
-          />
-          {pending.total ? (
-            <AppText variant="label" color={colors.textMuted}>
-              {t('driver.end.signOutWait')}
-            </AppText>
-          ) : null}
-        </>
-      )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 32 },
-  inline: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  // A name and its number share a line; the number moves under the name when they do not fit.
+  row: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    columnGap: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  rowLine: { borderTopWidth: 1, borderTopColor: colors.border },
+  value: { flexShrink: 1, marginLeft: 'auto', textAlign: 'right' },
   flex: { flex: 1 },
-  warn: { backgroundColor: colors.yellowSoft, borderColor: colors.yellow },
-  done: { backgroundColor: colors.greenSoft, borderColor: colors.green, alignItems: 'flex-start' },
+  center: { textAlign: 'center' },
+  done: { alignItems: 'center' },
+  doneBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

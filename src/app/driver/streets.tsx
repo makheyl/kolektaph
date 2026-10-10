@@ -22,7 +22,7 @@ import { goBack } from '@/lib/navigation';
 import { formatClock } from '@/lib/time';
 import type { SkipReason } from '@/services/types';
 import { useDriver, useDriverLive } from '@/stores/driver';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors, radius, shadows, spacing } from '@/theme/tokens';
 
 const REASONS: SkipReason[] = [
   'no_garbage',
@@ -33,8 +33,8 @@ const REASONS: SkipReason[] = [
 ];
 
 const PROGRESS: Record<StreetProgress, { icon: IconName; color: string }> = {
-  passed: { icon: 'check-circle', color: colors.green },
-  current: { icon: 'map-marker', color: colors.navy },
+  passed: { icon: 'check-circle', color: colors.primary },
+  current: { icon: 'map-marker', color: colors.ink },
   upcoming: { icon: 'clock-outline', color: colors.grey },
 };
 
@@ -89,17 +89,20 @@ export default function DriverStreets() {
   const streetName = (s: DriverStreet) => s.name ?? t('truck.unnamedRoad');
 
   return (
-    <Screen>
-      <AppHeader
-        title={t('driver.streets.title')}
-        leading={
-          <IconButton
-            icon="arrow-left"
-            label={t('common.back')}
-            onPress={() => goBack('/driver/shift')}
-          />
-        }
-      />
+    <Screen
+      header={
+        <AppHeader
+          title={t('driver.streets.title')}
+          leading={
+            <IconButton
+              icon="arrow-left"
+              label={t('common.back')}
+              onPress={() => goBack('/driver/shift')}
+            />
+          }
+        />
+      }
+    >
       {!route ? (
         <AppText>{t('driver.streets.noRoute')}</AppText>
       ) : (
@@ -139,7 +142,7 @@ export default function DriverStreets() {
                     {m ? (
                       <AppText
                         variant="label"
-                        color={m.outcome === 'collected' ? colors.green : colors.red}
+                        color={m.outcome === 'collected' ? colors.primary : colors.red}
                       >
                         {m.outcome === 'collected' ? '✓ ' : '✗ '}
                         {state}
@@ -169,20 +172,18 @@ export default function DriverStreets() {
                   </View>
                 ) : (
                   <View style={styles.actions}>
-                    <View style={styles.flex}>
+                    <View style={styles.action}>
                       <Button
                         size="driver"
                         variant={m?.outcome === 'collected' ? 'success' : 'secondary'}
-                        icon="check"
                         label={t('driver.streets.collected')}
                         onPress={() => mark(s, 'collected', null)}
                       />
                     </View>
-                    <View style={styles.flex}>
+                    <View style={styles.action}>
                       <Button
                         size="driver"
                         variant={m?.outcome === 'skipped' ? 'danger' : 'secondary'}
-                        icon="debug-step-over"
                         label={
                           m?.outcome === 'skipped'
                             ? t('driver.streets.change')
@@ -210,10 +211,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadows.card,
   },
-  current: { borderWidth: 3, borderColor: colors.navy },
+  current: { borderWidth: 3, borderColor: colors.ink },
   head: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
   flex: { flex: 1 },
-  actions: { flexDirection: 'row', gap: spacing.sm },
+  // Words only, so two tall buttons fit side by side on a phone without breaking a word.
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  action: { flexGrow: 1, flexShrink: 1, flexBasis: 130, minWidth: 0 },
   reasons: { gap: spacing.sm },
 });
